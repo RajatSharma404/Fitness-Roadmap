@@ -1,0 +1,110 @@
+import express from "express";
+import cors from "cors";
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
+import { prisma } from "../lib/prisma";
+import { verifyJWT } from "../lib/jwt";
+import liftsRouter from "./routes/lifts";
+import roadmapRouter from "./routes/roadmap";
+import leaderboardRouter from "./routes/leaderboard";
+import profileRouter from "./routes/profile";
+import aiRouter from "./routes/ai";
+import authRouter from "./routes/auth";
+
+const app = express();
+const PORT = process.env.PORT || 5000;
+
+// Security middleware
+app.use(helmet());
+app.use(
+  cors({
+    origin: process.env.FRONTEND_URL || "http://localhost:3001",
+    credentials: true,
+  }),
+);
+
+// General rate limiting
+const generalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per windowMs
+});
+app.use(generalLimiter);
+
+// Body parsing
+app.use(express.json());
+
+// JWT middleware
+export const authMiddleware = async (
+  req: express.Request,
+  res: express.Response,
+  next: express.NextFunction,
+) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader?.startsWith("Bearer ")) {
+      res.status(401).json({ error: "No token provided" });
+      return;
+    }
+
+    const token = authHeader.substring(7);
+    const payload = await verifyJWT(token);
+
+    if (!payload) {
+      res.status(401).json({ error: "Invalid token" });
+      return;
+    }
+
+    req.user = payload;
+    next();
+  } catch (error) {
+    res.status(401).json({ error: "Authentication failed" });
+  }
+};
+
+// Public routes
+app.use("/api/auth", authRouter);
+
+// Protected routes
+app.use("/api/lifts", authMiddleware, liftsRouter);
+app.use("/api/roadmap", authMiddleware, roadmapRouter);
+app.use("/api/leaderboard", leaderboardRouter); // Public
+app.use("/api/profile", authMiddleware, profileRouter);
+app.use("/api/ai", authMiddleware, aiRouter);
+
+// Health check
+app.get("/health", (req, res) => {
+  res.json({ status: "ok", timestamp: new Date().toISOString() });
+});
+
+// Error handling
+app.use(
+  (
+    err: Error,
+    req: express.Request,
+    res: express.Response,
+    _next: express.NextFunction,
+  ) => {
+    console.error("Server error:", err);
+    res.status(500).json({ error: "Internal server error" });
+  },
+);
+
+// Start server
+app.listen(PORT, () => {
+  console.log(`🚀 Express server running on port ${PORT}`);
+});
+
+// Graceful shutdown
+process.on("SIGTERM", async () => {
+  console.log("SIGTERM received, shutting down gracefully");
+  await prisma.$disconnect();
+  process.exit(0);
+});
+
+process.on("SIGINT", async () => {
+  console.log("SIGINT received, shutting down gracefully");
+  await prisma.$disconnect();
+  process.exit(0);
+});
+
+export default app;

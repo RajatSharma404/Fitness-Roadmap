@@ -1,0 +1,169 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  goal          Goal?     @default(STRENGTH)
+  bodyweight    Float?
+  unit          Unit      @default(KG)
+  bio           String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  lifts        Lift[]
+  userNodes    UserNode[]
+  achievements Achievement[]
+  accounts     Account[]
+  sessions     Session[]
+
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verificationtokens")
+}
+
+model Lift {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String
+  weight    Float
+  reps      Int
+  oneRM     Float
+  setType   SetType  @default(WORKING)
+  date      DateTime @default(now())
+  notes     String?
+  videoUrl  String?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, name])
+  @@index([date])
+  @@map("lifts")
+}
+
+model Node {
+  id          String   @id @default(cuid())
+  name        String
+  track       Track
+  level       Int      // 1-4 for Beginner to Elite
+  position    Json     // { x: number, y: number }
+  description String?
+  muscles     String[]
+  unlockCriteria Json
+  dependencies String[]
+  createdAt   DateTime @default(now())
+
+  userNodes UserNode[]
+
+  @@index([track, level])
+  @@map("nodes")
+}
+
+model UserNode {
+  id          String    @id @default(cuid())
+  userId      String
+  nodeId      String
+  status      NodeStatus @default(LOCKED)
+  unlockedAt  DateTime?
+  completedAt DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  node Node @relation(fields: [nodeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, nodeId])
+  @@index([userId])
+  @@map("user_nodes")
+}
+
+model Achievement {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String
+  label     String
+  earnedAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, type])
+  @@index([userId])
+  @@map("achievements")
+}
+
+enum Goal {
+  STRENGTH
+  POWERLIFTING
+  BODYBUILDING
+  ATHLETIC
+}
+
+enum Unit {
+  KG
+  LBS
+}
+
+enum SetType {
+  WORKING
+  MAX_EFFORT
+  COMPETITION
+}
+
+enum Track {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+  ELITE
+}
+
+enum NodeStatus {
+  LOCKED
+  ACTIVE
+  COMPLETED
+}

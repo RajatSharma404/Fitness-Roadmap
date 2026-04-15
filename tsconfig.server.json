@@ -1,0 +1,13 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "outDir": "./dist",
+    "noEmit": false,
+    "isolatedModules": false,
+    "strict": true
+  },
+  "include": ["src/server/**/*", "src/lib/**/*", "prisma/**/*"],
+  "exclude": ["node_modules", ".next"]
+}

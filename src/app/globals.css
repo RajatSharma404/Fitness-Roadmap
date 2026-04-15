@@ -1,26 +1,218 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #1e1e1e;
+  --foreground: #d4d4d4;
+  --surface: rgba(37, 37, 38, 0.92);
+  --surface-border: rgba(60, 60, 60, 0.9);
+  --primary: #007acc;
+  --primary-glow: rgba(0, 122, 204, 0.35);
+  --secondary: #4ec9b0;
+  --secondary-glow: rgba(78, 201, 176, 0.3);
+  --text-primary: #d4d4d4;
+  --text-secondary: #9aa1a8;
+  --text-muted: #808080;
+  --success: #4ec9b0;
+  --warning: #ce9178;
+  --error: #f14c4c;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-surface-border: var(--surface-border);
+  --color-primary: var(--primary);
+  --color-primary-glow: var(--primary-glow);
+  --color-secondary: var(--secondary);
+  --color-secondary-glow: var(--secondary-glow);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-error: var(--error);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  color-scheme: dark;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(24, 24, 27, 0.5);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(86, 156, 214, 0.55);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(86, 156, 214, 0.8);
+}
+
+/* Glassmorphism utility */
+.glass {
+  background: rgba(37, 37, 38, 0.88);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(60, 60, 60, 0.8);
+}
+
+/* 3D tilt effect base */
+.tilt-3d {
+  transform-style: preserve-3d;
+  perspective: 1000px;
+}
+
+/* Glow animations */
+@keyframes glow-pulse {
+  0%,
+  100% {
+    box-shadow:
+      0 0 18px rgba(0, 122, 204, 0.4),
+      0 0 32px rgba(0, 122, 204, 0.2);
+  }
+  50% {
+    box-shadow:
+      0 0 28px rgba(0, 122, 204, 0.55),
+      0 0 56px rgba(0, 122, 204, 0.25);
+  }
+}
+
+@keyframes scale-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+@keyframes radial-glow {
+  0% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.5);
+  }
+}
+
+.glow-pulse {
+  animation: glow-pulse 2s ease-in-out infinite;
+}
+
+.scale-pulse {
+  animation: scale-pulse 0.6s ease-out;
+}
+
+.radial-glow {
+  position: absolute;
+  inset: -50%;
+  background: radial-gradient(
+    circle,
+    rgba(0, 122, 204, 0.35) 0%,
+    transparent 70%
+  );
+  animation: radial-glow 1s ease-out forwards;
+  pointer-events: none;
+}
+
+/* Neon edge animation */
+@keyframes edge-dash {
+  to {
+    stroke-dashoffset: -20;
+  }
+}
+
+.neon-edge {
+  filter: drop-shadow(0 0 4px rgba(0, 122, 204, 0.7));
+}
+
+.neon-edge path {
+  stroke-dasharray: 5 5;
+  animation: edge-dash 1s linear infinite;
+}
+
+/* Monaco editor dark theme override */
+.monaco-editor {
+  --vscode-editor-background: #0a0a0f !important;
+  --vscode-editor-foreground: #ffffff !important;
+}
+
+/* ReactFlow custom styles */
+.react-flow {
+  --xy-edge-stroke: rgba(86, 156, 214, 0.7);
+  --xy-edge-stroke-width: 2;
+  --xy-handle-background: #007acc;
+  --xy-handle-border-color: #d4d4d4;
+}
+
+.react-flow__edge-path {
+  stroke: rgba(86, 156, 214, 0.7);
+  stroke-width: 2;
+}
+
+.react-flow__edge.animated path {
+  stroke: #4ec9b0;
+  stroke-dasharray: 5 5;
+  animation: edge-dash 1s linear infinite;
+}
+
+.react-flow__minimap {
+  background: rgba(30, 30, 30, 0.92);
+  border: 1px solid rgba(60, 60, 60, 0.7);
+  border-radius: 8px;
+}
+
+.react-flow__controls {
+  background: rgba(37, 37, 38, 0.95);
+  border: 1px solid rgba(60, 60, 60, 0.7);
+  border-radius: 8px;
+}
+
+.react-flow__controls button {
+  background: transparent;
+  color: #d4d4d4;
+  border: none;
+  border-bottom: 1px solid rgba(60, 60, 60, 0.7);
+}
+
+.react-flow__controls button:hover {
+  background: rgba(0, 122, 204, 0.2);
+}
+
+/* Typewriter effect cursor */
+.typewriter-cursor::after {
+  content: "|";
+  animation: blink 1s step-end infinite;
+  color: #007acc;
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
 }
