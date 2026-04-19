@@ -21,7 +21,7 @@ module.exports = {
     {
       name: "fitness-roadmap-api",
       script: "cmd.exe",
-      args: ["/c", "npm run start:api"],
+      args: ["/c", "npm run build:server && npm run start:api"],
       interpreter: "none",
       instances: 1,
       exec_mode: "fork",

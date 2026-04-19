@@ -47,6 +47,7 @@ import {
 type NodeStatus = "locked" | "active" | "completed";
 
 interface FlowNodeData {
+  [key: string]: unknown;
   title: string;
   level: number;
   status: NodeStatus;
@@ -205,6 +206,9 @@ export default function RoadmapPage() {
     energy: 7,
     workoutCompletion: 75,
   });
+  const [saveStatus, setSaveStatus] = useState<
+    "idle" | "saving" | "saved" | "offline"
+  >("idle");
 
   const plan = useMemo(() => calculateBodyPlan(input), [input]);
 
@@ -317,13 +321,24 @@ export default function RoadmapPage() {
 
     localStorage.setItem("bodyPlanEnhancedState", JSON.stringify(state));
 
-    void fetch("/api/user-plan-state", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(state),
-    }).catch(() => {
-      // offline or unauthenticated - local save still works
-    });
+    const timer = window.setTimeout(() => {
+      setSaveStatus("saving");
+
+      void fetch("/api/user-plan-state", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(state),
+      })
+        .then((response) => {
+          setSaveStatus(response.ok ? "saved" : "offline");
+        })
+        .catch(() => {
+          // offline or unauthenticated - local save still works
+          setSaveStatus("offline");
+        });
+    }, 400);
+
+    return () => window.clearTimeout(timer);
   }, [input, progress, checkins, equipment, experience]);
 
   useEffect(() => {
@@ -443,6 +458,12 @@ export default function RoadmapPage() {
               </div>
               <div className="text-xs text-[#9aa1a8]">
                 Readiness {readinessScore}/100
+              </div>
+              <div className="mt-1 text-xs text-[#9aa1a8]">
+                Sync: {saveStatus === "saving" ? "Saving..." : null}
+                {saveStatus === "saved" ? "Saved" : null}
+                {saveStatus === "offline" ? "Local only" : null}
+                {saveStatus === "idle" ? "Idle" : null}
               </div>
             </div>
           </div>

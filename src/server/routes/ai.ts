@@ -1,8 +1,22 @@
 import { Router } from "express";
 import rateLimit from "express-rate-limit";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { z } from "zod";
 
 const router = Router();
+
+const chatPayloadSchema = z.object({
+  message: z.string().trim().min(1).max(4000),
+  context: z
+    .object({
+      goal: z.string().max(120).optional(),
+      bodyweight: z.number().min(25).max(400).optional(),
+      unit: z.enum(["kg", "lbs", "KG", "LBS"]).optional(),
+      unlockedNodes: z.array(z.unknown()).max(200).optional(),
+      PRs: z.array(z.unknown()).max(200).optional(),
+    })
+    .optional(),
+});
 
 // AI route rate limiter: 20 requests per minute
 const aiLimiter = rateLimit({
@@ -16,12 +30,21 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 // POST /api/ai/chat (SSE streaming)
 router.post("/chat", aiLimiter, async (req, res) => {
   try {
-    const { message, context } = req.body;
-
-    if (!message) {
-      res.status(400).json({ error: "Message is required" });
+    const parsed = chatPayloadSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({
+        error: "Invalid request payload",
+        details: parsed.error.issues,
+      });
       return;
     }
+
+    if (!process.env.GEMINI_API_KEY) {
+      res.status(503).json({ error: "AI service is not configured" });
+      return;
+    }
+
+    const { message, context } = parsed.data;
 
     // Set up SSE headers
     res.setHeader("Content-Type", "text/event-stream");
@@ -81,6 +104,11 @@ Keep responses under 300 words unless detailed programming is requested.`;
     res.end();
   } catch (error) {
     console.error("AI chat error:", error);
+    if (!res.headersSent) {
+      res.status(500).json({ error: "AI service error" });
+      return;
+    }
+
     res.write(`data: ${JSON.stringify({ error: "AI service error" })}
 
 `);

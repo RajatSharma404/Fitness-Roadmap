@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { X, Dumbbell, Target, TrendingUp, MessageSquare } from 'lucide-react';
+import { useState } from "react";
+import { motion } from "framer-motion";
+import { X, Dumbbell, Target, TrendingUp, MessageSquare } from "lucide-react";
 import {
   LineChart,
   Line,
@@ -11,8 +11,8 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-} from 'recharts';
-import { cn } from '@/lib/cn';
+} from "recharts";
+import { cn } from "@/lib/cn";
 
 interface NodeDrawerProps {
   node: {
@@ -39,15 +39,17 @@ export function NodeDrawer({
   onLogPR,
   onAskAI,
 }: NodeDrawerProps) {
-  const [activeTab, setActiveTab] = useState<'overview' | 'history'>('overview');
+  const [activeTab, setActiveTab] = useState<"overview" | "history">(
+    "overview",
+  );
 
   if (!isOpen || !node) return null;
 
   const trackColors: Record<string, string> = {
-    BEGINNER: 'text-emerald-400',
-    INTERMEDIATE: 'text-blue-400',
-    ADVANCED: 'text-violet-400',
-    ELITE: 'text-amber-400',
+    BEGINNER: "text-emerald-400",
+    INTERMEDIATE: "text-blue-400",
+    ADVANCED: "text-violet-400",
+    ELITE: "text-amber-400",
   };
 
   const criteria = node.unlockCriteria as {
@@ -55,9 +57,8 @@ export function NodeDrawer({
     metric?: string;
     value?: number;
     type?: string;
+    unit?: string;
   };
-
-  const liftName = criteria.lift || 'lift';
 
   return (
     <>
@@ -82,8 +83,8 @@ export function NodeDrawer({
               <div>
                 <div
                   className={cn(
-                    'text-sm font-medium uppercase tracking-wider mb-2',
-                    trackColors[node.track]
+                    "text-sm font-medium uppercase tracking-wider mb-2",
+                    trackColors[node.track],
                   )}
                 >
                   {node.track.toLowerCase()}
@@ -101,15 +102,15 @@ export function NodeDrawer({
 
           {/* Tabs */}
           <div className="flex border-b border-zinc-800">
-            {(['overview', 'history'] as const).map((tab) => (
+            {(["overview", "history"] as const).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
                 className={cn(
-                  'flex-1 py-3 text-sm font-medium transition-colors',
+                  "flex-1 py-3 text-sm font-medium transition-colors",
                   activeTab === tab
-                    ? 'text-white border-b-2 border-violet-500'
-                    : 'text-zinc-400 hover:text-white'
+                    ? "text-white border-b-2 border-violet-500"
+                    : "text-zinc-400 hover:text-white",
                 )}
               >
                 {tab.charAt(0).toUpperCase() + tab.slice(1)}
@@ -119,7 +120,7 @@ export function NodeDrawer({
 
           {/* Content */}
           <div className="flex-1 overflow-y-auto p-6">
-            {activeTab === 'overview' && (
+            {activeTab === "overview" && (
               <div className="space-y-6">
                 {/* Description */}
                 {node.description && (
@@ -159,19 +160,22 @@ export function NodeDrawer({
                     <span className="text-sm font-medium">Unlock Criteria</span>
                   </div>
                   <div className="p-4 bg-zinc-800/50 rounded-lg">
-                    {criteria.type === 'total' ? (
+                    {criteria.type === "total" ? (
                       <div className="text-zinc-300">
-                        Achieve {criteria.value} {criteria.unit} total across Squat, Bench, and Deadlift
+                        Achieve {criteria.value} {criteria.unit} total across
+                        Squat, Bench, and Deadlift
                       </div>
-                    ) : criteria.type === 'wilks' || criteria.type === 'dots' ? (
+                    ) : criteria.type === "wilks" ||
+                      criteria.type === "dots" ? (
                       <div className="text-zinc-300">
-                        Achieve a {criteria.metric?.replace('_', ' ')} of {criteria.value}
+                        Achieve a {criteria.metric?.replace("_", " ")} of{" "}
+                        {criteria.value}
                       </div>
                     ) : (
                       <div className="text-zinc-300">
-                        {criteria.metric === '1rm_bw_ratio'
+                        {criteria.metric === "1rm_bw_ratio"
                           ? `${criteria.lift}: ${criteria.value}x bodyweight`
-                          : `${criteria.lift}: ${criteria.value}${criteria.unit || 'kg'}`}
+                          : `${criteria.lift}: ${criteria.value}${criteria.unit || "kg"}`}
                       </div>
                     )}
                   </div>
@@ -179,20 +183,23 @@ export function NodeDrawer({
               </div>
             )}
 
-            {activeTab === 'history' && (
+            {activeTab === "history" && (
               <div>
                 {liftHistory.length > 0 ? (
                   <div className="space-y-4">
                     <div className="h-64">
                       <ResponsiveContainer width="100%" height="100%">
                         <LineChart data={liftHistory}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="#3f3f46" />
+                          <CartesianGrid
+                            strokeDasharray="3 3"
+                            stroke="#3f3f46"
+                          />
                           <XAxis
                             dataKey="date"
                             tickFormatter={(date) =>
-                              new Date(date).toLocaleDateString('en-US', {
-                                month: 'short',
-                                day: 'numeric',
+                              new Date(date).toLocaleDateString("en-US", {
+                                month: "short",
+                                day: "numeric",
                               })
                             }
                             stroke="#a1a1aa"
@@ -200,19 +207,19 @@ export function NodeDrawer({
                           <YAxis stroke="#a1a1aa" />
                           <Tooltip
                             contentStyle={{
-                              backgroundColor: '#18181b',
-                              border: '1px solid #3f3f46',
-                              borderRadius: '8px',
+                              backgroundColor: "#18181b",
+                              border: "1px solid #3f3f46",
+                              borderRadius: "8px",
                             }}
-                            labelStyle={{ color: '#ffffff' }}
-                            itemStyle={{ color: '#7c3aed' }}
+                            labelStyle={{ color: "#ffffff" }}
+                            itemStyle={{ color: "#7c3aed" }}
                           />
                           <Line
                             type="monotone"
                             dataKey="oneRM"
                             stroke="#7c3aed"
                             strokeWidth={2}
-                            dot={{ fill: '#7c3aed', strokeWidth: 0 }}
+                            dot={{ fill: "#7c3aed", strokeWidth: 0 }}
                           />
                         </LineChart>
                       </ResponsiveContainer>

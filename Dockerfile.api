@@ -15,6 +15,9 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
+# Compile server TypeScript before creating runtime image
+RUN npm run build:server
+
 # Production image
 FROM base AS runner
 WORKDIR /app
@@ -25,10 +28,7 @@ ENV NODE_ENV=production
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package*.json ./
 COPY --from=builder /app/prisma ./prisma
-COPY --from=builder /app/tsconfig.json ./tsconfig.json
-COPY --from=builder /app/tsconfig.server.json ./tsconfig.server.json
-COPY --from=builder /app/src/server ./src/server
-COPY --from=builder /app/src/lib ./src/lib
+COPY --from=builder /app/dist ./dist
 
 # Generate Prisma client in production
 RUN npx prisma generate
@@ -37,4 +37,4 @@ EXPOSE 5000
 
 ENV PORT=5000
 
-CMD ["npx", "ts-node", "--transpile-only", "--project", "tsconfig.server.json", "src/server/index.ts"]
+CMD ["node", "dist/src/server/index.js"]

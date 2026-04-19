@@ -1,19 +1,30 @@
 import { Router } from "express";
+import { z } from "zod";
 import { createJWT } from "../../lib/jwt";
 import { prisma } from "../../lib/prisma";
 
 const router = Router();
 
+const sessionSyncSchema = z.object({
+  email: z.string().email(),
+  name: z.string().trim().min(1).max(120).optional(),
+  picture: z.string().url().optional(),
+  userId: z.string().trim().min(1).max(64).optional(),
+});
+
 // POST /api/auth/session-sync
 // Sync NextAuth session and issue app JWT
 router.post("/session-sync", async (req, res) => {
   try {
-    const { email, name, picture, userId } = req.body;
-
-    if (!email) {
-      res.status(400).json({ error: "Email is required" });
+    const parsed = sessionSyncSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res
+        .status(400)
+        .json({ error: "Invalid input", details: parsed.error.issues });
       return;
     }
+
+    const { email, name, picture, userId } = parsed.data;
 
     // Get or create user
     let user = await prisma.user.findUnique({
@@ -23,7 +34,7 @@ router.post("/session-sync", async (req, res) => {
     if (!user) {
       user = await prisma.user.create({
         data: {
-          id: userId,
+          ...(userId ? { id: userId } : {}),
           email,
           name: name || email.split("@")[0],
           image: picture,

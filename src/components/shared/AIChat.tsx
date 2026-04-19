@@ -1,14 +1,14 @@
-'use client';
+"use client";
 
-import { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Bot, X, Send, Loader2 } from 'lucide-react';
-import ReactMarkdown from 'react-markdown';
-import { cn } from '@/lib/cn';
+import { useState, useRef, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Bot, X, Send, Loader2 } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import { cn } from "@/lib/cn";
 
 interface Message {
   id: string;
-  role: 'user' | 'assistant';
+  role: "user" | "assistant";
   content: string;
   isStreaming?: boolean;
 }
@@ -27,17 +27,18 @@ interface AIChatProps {
 export function AIChat({ isOpen, onClose, context }: AIChatProps) {
   const [messages, setMessages] = useState<Message[]>([
     {
-      id: 'welcome',
-      role: 'assistant',
-      content: "Hi! I'm your AI strength coach. Ask me anything about training, technique, or programming!",
+      id: "welcome",
+      role: "assistant",
+      content:
+        "Hi! I'm your AI strength coach. Ask me anything about training, technique, or programming!",
     },
   ]);
-  const [input, setInput] = useState('');
+  const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   useEffect(() => {
@@ -49,25 +50,25 @@ export function AIChat({ isOpen, onClose, context }: AIChatProps) {
 
     const userMessage: Message = {
       id: Date.now().toString(),
-      role: 'user',
+      role: "user",
       content: input.trim(),
     };
 
     setMessages((prev) => [...prev, userMessage]);
-    setInput('');
+    setInput("");
     setIsLoading(true);
 
     // Add assistant message placeholder
     const assistantId = (Date.now() + 1).toString();
     setMessages((prev) => [
       ...prev,
-      { id: assistantId, role: 'assistant', content: '', isStreaming: true },
+      { id: assistantId, role: "assistant", content: "", isStreaming: true },
     ]);
 
     try {
-      const response = await fetch('/api/ai/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("/api/ai/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           message: userMessage.content,
           context: {
@@ -79,35 +80,33 @@ export function AIChat({ isOpen, onClose, context }: AIChatProps) {
         }),
       });
 
-      if (!response.ok) throw new Error('Failed to get response');
+      if (!response.ok) throw new Error("Failed to get response");
 
       const reader = response.body?.getReader();
-      if (!reader) throw new Error('No reader');
+      if (!reader) throw new Error("No reader");
 
-      let fullContent = '';
+      let fullContent = "";
 
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
 
         const text = new TextDecoder().decode(value);
-        const lines = text.split('\n');
+        const lines = text.split("\n");
 
         for (const line of lines) {
-          if (line.startsWith('data: ')) {
+          if (line.startsWith("data: ")) {
             const data = line.slice(6);
-            if (data === '[DONE]') continue;
+            if (data === "[DONE]") continue;
 
             try {
               const parsed = JSON.parse(data);
               if (parsed.text) {
                 fullContent += parsed.text;
-                setMessages((prev) =
-                  prev.map((m) =
-                    m.id === assistantId
-                      ? { ...m, content: fullContent }
-                      : m
-                  )
+                setMessages((prev) =>
+                  prev.map((m) =>
+                    m.id === assistantId ? { ...m, content: fullContent } : m,
+                  ),
                 );
               }
             } catch {
@@ -117,18 +116,22 @@ export function AIChat({ isOpen, onClose, context }: AIChatProps) {
         }
       }
 
-      setMessages((prev) =
-        prev.map((m) =
-          m.id === assistantId ? { ...m, isStreaming: false } : m
-        )
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === assistantId ? { ...m, isStreaming: false } : m,
+        ),
       );
-    } catch (error) {
-      setMessages((prev) =
-        prev.map((m) =
+    } catch {
+      setMessages((prev) =>
+        prev.map((m) =>
           m.id === assistantId
-            ? { ...m, content: 'Sorry, I had trouble connecting. Please try again.', isStreaming: false }
-            : m
-        )
+            ? {
+                ...m,
+                content: "Sorry, I had trouble connecting. Please try again.",
+                isStreaming: false,
+              }
+            : m,
+        ),
       );
     } finally {
       setIsLoading(false);
@@ -139,21 +142,17 @@ export function AIChat({ isOpen, onClose, context }: AIChatProps) {
     <>
       {/* Floating FAB */}
       <motion.button
-        onClick={() => isOpen ? onClose() : undefined}
+        onClick={() => (isOpen ? onClose() : undefined)}
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         className={cn(
-          'fixed bottom-6 right-6 z-40 w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-colors',
+          "fixed bottom-6 right-6 z-40 w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-colors",
           isOpen
-            ? 'bg-zinc-700 text-white'
-            : 'bg-violet-600 text-white hover:bg-violet-500'
+            ? "bg-zinc-700 text-white"
+            : "bg-violet-600 text-white hover:bg-violet-500",
         )}
       >
-        {isOpen ? (
-          <X className="w-6 h-6" />
-        ) : (
-          <Bot className="w-6 h-6" />
-        )}
+        {isOpen ? <X className="w-6 h-6" /> : <Bot className="w-6 h-6" />}
       </motion.button>
 
       {/* Chat Panel */}
@@ -189,28 +188,29 @@ export function AIChat({ isOpen, onClose, context }: AIChatProps) {
                   <div
                     key={message.id}
                     className={cn(
-                      'flex',
-                      message.role === 'user' ? 'justify-end' : 'justify-start'
+                      "flex",
+                      message.role === "user" ? "justify-end" : "justify-start",
                     )}
                   >
                     <div
                       className={cn(
-                        'max-w-[85%] rounded-2xl px-4 py-2',
-                        message.role === 'user'
-                          ? 'bg-violet-600 text-white'
-                          : 'bg-zinc-800 text-zinc-200'
+                        "max-w-[85%] rounded-2xl px-4 py-2",
+                        message.role === "user"
+                          ? "bg-violet-600 text-white"
+                          : "bg-zinc-800 text-zinc-200",
                       )}
                     >
-                      <ReactMarkdown
-                        className="prose prose-invert prose-sm max-w-none"
-                        components={{
-                          p: ({ children }) => (
-                            <p className="m-0">{children}</p>
-                          ),
-                        }}
-                      >
-                        {message.content}
-                      </ReactMarkdown>
+                      <div className="prose prose-invert prose-sm max-w-none">
+                        <ReactMarkdown
+                          components={{
+                            p: ({ children }) => (
+                              <p className="m-0">{children}</p>
+                            ),
+                          }}
+                        >
+                          {message.content}
+                        </ReactMarkdown>
+                      </div>
                       {message.isStreaming && (
                         <span className="typewriter-cursor" />
                       )}
@@ -228,7 +228,7 @@ export function AIChat({ isOpen, onClose, context }: AIChatProps) {
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     onKeyDown={(e) => {
-                      if (e.key === 'Enter' && !e.shiftKey) {
+                      if (e.key === "Enter" && !e.shiftKey) {
                         e.preventDefault();
                         sendMessage();
                       }

@@ -1,13 +1,14 @@
 import type { NextConfig } from "next";
 
+const apiProxyTarget =
+  process.env.API_PROXY_TARGET ??
+  (process.env.NODE_ENV === "development"
+    ? "http://localhost:5000"
+    : undefined);
+
 const nextConfig: NextConfig = {
   output: "standalone",
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
-  typescript: {
-    ignoreBuildErrors: true,
-  },
+  outputFileTracingRoot: process.cwd(),
   images: {
     remotePatterns: [
       {
@@ -17,10 +18,14 @@ const nextConfig: NextConfig = {
     ],
   },
   async rewrites() {
+    if (!apiProxyTarget) {
+      return [];
+    }
+
     return [
       {
         source: "/api/:path*",
-        destination: "http://localhost:5001/api/:path*",
+        destination: `${apiProxyTarget}/api/:path*`,
       },
     ];
   },

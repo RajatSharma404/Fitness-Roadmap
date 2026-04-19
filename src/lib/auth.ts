@@ -10,7 +10,8 @@ export const authOptions: NextAuthOptions = {
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-      allowDangerousEmailAccountLinking: true,
+      allowDangerousEmailAccountLinking:
+        process.env.ALLOW_DANGEROUS_EMAIL_LINKING === "true",
     }),
   ],
   session: {
@@ -22,7 +23,10 @@ export const authOptions: NextAuthOptions = {
   },
   cookies: {
     sessionToken: {
-      name: `__Secure-next-auth.session-token`,
+      name:
+        process.env.NODE_ENV === "production"
+          ? "__Secure-next-auth.session-token"
+          : "next-auth.session-token",
       options: {
         httpOnly: true,
         sameSite: "lax",
@@ -45,25 +49,20 @@ export const authOptions: NextAuthOptions = {
       return token;
     },
     async session({ session, token }) {
-      if (token) {
-        const sessionUser = (session.user ?? {}) as {
-          id?: string;
-          email?: string | null;
-          name?: string | null;
-          image?: string | null;
-        };
-
-        sessionUser.id = token.id as string;
-        sessionUser.email = token.email as string;
-        sessionUser.name = token.name as string;
-        sessionUser.image = token.picture as string | null;
-        session.user = sessionUser;
+      if (token?.id) {
+        session.user = {
+          ...(session.user ?? {}),
+          id: String(token.id),
+          email: (token.email as string | null) ?? null,
+          name: (token.name as string | null) ?? null,
+          image: (token.picture as string | null) ?? null,
+        } as typeof session.user;
       }
       return session;
     },
   },
   events: {
-    async signIn({ user, account, profile }) {
+    async signIn({ user }) {
       // Check if user needs onboarding
       const dbUser = await prisma.user.findUnique({
         where: { id: user.id },

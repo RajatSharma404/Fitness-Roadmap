@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
+import crypto from "node:crypto";
 import { prisma } from "../lib/prisma";
 import { verifyJWT } from "../lib/jwt";
 import liftsRouter from "./routes/lifts";
@@ -13,12 +14,28 @@ import authRouter from "./routes/auth";
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+const allowedOrigins = (
+  process.env.FRONTEND_URLS ||
+  process.env.FRONTEND_URL ||
+  "http://localhost:3001"
+)
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+app.set("trust proxy", 1);
 
 // Security middleware
 app.use(helmet());
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || "http://localhost:3001",
+    origin(origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+        return;
+      }
+      callback(new Error("Origin not allowed by CORS"));
+    },
     credentials: true,
   }),
 );
@@ -31,7 +48,14 @@ const generalLimiter = rateLimit({
 app.use(generalLimiter);
 
 // Body parsing
-app.use(express.json());
+app.use(express.json({ limit: "1mb" }));
+
+app.use((req, res, next) => {
+  const requestId =
+    req.headers["x-request-id"]?.toString() || crypto.randomUUID();
+  res.setHeader("x-request-id", requestId);
+  next();
+});
 
 // JWT middleware
 export const authMiddleware = async (
@@ -56,7 +80,7 @@ export const authMiddleware = async (
 
     req.user = payload;
     next();
-  } catch (error) {
+  } catch {
     res.status(401).json({ error: "Authentication failed" });
   }
 };
@@ -73,7 +97,22 @@ app.use("/api/ai", authMiddleware, aiRouter);
 
 // Health check
 app.get("/health", (req, res) => {
-  res.json({ status: "ok", timestamp: new Date().toISOString() });
+  res.json({
+    status: "ok",
+    uptimeSec: Math.round(process.uptime()),
+    timestamp: new Date().toISOString(),
+  });
+});
+
+app.get("/health/ready", async (req, res) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    res.json({ status: "ready", timestamp: new Date().toISOString() });
+  } catch {
+    res
+      .status(503)
+      .json({ status: "not_ready", timestamp: new Date().toISOString() });
+  }
 });
 
 // Error handling
@@ -82,8 +121,10 @@ app.use(
     err: Error,
     req: express.Request,
     res: express.Response,
-    _next: express.NextFunction,
+    next: express.NextFunction,
   ) => {
+    void req;
+    void next;
     console.error("Server error:", err);
     res.status(500).json({ error: "Internal server error" });
   },

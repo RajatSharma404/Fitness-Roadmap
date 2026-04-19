@@ -29,6 +29,11 @@ interface RoadmapNode {
   criteriaMet?: boolean;
 }
 
+interface RoadmapFlowNodeData extends RoadmapNode {
+  [key: string]: unknown;
+  onClick: () => void;
+}
+
 interface RoadmapCanvasProps {
   nodes: RoadmapNode[];
   onNodeClick: (node: RoadmapNode) => void;
@@ -46,12 +51,14 @@ export function RoadmapCanvas({
   nodes: roadmapNodes,
   onNodeClick,
 }: RoadmapCanvasProps) {
-  const [nodes, setNodes, onNodesChange] = useNodesState([]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const [nodes, setNodes, onNodesChange] = useNodesState<
+    Node<RoadmapFlowNodeData>
+  >([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
 
   // Convert roadmap nodes to ReactFlow nodes
   useEffect(() => {
-    const rfNodes: Node[] = roadmapNodes.map((node) => ({
+    const rfNodes: Node<RoadmapFlowNodeData>[] = roadmapNodes.map((node) => ({
       id: node.id,
       position: node.position,
       type: "default",

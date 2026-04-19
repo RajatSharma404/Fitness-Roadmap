@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Dumbbell, Target, Scale } from "lucide-react";
+import { Dumbbell, Target, Scale } from "lucide-react";
 import { cn } from "@/lib/cn";
 
 interface OnboardingProps {
@@ -46,18 +46,25 @@ export function Onboarding({ isOpen, onComplete }: OnboardingProps) {
   const [step, setStep] = useState(0);
   const [displayName, setDisplayName] = useState("");
   const [goal, setGoal] = useState<
-    "RENGTH" | "POWERLIFTING" | "BODYBUILDING" | "ATHLETIC"
+    "STRENGTH" | "POWERLIFTING" | "BODYBUILDING" | "ATHLETIC"
   >("STRENGTH");
   const [bodyweight, setBodyweight] = useState("");
   const [unit, setUnit] = useState<"KG" | "LBS">("KG");
+
+  const normalizedName = displayName.trim();
+  const parsedBodyweight = Number(bodyweight);
+  const isValidBodyweight =
+    Number.isFinite(parsedBodyweight) &&
+    parsedBodyweight >= 25 &&
+    parsedBodyweight <= 400;
 
   if (!isOpen) return null;
 
   const handleComplete = () => {
     onComplete({
-      displayName,
+      displayName: normalizedName,
       goal,
-      bodyweight: parseFloat(bodyweight) || 70,
+      bodyweight: isValidBodyweight ? parsedBodyweight : 70,
       unit,
     });
   };
@@ -121,7 +128,7 @@ export function Onboarding({ isOpen, onComplete }: OnboardingProps) {
 
                   <button
                     onClick={() => setStep(1)}
-                    disabled={!displayName.trim()}
+                    disabled={!normalizedName}
                     className="w-full bg-violet-600 hover:bg-violet-500 disabled:bg-zinc-700 disabled:cursor-not-allowed text-white font-medium py-3 rounded-lg transition-colors"
                   >
                     Continue
@@ -197,6 +204,8 @@ export function Onboarding({ isOpen, onComplete }: OnboardingProps) {
                         value={bodyweight}
                         onChange={(e) => setBodyweight(e.target.value)}
                         placeholder="70"
+                        min={25}
+                        max={400}
                         className="flex-1 bg-zinc-800/50 border border-zinc-700 rounded-lg px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-violet-500"
                       />
                       <div className="flex rounded-lg overflow-hidden border border-zinc-700">
@@ -216,6 +225,11 @@ export function Onboarding({ isOpen, onComplete }: OnboardingProps) {
                         ))}
                       </div>
                     </div>
+                    {!isValidBodyweight && bodyweight.length > 0 ? (
+                      <p className="mt-2 text-xs text-amber-400">
+                        Enter a bodyweight between 25 and 400.
+                      </p>
+                    ) : null}
                   </div>
 
                   <div className="flex gap-3">
@@ -227,7 +241,7 @@ export function Onboarding({ isOpen, onComplete }: OnboardingProps) {
                     </button>
                     <button
                       onClick={handleComplete}
-                      disabled={!bodyweight}
+                      disabled={!isValidBodyweight}
                       className="flex-1 bg-violet-600 hover:bg-violet-500 disabled:bg-zinc-700 disabled:cursor-not-allowed text-white font-medium py-3 rounded-lg transition-colors"
                     >
                       Complete Setup

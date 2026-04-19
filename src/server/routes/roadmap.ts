@@ -1,6 +1,7 @@
 import { Router } from "express";
+import { Prisma } from "@prisma/client";
 import { prisma } from "../../lib/prisma";
-import { calculateEpley1RM, calculateWilksScore } from "../../lib/formulas";
+import { calculateWilksScore } from "../../lib/formulas";
 
 const router = Router();
 
@@ -167,7 +168,7 @@ router.post("/check-unlocks", async (req, res) => {
     const wilksScore = calculateWilksScore(sbdTotal, bodyweightKg);
 
     const newlyUnlocked: string[] = [];
-    const newAchievements: string[] = [];
+    const writes: Prisma.PrismaPromise<unknown>[] = [];
 
     for (const node of nodes) {
       const userNode = userNodeMap.get(node.id);
@@ -213,36 +214,46 @@ router.post("/check-unlocks", async (req, res) => {
 
       if (criteriaMet) {
         if (!userNode) {
-          await prisma.userNode.create({
-            data: {
-              userId,
-              nodeId: node.id,
-              status: "COMPLETED",
-              unlockedAt: new Date(),
-              completedAt: new Date(),
-            },
-          });
+          writes.push(
+            prisma.userNode.create({
+              data: {
+                userId,
+                nodeId: node.id,
+                status: "COMPLETED",
+                unlockedAt: new Date(),
+                completedAt: new Date(),
+              },
+            }),
+          );
         } else {
-          await prisma.userNode.update({
-            where: { id: userNode.id },
-            data: {
-              status: "COMPLETED",
-              completedAt: new Date(),
-            },
-          });
+          writes.push(
+            prisma.userNode.update({
+              where: { id: userNode.id },
+              data: {
+                status: "COMPLETED",
+                completedAt: new Date(),
+              },
+            }),
+          );
         }
         newlyUnlocked.push(node.id);
       } else if (!userNode && dependenciesMet) {
         // Node is active (dependencies met but criteria not)
-        await prisma.userNode.create({
-          data: {
-            userId,
-            nodeId: node.id,
-            status: "ACTIVE",
-            unlockedAt: new Date(),
-          },
-        });
+        writes.push(
+          prisma.userNode.create({
+            data: {
+              userId,
+              nodeId: node.id,
+              status: "ACTIVE",
+              unlockedAt: new Date(),
+            },
+          }),
+        );
       }
+    }
+
+    if (writes.length > 0) {
+      await prisma.$transaction(writes);
     }
 
     // Check achievements
