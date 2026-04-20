@@ -24,6 +24,8 @@ The shell includes:
 - a route-aware top bar that changes title and context by page
 - a shared dark design system with reusable cards, metrics, and action buttons
 - a central content area that loads only the route the user needs
+- mobile navigation that collapses into a drawer on small screens
+- shared layout state across the dashboard, roadmap, workouts, check-ins, library, and nutrition pages
 
 ## Key Experiences
 
@@ -49,7 +51,6 @@ The roadmap is the planning and progression workspace. It pairs a visual node gr
 
 It includes:
 
-- the same Today Stack pattern as the dashboard for continuity
 - a React Flow roadmap that shows progression phases and node dependencies
 - node focus dimming so irrelevant items fade when a node is selected
 - phase progress rings for faster scanning
@@ -196,6 +197,7 @@ The app uses layered persistence:
 - localStorage for offline-first state recovery
 - authenticated user-plan-state API sync when signed in
 - Prisma/PostgreSQL for long-term storage
+- the route pages initialize from a deterministic snapshot so server and client renders stay aligned before hydration
 
 ## Visual System
 
@@ -216,6 +218,8 @@ Design principles:
 - mono font: JetBrains Mono
 
 Shared UI primitives live in the shared component layer and are used to keep dashboard and roadmap consistent.
+
+The shared shell lives in `src/components/layout/` and is responsible for the sidebar, route-aware header, and readiness ring.
 
 ## Tech Stack
 
@@ -500,10 +504,11 @@ Enums used in the schema include:
 
 ## Development Notes
 
-- The app is intentionally dark themed and data dense, but the current layout keeps the hierarchy focused on one mission at a time.
-- The shared `lab-*` classes in `src/app/globals.css` define the surface and typography language.
-- The dashboard and roadmap both use the Today Stack pattern so execution feels consistent across pages.
+- The app is intentionally dark themed and data dense, but the routed shell keeps each page focused on one task at a time.
+- The shared `lab-*` classes and the newer `card`, `btn-primary`, `step-*`, and `metric-number` utilities in `src/app/globals.css` define the current surface language.
+- The dashboard is now the root route, while `/dashboard` remains as a redirect for older links.
 - The codebase is split between Next.js route handlers and an Express API layer, so you need both processes running for full local functionality.
+- Route pages that read persisted planner state use a shared deterministic snapshot helper in `src/lib/plannerView.ts` to avoid hydration drift.
 
 ## Verification
 
