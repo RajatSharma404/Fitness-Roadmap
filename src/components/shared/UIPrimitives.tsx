@@ -26,7 +26,7 @@ const levelClasses: Record<SurfaceLevel, string> = {
 
 export function Card({ children, level = "base", className }: CardProps) {
   return (
-    <section className={cn("rounded-xl p-4", levelClasses[level], className)}>
+    <section className={cn("card p-4", levelClasses[level], className)}>
       {children}
     </section>
   );
@@ -50,10 +50,12 @@ export function SectionHeader({
   return (
     <div className={cn("flex items-start justify-between gap-4", className)}>
       <div>
-        {kicker ? <p className="lab-kicker text-[#7fe8ff]">{kicker}</p> : null}
-        <h2 className="mt-1 text-lg font-semibold text-[#edf3f7]">{title}</h2>
+        {kicker ? <p className="lab-kicker text-[#60a5fa]">{kicker}</p> : null}
+        <h2 className="mt-1 font-display text-lg font-semibold text-[#eeeef2]">
+          {title}
+        </h2>
         {description ? (
-          <p className="mt-1 text-sm text-[#adc0cd]">{description}</p>
+          <p className="mt-1 text-sm text-[#636380]">{description}</p>
         ) : null}
       </div>
       {action ? <div className="shrink-0">{action}</div> : null}
@@ -85,12 +87,17 @@ export function MetricTile({
   intent = "neutral",
 }: MetricTileProps) {
   return (
-    <div className="rounded-lg border border-[rgba(67,81,95,0.45)] bg-[rgba(16,22,27,0.74)] p-3">
+    <div className="card p-3">
       <p className="mb-1 flex items-center gap-2 text-xs uppercase tracking-wide text-[#adc0cd]">
         {icon}
         {label}
       </p>
-      <p className={cn("text-2xl font-semibold", intentClasses[intent])}>
+      <p
+        className={cn(
+          "font-mono text-2xl font-bold metric-number",
+          intentClasses[intent],
+        )}
+      >
         {value}
       </p>
       {note ? <p className="mt-1 text-xs text-[#adc0cd]">{note}</p> : null}

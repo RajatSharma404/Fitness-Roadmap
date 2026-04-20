@@ -2,7 +2,7 @@
 
 FitFlow Planner is a full-stack fitness roadmap app that turns body transformation into a guided execution system.
 
-The product is organized around a dark, tactical UI called the Performance Console. It combines a mission-first dashboard, an adaptive roadmap, workout execution tools, nutrition templates, weekly check-ins, and a lightweight coaching layer so the next action is always obvious.
+The product now uses a persistent App Shell with a fixed sidebar, route-aware top bar, and dedicated surfaces for dashboard execution, roadmap planning, workouts, check-ins, exercise library browsing, and nutrition planning. The interface is built around a dark void theme so the next action stays obvious without visual noise.
 
 ## Product Goal
 
@@ -12,7 +12,18 @@ The app is designed to answer three questions as quickly as possible:
 2. Why am I doing it?
 3. How should the plan change if progress slows down?
 
-That principle drives the dashboard, roadmap, landing page, and the shared visual system.
+That principle drives the route layout, the shared shell, and the visual system.
+
+## App Shell
+
+The app is organized around a route-first shell rather than one oversized scroll page.
+
+The shell includes:
+
+- a persistent sidebar with route navigation and readiness status
+- a route-aware top bar that changes title and context by page
+- a shared dark design system with reusable cards, metrics, and action buttons
+- a central content area that loads only the route the user needs
 
 ## Key Experiences
 
@@ -29,7 +40,8 @@ It includes:
 - a right-side analytics rail for readiness, nutrition targets, trends, and recent check-ins
 - a quick check-in slide-over with progressive disclosure
 - immediate coaching feedback after a check-in is prepared
-- section views for overview, workouts, check-ins, exercise library, and nutrition
+- compact mission cards for readiness, progress, and the day’s stack
+- quick links into workouts, roadmap, check-ins, library, and nutrition
 
 ### Roadmap
 
@@ -42,22 +54,51 @@ It includes:
 - node focus dimming so irrelevant items fade when a node is selected
 - phase progress rings for faster scanning
 - a selected-node panel with unlock criteria and phase rationale
-- adaptive workout plans based on goal, activity, experience, and equipment
-- workout execution controls and a timer-driven session mode
-- check-in history, nutrition planning, and exercise explorer tools
+- phase progression controls that can be updated from the roadmap view
+- route links into workouts, check-ins, library, and nutrition without leaving the shell
 
-### Landing Page
+### Workouts
 
-The landing page is intentionally proof-driven rather than marketing-heavy.
+The workouts page turns the plan into an execution surface.
 
-It follows a simple narrative:
+It includes:
 
-- Problem: random plans fail
-- System: adaptive roadmap
-- Proof: weekly metric deltas and athlete log snapshots
-- CTA: start the plan
+- experience-tier toggles for beginner, intermediate, and advanced sessions
+- day-by-day workout cards with exercise details
+- a workout mode overlay for in-session logging
+- PR logging hooks and set input fields
 
-It also includes a compact visual preview of the product so users can understand the app before signing in.
+### Check-ins
+
+The check-ins page captures recovery signals and pushes them back into the planner.
+
+It includes:
+
+- weekly check-in inputs for weight, waist, sleep, steps, stress, energy, and workout completion
+- readiness scoring and coaching feedback
+- line and area charts for trend visibility
+- saved check-in history with deduping by date
+
+### Library
+
+The library page is a searchable exercise catalog.
+
+It includes:
+
+- body-part and modality filters
+- exercise cards with preview blocks
+- a slide-over detail view for exercise instructions and alternatives
+
+### Nutrition
+
+The nutrition page turns the calorie target into practical meals.
+
+It includes:
+
+- macro summary bars
+- meal templates tuned to the current target
+- grocery list generation
+- meal swap suggestions with calorie and protein deltas
 
 ## Core Features
 
@@ -158,7 +199,7 @@ The app uses layered persistence:
 
 ## Visual System
 
-The current UI is built around the Performance Console direction.
+The current UI is built around a dark fitness console direction.
 
 Design principles:
 
@@ -170,6 +211,9 @@ Design principles:
 - strict spacing rhythm to keep pages from feeling noisy
 - condensed hierarchy for key numbers and metrics
 - readable body typography for long-form planning content
+- display font: Syne
+- body font: DM Sans
+- mono font: JetBrains Mono
 
 Shared UI primitives live in the shared component layer and are used to keep dashboard and roadmap consistent.
 
@@ -201,14 +245,19 @@ Shared UI primitives live in the shared component layer and are used to keep das
 ├── src/
 │   ├── app/
 │   │   ├── api/
+│   │   ├── checkins/
 │   │   ├── dashboard/
+│   │   ├── library/
 │   │   ├── leaderboard/
+│   │   ├── nutrition/
 │   │   ├── profile/[id]/
 │   │   ├── roadmap/
+│   │   ├── workouts/
 │   │   ├── globals.css
 │   │   ├── layout.tsx
 │   │   └── page.tsx
 │   ├── components/
+│   │   ├── layout/
 │   │   ├── dashboard/
 │   │   ├── landing/
 │   │   ├── roadmap/
@@ -227,9 +276,13 @@ Shared UI primitives live in the shared component layer and are used to keep das
 
 ## Main Routes
 
-- `/` - landing page
-- `/dashboard` - mission-first command center for plan execution
-- `/roadmap` - adaptive planning workspace with graph navigation and check-ins
+- `/` - dashboard home and daily command center
+- `/dashboard` - legacy dashboard route that redirects to `/`
+- `/roadmap` - adaptive planning workspace with graph navigation and phase controls
+- `/workouts` - workout execution and set logging
+- `/checkins` - weekly recovery and readiness tracking
+- `/library` - exercise catalog and detail drawer
+- `/nutrition` - macro planning, meal templates, and grocery list generation
 - `/leaderboard` - ranking view
 - `/profile/[id]` - public profile page
 

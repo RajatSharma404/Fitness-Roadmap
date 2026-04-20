@@ -1,22 +1,35 @@
 @import "tailwindcss";
 
 :root {
-  --background: #111315;
-  --background-soft: #15191f;
-  --foreground: #edf3f7;
-  --surface: rgba(23, 26, 31, 0.94);
-  --surface-elevated: rgba(27, 32, 39, 0.97);
-  --surface-border: rgba(61, 75, 89, 0.72);
-  --primary: #16d9ff;
-  --primary-glow: rgba(22, 217, 255, 0.35);
-  --secondary: #b7ff45;
-  --secondary-glow: rgba(183, 255, 69, 0.22);
-  --text-primary: #edf3f7;
-  --text-secondary: #adc0cd;
-  --text-muted: #7f95a5;
-  --success: #6be9af;
-  --warning: #ffd36a;
-  --error: #ff6b6b;
+  --bg-void: #07070d;
+  --bg-base: #0d0d16;
+  --bg-surface: #12121e;
+  --bg-elevated: #1a1a2e;
+  --bg-overlay: rgba(255, 255, 255, 0.03);
+  --border: rgba(255, 255, 255, 0.06);
+  --border-glow: rgba(0, 212, 255, 0.2);
+  --cyan: #00d4ff;
+  --green: #00e676;
+  --amber: #ffb347;
+  --purple: #a78bfa;
+  --red: #ff4d6d;
+  --blue: #60a5fa;
+  --text-primary: #eeeef2;
+  --text-muted: #636380;
+  --text-dim: #2e2e48;
+  --background: var(--bg-void);
+  --background-soft: var(--bg-base);
+  --foreground: var(--text-primary);
+  --surface: var(--bg-surface);
+  --surface-elevated: var(--bg-elevated);
+  --surface-border: var(--border);
+  --primary: var(--cyan);
+  --primary-glow: rgba(0, 212, 255, 0.25);
+  --secondary: var(--green);
+  --secondary-glow: rgba(0, 230, 118, 0.18);
+  --success: var(--green);
+  --warning: var(--amber);
+  --error: var(--red);
   --space-1: 8px;
   --space-2: 12px;
   --space-3: 16px;
@@ -25,6 +38,19 @@
 }
 
 @theme inline {
+  --color-bg-void: var(--bg-void);
+  --color-bg-base: var(--bg-base);
+  --color-bg-surface: var(--bg-surface);
+  --color-bg-elevated: var(--bg-elevated);
+  --color-bg-overlay: var(--bg-overlay);
+  --color-border: var(--border);
+  --color-border-glow: var(--border-glow);
+  --color-cyan: var(--cyan);
+  --color-green: var(--green);
+  --color-amber: var(--amber);
+  --color-purple: var(--purple);
+  --color-red: var(--red);
+  --color-blue: var(--blue);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-surface: var(--surface);
@@ -40,8 +66,9 @@
   --color-success: var(--success);
   --color-warning: var(--warning);
   --color-error: var(--error);
+  --font-display: var(--font-display);
   --font-sans: var(--font-body);
-  --font-mono: var(--font-metrics);
+  --font-mono: var(--font-mono);
 }
 
 html {
@@ -50,19 +77,20 @@ html {
 
 body {
   background:
+    radial-gradient(circle at 12% 8%, rgba(0, 212, 255, 0.11), transparent 28%),
     radial-gradient(
-      circle at 16% 8%,
-      rgba(22, 217, 255, 0.14),
-      transparent 34%
+      circle at 84% 0%,
+      rgba(167, 139, 250, 0.08),
+      transparent 24%
     ),
     radial-gradient(
-      circle at 88% 0%,
-      rgba(183, 255, 69, 0.12),
-      transparent 28%
+      circle at 50% 100%,
+      rgba(0, 230, 118, 0.06),
+      transparent 30%
     ),
-    linear-gradient(180deg, #101317 0%, #12171d 50%, #0f1318 100%);
+    linear-gradient(180deg, #07070d 0%, #0d0d16 45%, #07070d 100%);
   color: var(--foreground);
-  font-family: var(--font-body), var(--font-geist-sans), system-ui, sans-serif;
+  font-family: var(--font-body), var(--font-geist-sans), sans-serif;
 }
 
 h1,
@@ -72,7 +100,7 @@ h4,
 h5,
 h6 {
   font-family:
-    var(--font-heading), var(--font-geist-sans), system-ui, sans-serif;
+    var(--font-display), var(--font-heading), var(--font-geist-sans), sans-serif;
   letter-spacing: -0.01em;
 }
 
@@ -80,7 +108,8 @@ code,
 kbd,
 samp,
 pre {
-  font-family: var(--font-metrics), var(--font-geist-mono), monospace;
+  font-family:
+    var(--font-mono), var(--font-metrics), var(--font-geist-mono), monospace;
 }
 
 /* Custom scrollbar */
@@ -114,6 +143,47 @@ pre {
 .lab-shell {
   min-height: 100vh;
   color: var(--text-primary);
+}
+
+.card,
+.lab-panel,
+.lab-elevated,
+.lab-surface-base,
+.lab-surface-elevated,
+.lab-surface-highlight {
+  border-radius: 18px;
+}
+
+.card {
+  border: 1px solid var(--border);
+  background: var(--bg-surface);
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.card:hover {
+  box-shadow:
+    0 0 0 1px var(--border-glow),
+    0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+.btn-primary {
+  box-shadow: 0 0 16px rgba(0, 212, 255, 0.25);
+}
+
+.step-active {
+  border-left: 2px solid var(--cyan);
+  background: rgba(0, 212, 255, 0.04);
+}
+
+.step-done {
+  border-left: 2px solid var(--green);
+  background: rgba(0, 230, 118, 0.04);
+}
+
+.step-idle {
+  border-left: 2px solid rgba(255, 255, 255, 0.06);
 }
 
 .lab-panel {
@@ -221,6 +291,14 @@ pre {
 .lab-btn-secondary:hover {
   border-color: rgba(183, 255, 69, 0.55);
   color: #dcff9d;
+}
+
+.metric-number {
+  text-shadow: 0 0 20px currentColor;
+}
+
+.font-display {
+  font-family: var(--font-display), var(--font-heading), sans-serif;
 }
 
 .lab-accent-line {
