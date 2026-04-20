@@ -69,6 +69,7 @@ It includes:
 - experience-tier toggles for beginner, intermediate, and advanced sessions
 - day-by-day workout cards with exercise details
 - generated visual previews for each exercise card
+- per-muscle art styles so chest, back, legs, glutes, core, and arms all render with distinct themes
 - a workout mode overlay for in-session logging
 - PR logging hooks and set input fields
 
@@ -91,7 +92,8 @@ It includes:
 
 - body-part and modality filters
 - exercise cards with generated movement previews
-- a slide-over detail view for exercise instructions and alternatives
+- a slide-over detail view with exercise image, instructions, and alternatives
+- outside-click dismissal so the detail panel closes when clicking the backdrop
 
 ### Nutrition
 
@@ -225,6 +227,7 @@ Shared UI primitives live in the shared component layer and are used to keep das
 The shared shell lives in `src/components/layout/` and is responsible for the sidebar, route-aware header, and readiness ring.
 
 Exercise visuals are generated as SVG images from exercise metadata so every workout item has a consistent thumbnail.
+The generator applies body-part-specific palettes, motifs, and pose highlights for better visual differentiation across muscle groups.
 
 ## Tech Stack
 

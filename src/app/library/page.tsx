@@ -156,8 +156,14 @@ export default function LibraryPage() {
       </div>
 
       {activeDetail ? (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm">
-          <div className="absolute right-0 top-0 h-full w-full max-w-md overflow-y-auto border-l border-[rgba(255,255,255,0.06)] bg-bg-elevated p-6">
+        <div
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm"
+          onClick={() => setActiveExercise(null)}
+        >
+          <div
+            className="absolute right-0 top-0 h-full w-full max-w-md overflow-y-auto border-l border-[rgba(255,255,255,0.06)] bg-bg-elevated p-6"
+            onClick={(event) => event.stopPropagation()}
+          >
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="lab-kicker text-[#60a5fa]">Exercise</p>
@@ -175,6 +181,16 @@ export default function LibraryPage() {
             </div>
 
             <div className="mt-4 space-y-4 text-sm text-[#636380]">
+              <Card level="base" className="overflow-hidden p-0">
+                <Image
+                  src={activeDetail.imageUrl}
+                  alt={activeDetail.imageAlt}
+                  width={720}
+                  height={420}
+                  unoptimized
+                  className="h-48 w-full object-cover"
+                />
+              </Card>
               <Card level="base">
                 <p className="text-xs uppercase tracking-[0.2em]">Muscle</p>
                 <p className="mt-1 text-[#eeeef2]">{activeDetail.bodyPart}</p>

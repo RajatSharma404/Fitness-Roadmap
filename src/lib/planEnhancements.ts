@@ -325,27 +325,274 @@ function defaultRepRangeForBodyPart(bodyPart: string): string {
   return "3-4 sets x 8-15 reps";
 }
 
+interface MuscleArtStyle {
+  bgStart: string;
+  bgEnd: string;
+  panelFill: string;
+  panelStroke: string;
+  titleColor: string;
+  subtitleColor: string;
+  accent: string;
+  motif: string;
+  targetHighlight: string;
+  pose: "push" | "pull" | "legs" | "hinge" | "core" | "overhead";
+}
+
+const muscleArtStyles: Record<string, MuscleArtStyle> = {
+  chest: {
+    bgStart: "#1f0d18",
+    bgEnd: "#3b1428",
+    panelFill: "#2a1220",
+    panelStroke: "#7d2851",
+    titleColor: "#ffd3e8",
+    subtitleColor: "#ffc1df",
+    accent: "#fb7185",
+    motif:
+      '<path d="M92 124H628" stroke="#f472b6" stroke-opacity="0.25" stroke-width="5"/><path d="M92 164H628" stroke="#f472b6" stroke-opacity="0.16" stroke-width="5"/>',
+    targetHighlight:
+      '<ellipse cx="360" cy="210" rx="54" ry="38" fill="#fb7185" fill-opacity="0.42"/>',
+    pose: "push",
+  },
+  back: {
+    bgStart: "#0a1a2f",
+    bgEnd: "#102e4f",
+    panelFill: "#102338",
+    panelStroke: "#2a6ea1",
+    titleColor: "#c7e8ff",
+    subtitleColor: "#9dd8ff",
+    accent: "#38bdf8",
+    motif:
+      '<path d="M120 84L300 264" stroke="#38bdf8" stroke-opacity="0.18" stroke-width="7"/><path d="M240 84L420 264" stroke="#38bdf8" stroke-opacity="0.15" stroke-width="7"/><path d="M360 84L540 264" stroke="#38bdf8" stroke-opacity="0.18" stroke-width="7"/>',
+    targetHighlight:
+      '<rect x="320" y="172" width="80" height="112" rx="30" fill="#38bdf8" fill-opacity="0.36"/>',
+    pose: "pull",
+  },
+  shoulders: {
+    bgStart: "#1d142e",
+    bgEnd: "#2f1d4f",
+    panelFill: "#201831",
+    panelStroke: "#7a4bcc",
+    titleColor: "#ede1ff",
+    subtitleColor: "#d7c2ff",
+    accent: "#a78bfa",
+    motif:
+      '<path d="M220 108Q360 38 500 108" stroke="#a78bfa" stroke-opacity="0.28" stroke-width="8" fill="none"/><path d="M250 136Q360 76 470 136" stroke="#a78bfa" stroke-opacity="0.2" stroke-width="6" fill="none"/>',
+    targetHighlight:
+      '<ellipse cx="320" cy="194" rx="24" ry="24" fill="#a78bfa" fill-opacity="0.4"/><ellipse cx="400" cy="194" rx="24" ry="24" fill="#a78bfa" fill-opacity="0.4"/>',
+    pose: "overhead",
+  },
+  arms: {
+    bgStart: "#0f2616",
+    bgEnd: "#174328",
+    panelFill: "#12301d",
+    panelStroke: "#2a8b4d",
+    titleColor: "#cfffe0",
+    subtitleColor: "#adf3c5",
+    accent: "#4ade80",
+    motif:
+      '<path d="M124 118C188 70 252 70 316 118" stroke="#4ade80" stroke-opacity="0.22" stroke-width="7" fill="none"/><path d="M404 118C468 70 532 70 596 118" stroke="#4ade80" stroke-opacity="0.22" stroke-width="7" fill="none"/>',
+    targetHighlight:
+      '<ellipse cx="300" cy="212" rx="22" ry="34" fill="#4ade80" fill-opacity="0.35"/><ellipse cx="420" cy="212" rx="22" ry="34" fill="#4ade80" fill-opacity="0.35"/>',
+    pose: "pull",
+  },
+  legs: {
+    bgStart: "#1d1708",
+    bgEnd: "#3a2a0a",
+    panelFill: "#271d0a",
+    panelStroke: "#9a7b2f",
+    titleColor: "#ffeec2",
+    subtitleColor: "#f4dc9f",
+    accent: "#facc15",
+    motif:
+      '<path d="M172 92V284" stroke="#facc15" stroke-opacity="0.2" stroke-width="8"/><path d="M262 92V284" stroke="#facc15" stroke-opacity="0.14" stroke-width="8"/><path d="M352 92V284" stroke="#facc15" stroke-opacity="0.2" stroke-width="8"/><path d="M442 92V284" stroke="#facc15" stroke-opacity="0.14" stroke-width="8"/><path d="M532 92V284" stroke="#facc15" stroke-opacity="0.2" stroke-width="8"/>',
+    targetHighlight:
+      '<rect x="325" y="268" width="30" height="72" rx="12" fill="#facc15" fill-opacity="0.4"/><rect x="365" y="268" width="30" height="72" rx="12" fill="#facc15" fill-opacity="0.4"/>',
+    pose: "legs",
+  },
+  glutes: {
+    bgStart: "#2a0e22",
+    bgEnd: "#4a1a3d",
+    panelFill: "#33142b",
+    panelStroke: "#ac4b8a",
+    titleColor: "#ffd9ef",
+    subtitleColor: "#f9bedd",
+    accent: "#f472b6",
+    motif:
+      '<circle cx="256" cy="148" r="56" fill="#f472b6" fill-opacity="0.12"/><circle cx="464" cy="148" r="56" fill="#f472b6" fill-opacity="0.12"/><path d="M210 238H510" stroke="#f472b6" stroke-opacity="0.22" stroke-width="6"/>',
+    targetHighlight:
+      '<ellipse cx="348" cy="280" rx="34" ry="24" fill="#f472b6" fill-opacity="0.4"/><ellipse cx="390" cy="280" rx="34" ry="24" fill="#f472b6" fill-opacity="0.4"/>',
+    pose: "hinge",
+  },
+  core: {
+    bgStart: "#102221",
+    bgEnd: "#1a4240",
+    panelFill: "#14312f",
+    panelStroke: "#2a8d86",
+    titleColor: "#d4fffb",
+    subtitleColor: "#a7efe9",
+    accent: "#2dd4bf",
+    motif:
+      '<circle cx="360" cy="186" r="120" stroke="#2dd4bf" stroke-opacity="0.2" stroke-width="8" fill="none"/><circle cx="360" cy="186" r="84" stroke="#2dd4bf" stroke-opacity="0.16" stroke-width="8" fill="none"/><circle cx="360" cy="186" r="50" stroke="#2dd4bf" stroke-opacity="0.14" stroke-width="8" fill="none"/>',
+    targetHighlight:
+      '<rect x="334" y="206" width="52" height="90" rx="22" fill="#2dd4bf" fill-opacity="0.38"/>',
+    pose: "core",
+  },
+  default: {
+    bgStart: "#101418",
+    bgEnd: "#1a222b",
+    panelFill: "#1a222b",
+    panelStroke: "#2b3a4a",
+    titleColor: "#d7edff",
+    subtitleColor: "#dcdcaa",
+    accent: "#9cdcfe",
+    motif:
+      '<path d="M96 136H624" stroke="#8ca5bf" stroke-opacity="0.18" stroke-width="6"/><path d="M96 184H624" stroke="#8ca5bf" stroke-opacity="0.12" stroke-width="6"/>',
+    targetHighlight:
+      '<rect x="336" y="190" width="48" height="104" rx="20" fill="#9cdcfe" fill-opacity="0.28"/>',
+    pose: "push",
+  },
+};
+
+function normalizeBodyPartForStyle(
+  bodyPart: string,
+): keyof typeof muscleArtStyles {
+  const value = bodyPart.toLowerCase();
+  if (value.includes("chest")) return "chest";
+  if (value.includes("back")) return "back";
+  if (value.includes("shoulder") || value.includes("delt")) return "shoulders";
+  if (
+    value.includes("bicep") ||
+    value.includes("tricep") ||
+    value.includes("arm") ||
+    value.includes("forearm")
+  ) {
+    return "arms";
+  }
+  if (
+    value.includes("leg") ||
+    value.includes("quad") ||
+    value.includes("hamstring") ||
+    value.includes("calf")
+  ) {
+    return "legs";
+  }
+  if (value.includes("glute")) return "glutes";
+  if (
+    value.includes("core") ||
+    value.includes("abs") ||
+    value.includes("abdom")
+  ) {
+    return "core";
+  }
+  return "default";
+}
+
+function escapeSvgText(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function getPoseLines(
+  pose: MuscleArtStyle["pose"],
+  stroke: string,
+): { armLines: string; legLines: string } {
+  switch (pose) {
+    case "pull":
+      return {
+        armLines:
+          `<line x1="360" y1="202" x2="300" y2="162" stroke="${stroke}" stroke-width="10"/>` +
+          `<line x1="360" y1="202" x2="420" y2="162" stroke="${stroke}" stroke-width="10"/>`,
+        legLines:
+          `<line x1="360" y1="280" x2="322" y2="338" stroke="${stroke}" stroke-width="10"/>` +
+          `<line x1="360" y1="280" x2="398" y2="338" stroke="${stroke}" stroke-width="10"/>`,
+      };
+    case "overhead":
+      return {
+        armLines:
+          `<line x1="360" y1="202" x2="320" y2="138" stroke="${stroke}" stroke-width="10"/>` +
+          `<line x1="360" y1="202" x2="400" y2="138" stroke="${stroke}" stroke-width="10"/>`,
+        legLines:
+          `<line x1="360" y1="280" x2="324" y2="338" stroke="${stroke}" stroke-width="10"/>` +
+          `<line x1="360" y1="280" x2="396" y2="338" stroke="${stroke}" stroke-width="10"/>`,
+      };
+    case "legs":
+      return {
+        armLines:
+          `<line x1="360" y1="202" x2="308" y2="212" stroke="${stroke}" stroke-width="10"/>` +
+          `<line x1="360" y1="202" x2="412" y2="212" stroke="${stroke}" stroke-width="10"/>`,
+        legLines:
+          `<line x1="360" y1="280" x2="316" y2="314" stroke="${stroke}" stroke-width="10"/>` +
+          `<line x1="316" y1="314" x2="332" y2="346" stroke="${stroke}" stroke-width="10"/>` +
+          `<line x1="360" y1="280" x2="404" y2="314" stroke="${stroke}" stroke-width="10"/>` +
+          `<line x1="404" y1="314" x2="388" y2="346" stroke="${stroke}" stroke-width="10"/>`,
+      };
+    case "hinge":
+      return {
+        armLines:
+          `<line x1="360" y1="202" x2="314" y2="220" stroke="${stroke}" stroke-width="10"/>` +
+          `<line x1="360" y1="202" x2="412" y2="198" stroke="${stroke}" stroke-width="10"/>`,
+        legLines:
+          `<line x1="360" y1="280" x2="326" y2="338" stroke="${stroke}" stroke-width="10"/>` +
+          `<line x1="360" y1="280" x2="398" y2="338" stroke="${stroke}" stroke-width="10"/>`,
+      };
+    case "core":
+      return {
+        armLines:
+          `<line x1="360" y1="202" x2="316" y2="238" stroke="${stroke}" stroke-width="10"/>` +
+          `<line x1="360" y1="202" x2="404" y2="238" stroke="${stroke}" stroke-width="10"/>`,
+        legLines:
+          `<line x1="360" y1="280" x2="332" y2="338" stroke="${stroke}" stroke-width="10"/>` +
+          `<line x1="360" y1="280" x2="396" y2="320" stroke="${stroke}" stroke-width="10"/>`,
+      };
+    case "push":
+    default:
+      return {
+        armLines:
+          `<line x1="360" y1="202" x2="304" y2="202" stroke="${stroke}" stroke-width="10"/>` +
+          `<line x1="360" y1="202" x2="416" y2="202" stroke="${stroke}" stroke-width="10"/>`,
+        legLines:
+          `<line x1="360" y1="280" x2="320" y2="338" stroke="${stroke}" stroke-width="10"/>` +
+          `<line x1="360" y1="280" x2="400" y2="338" stroke="${stroke}" stroke-width="10"/>`,
+      };
+  }
+}
+
 function buildExerciseImageDataUrl(
   name: string,
   bodyPart: string,
   modality: "bodyweight" | "machine",
 ): string {
-  const accent = modality === "bodyweight" ? "#4ec9b0" : "#9cdcfe";
-  const title = `${name}`.slice(0, 40);
-  const subtitle = `${bodyPart} • ${modality}`;
+  const styleKey = normalizeBodyPartForStyle(bodyPart);
+  const style = muscleArtStyles[styleKey];
+  const title = escapeSvgText(`${name}`.slice(0, 40));
+  const subtitle = escapeSvgText(`${bodyPart} • ${modality}`);
+  const figureStroke = modality === "bodyweight" ? "#f8fafc" : "#e5e7eb";
+  const accent = modality === "bodyweight" ? "#2dd4bf" : style.accent;
+  const poseLines = getPoseLines(style.pose, figureStroke);
 
   const svg = `
 <svg xmlns="http://www.w3.org/2000/svg" width="720" height="420" viewBox="0 0 720 420" role="img" aria-label="${title} form example">
-  <rect width="720" height="420" fill="#101418"/>
-  <rect x="24" y="24" width="672" height="372" rx="20" fill="#1a222b" stroke="#2b3a4a"/>
-  <circle cx="360" cy="125" r="34" fill="${accent}"/>
-  <line x1="360" y1="159" x2="360" y2="276" stroke="#d4d4d4" stroke-width="10"/>
-  <line x1="304" y1="199" x2="416" y2="199" stroke="#d4d4d4" stroke-width="10"/>
-  <line x1="360" y1="276" x2="315" y2="338" stroke="#d4d4d4" stroke-width="10"/>
-  <line x1="360" y1="276" x2="405" y2="338" stroke="#d4d4d4" stroke-width="10"/>
-  <text x="360" y="72" text-anchor="middle" fill="#9cdcfe" font-size="28" font-family="Segoe UI, Arial, sans-serif">${title}</text>
-  <text x="360" y="356" text-anchor="middle" fill="#dcdcaa" font-size="20" font-family="Segoe UI, Arial, sans-serif">${subtitle}</text>
-  <text x="360" y="386" text-anchor="middle" fill="#9aa1a8" font-size="18" font-family="Segoe UI, Arial, sans-serif">Control tempo • Full range • Stable core</text>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="${style.bgStart}"/>
+      <stop offset="100%" stop-color="${style.bgEnd}"/>
+    </linearGradient>
+  </defs>
+  <rect width="720" height="420" fill="url(#bg)"/>
+  <rect x="24" y="24" width="672" height="372" rx="20" fill="${style.panelFill}" stroke="${style.panelStroke}" stroke-width="2"/>
+  ${style.motif}
+  ${style.targetHighlight}
+  <circle cx="360" cy="126" r="33" fill="${accent}"/>
+  <line x1="360" y1="160" x2="360" y2="280" stroke="${figureStroke}" stroke-width="10"/>
+  ${poseLines.armLines}
+  ${poseLines.legLines}
+  <text x="360" y="72" text-anchor="middle" fill="${style.titleColor}" font-size="28" font-family="Segoe UI, Arial, sans-serif">${title}</text>
+  <text x="360" y="356" text-anchor="middle" fill="${style.subtitleColor}" font-size="20" font-family="Segoe UI, Arial, sans-serif">${subtitle}</text>
+  <text x="360" y="386" text-anchor="middle" fill="#cbd5e1" font-size="18" font-family="Segoe UI, Arial, sans-serif">Control tempo • Full range • Stable core</text>
 </svg>`;
 
   return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
