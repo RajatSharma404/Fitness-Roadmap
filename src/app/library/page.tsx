@@ -8,6 +8,8 @@ import {
   Card,
   SectionHeader,
 } from "@/components/shared/UIPrimitives";
+import { Skeleton, LibraryGridSkeleton, DetailPanelSkeleton } from "@/components/shared/Skeleton";
+import { useLazyLoad } from "@/hooks/useLazyLoad";
 import {
   getExerciseImageDataUrl,
   getBodyPartExerciseCatalog,
@@ -61,6 +63,7 @@ export default function LibraryPage() {
   const [activeExercise, setActiveExercise] = useState<string | null>(null);
   const [addedExercises, setAddedExercises] = useState<Set<string>>(new Set());
   const [activeIndex, setActiveIndex] = useState<number>(-1);
+  const [isFiltering, setIsFiltering] = useState(false);
 
   const exercises = useMemo(() => {
     const entries = catalog.flatMap((entry) => [
@@ -89,11 +92,18 @@ export default function LibraryPage() {
         .includes(query.toLowerCase());
       return bodyMatch && modalityMatch && typeMatch && queryMatch;
     });
-  }, [catalog, query, selectedBodyPart, selectedModality]);
+  }, [catalog, query, selectedBodyPart, selectedModality, selectedType]);
 
   const activeDetail = activeExercise
     ? getExerciseDetail(activeExercise)
     : null;
+
+  // Show skeleton briefly when filters change
+  useEffect(() => {
+    setIsFiltering(true);
+    const timer = setTimeout(() => setIsFiltering(false), 100);
+    return () => clearTimeout(timer);
+  }, [selectedBodyPart, selectedModality, selectedType, query]);
 
   // Load added exercises on mount
   useEffect(() => {
@@ -209,51 +219,127 @@ export default function LibraryPage() {
         </div>
       </Card>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {exercises.map((exercise, index) => (
-          <button
-            key={`${exercise.bodyPart}-${exercise.modality}-${exercise.name}-${index}`}
-            type="button"
-            onClick={() => setActiveExercise(exercise.name)}
-            className="group overflow-hidden rounded-2xl border border-[rgba(255,255,255,0.06)] text-left transition hover:-translate-y-0.5 hover:border-cyan-400/40"
-          >
-            <div
-              className={`h-24 bg-linear-to-br ${bodyPartColors[exercise.bodyPart] ?? "from-cyan-400/50 to-slate-400/20"} p-4`}
-            >
-              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-white/90">
-                {exercise.bodyPart}
-              </p>
-              <Image
-                src={getExerciseImageDataUrl(
-                  exercise.name,
-                  exercise.bodyPart,
-                  exercise.modality.toLowerCase() as "bodyweight" | "machine",
-                )}
-                alt={`${exercise.name} preview`}
-                width={128}
-                height={72}
-                unoptimized
-                className="mt-2 h-18 w-32 rounded-md border border-white/10 object-cover"
+      {isFiltering ? (
+        <LibraryGridSkeleton count={12} />
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {exercises.length === 0 ? (
+            <div className="col-span-full flex flex-col items-center justify-center gap-4 py-12">
+              <p className="text-center text-[#636380]">No exercises match your filters.</p>
+              <button
+                type="button"
+                onClick={() => {
+                  setQuery("");
+                  setSelectedBodyPart("All");
+                  setSelectedModality("All");
+                  setSelectedType("All");
+                }}
+                className="rounded-lg border border-cyan-400/40 px-4 py-2 text-sm text-cyan-300 hover:bg-cyan-400/5"
+              >
+                Reset filters
+              </button>
+            </div>
+          ) : (
+            exercises.map((exercise, index) => (
+              <ExerciseCardWithLazyLoad
+                key={`${exercise.bodyPart}-${exercise.modality}-${exercise.name}-${index}`}
+                exercise={exercise}
+                onSelect={() => setActiveExercise(exercise.name)}
               />
-            </div>
-            <div className="space-y-2 bg-bg-surface p-4">
-              <p className="font-display text-lg font-semibold text-[#eeeef2]">
-                {exercise.name}
-              </p>
-              <div className="flex flex-wrap gap-2 text-xs">
-                <span className="rounded-full bg-white/5 px-2 py-1 text-[#636380]">
-                  {exercise.bodyPart}
-                </span>
-                <span className="rounded-full bg-white/5 px-2 py-1 text-[#636380]">
-                  {exercise.modality}
-                </span>
-              </div>
-            </div>
-          </button>
-        ))}
-      </div>
+            ))
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
-      {activeDetail ? (
+function ExerciseCardWithLazyLoad({
+  exercise,
+  onSelect,
+}: {
+  exercise: { name: string; bodyPart: string; modality: "Bodyweight" | "Machine" };
+  onSelect: () => void;
+}) {
+  const { ref, isInView } = useLazyLoad({ threshold: 0.1 });
+  const [imageLoaded, setImageLoaded] = useState(false);
+
+  const localBodyPartColors: Record<string, string> = {
+    Chest: "from-sky-500/50 to-cyan-400/20",
+    Back: "from-violet-500/50 to-fuchsia-400/20",
+    Shoulders: "from-amber-500/50 to-yellow-400/20",
+    Biceps: "from-emerald-500/50 to-green-400/20",
+    Triceps: "from-rose-500/50 to-red-400/20",
+    Legs: "from-lime-500/50 to-green-400/20",
+    Hamstrings: "from-teal-500/50 to-cyan-400/20",
+    Glutes: "from-pink-500/50 to-rose-400/20",
+    Core: "from-blue-500/50 to-indigo-400/20",
+  };
+
+  return (
+    <div ref={ref}>
+      {isInView ? (
+        <button
+          type="button"
+          onClick={onSelect}
+          className="group w-full overflow-hidden rounded-2xl border border-[rgba(255,255,255,0.06)] text-left transition hover:-translate-y-0.5 hover:border-cyan-400/40"
+        >
+          <div
+            className={`h-24 bg-linear-to-br ${localBodyPartColors[exercise.bodyPart] ?? "from-cyan-400/50 to-slate-400/20"} relative p-4`}
+          >
+            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-white/90">
+              {exercise.bodyPart}
+            </p>
+            {!imageLoaded && (
+              <Skeleton className="absolute inset-x-4 top-14 h-18 w-32 rounded-md" />
+            )}
+            <Image
+              src={getExerciseImageDataUrl(
+                exercise.name,
+                exercise.bodyPart,
+                exercise.modality.toLowerCase() as "bodyweight" | "machine",
+              )}
+              alt={`${exercise.name} preview`}
+              width={128}
+              height={72}
+              unoptimized
+              className={`mt-2 h-18 w-32 rounded-md border border-white/10 object-cover transition-opacity duration-300 ${imageLoaded ? "opacity-100" : "opacity-0"}`}
+              onLoad={() => setImageLoaded(true)}
+            />
+          </div>
+          <div className="space-y-2 bg-bg-surface p-4">
+            <p className="font-display text-lg font-semibold text-[#eeeef2]">
+              {exercise.name}
+            </p>
+            <div className="flex flex-wrap gap-2 text-xs">
+              <span className="rounded-full bg-white/5 px-2 py-1 text-[#636380]">
+                {exercise.bodyPart}
+              </span>
+              <span className="rounded-full bg-white/5 px-2 py-1 text-[#636380]">
+                {exercise.modality}
+              </span>
+            </div>
+          </div>
+        </button>
+      ) : (
+        // Show skeleton while not in view
+        <div className="overflow-hidden rounded-2xl border border-[rgba(255,255,255,0.06)]">
+          <div className="h-24 bg-linear-to-br from-cyan-400/20 to-slate-400/5 p-4">
+            <Skeleton className="mb-2 h-4 w-20" />
+            <Skeleton className="h-18 w-32 rounded-md" />
+          </div>
+          <div className="space-y-2 bg-bg-surface p-4">
+            <Skeleton className="h-6 w-24" />
+            <div className="flex flex-wrap gap-2">
+              <Skeleton className="h-6 w-16 rounded-full" />
+              <Skeleton className="h-6 w-20 rounded-full" />
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
         <div
           className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm"
           onClick={() => setActiveExercise(null)}

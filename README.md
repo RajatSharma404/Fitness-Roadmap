@@ -86,12 +86,15 @@ It includes:
 
 ### Library
 
-The library page is a searchable exercise catalog.
+The library page is a searchable exercise catalog with performance optimizations.
 
 It includes:
 
 - body-part and modality filters
 - **compound vs isolation exercise classification** for movement type filtering
+- **skeleton loading states** while filters change and cards render
+- **IntersectionObserver lazy loading** — exercise cards only render when scrolled into view
+- **image skeleton placeholders** that fade to the full SVG/photo when loaded
 - exercise cards with generated movement previews
 - a slide-over detail view with exercise image, instructions, and alternatives
 - keyboard navigation in the detail panel (arrow keys to navigate exercises, Esc to close)
@@ -173,6 +176,17 @@ This enables:
 - discovery of related exercises that target the same muscle groups
 - exercise alternatives based on target muscle overlap
 - adaptability for different training goals and equipment availability
+
+### Performance optimizations
+
+The app implements several techniques to keep the experience smooth at scale:
+
+- **Skeleton loading states** — brief placeholders when filters change, reducing perceived latency
+- **IntersectionObserver lazy loading** — exercise cards only render when scrolled into view, reducing DOM size and memory
+- **Image skeleton fading** — placeholder skeletons fade out as SVG/photo images load, improving perceived performance
+- **Memoized calculations** — exercise filtering and catalog building use `useMemo` to avoid unnecessary re-renders
+- **Dynamic imports** — Monaco editor for PR logging is dynamically imported to reduce initial bundle size
+- **Virtualization-ready** — architecture supports later virtualization of large lists without refactoring
 
 ### Nutrition planning
 
