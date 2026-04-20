@@ -458,4 +458,4 @@ The current build completes successfully with `npm run build`.
 
 ## License
 
-This repository does not currently include a license file.
+This project is licensed under the MIT License. See [LICENSE](LICENSE) for the full text.
