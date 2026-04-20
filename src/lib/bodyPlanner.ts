@@ -104,10 +104,10 @@ const goalCalorieFactor: Record<GoalType, number> = {
 };
 
 const goalProteinPerKg: Record<GoalType, number> = {
-  fat_loss: 2.0,
-  weight_loss: 1.8,
-  muscle_gain: 2.2,
-  recomposition: 2.0,
+  fat_loss: 1.5,
+  weight_loss: 1.5,
+  muscle_gain: 1.5,
+  recomposition: 1.5,
 };
 
 const dayNames = [

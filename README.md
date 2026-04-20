@@ -130,6 +130,7 @@ It calculates:
 - BMI and BMI category
 - BMR and calorie targets
 - protein, carbs, fats, and fiber targets
+- beginner-friendly protein guidance at `1.5 g/kg` bodyweight (instead of advanced-level `2.0+ g/kg` defaults)
 - hydration targets
 - weekly workout structure
 - gym progression phases
