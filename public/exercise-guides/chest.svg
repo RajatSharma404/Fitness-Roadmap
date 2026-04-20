@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="420" viewBox="0 0 720 420" role="img">
+  <rect width="720" height="420" fill="#101418"/>
+  <rect x="24" y="24" width="672" height="372" rx="20" fill="#1a222b" stroke="#2b3a4a"/>
+  <rect x="190" y="230" width="340" height="26" rx="13" fill="#3c3c3c"/>
+  <circle cx="300" cy="204" r="16" fill="#dcdcaa"/>
+  <circle cx="420" cy="204" r="16" fill="#dcdcaa"/>
+  <line x1="260" y1="204" x2="460" y2="204" stroke="#4ec9b0" stroke-width="8"/>
+  <text x="360" y="70" text-anchor="middle" fill="#9cdcfe" font-size="30" font-family="Segoe UI, Arial, sans-serif">Chest Press Pattern</text>
+  <text x="360" y="380" text-anchor="middle" fill="#9aa1a8" font-size="20" font-family="Segoe UI, Arial, sans-serif">Shoulders down · Wrists stacked · Controlled lowering</text>
+</svg>

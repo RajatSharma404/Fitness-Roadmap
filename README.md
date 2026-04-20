@@ -1,94 +1,131 @@
 # FitFlow Planner
 
-FitFlow Planner is a full-stack fitness transformation app for fat loss, weight loss, muscle gain, and recomposition. It combines a roadmap, adaptive workout planning, nutrition templates, weekly check-ins, AI coaching, and progress tracking into one application.
+FitFlow Planner is a full-stack fitness roadmap app that turns body transformation into a guided execution system.
 
-The goal is to make the next action obvious. The app shows what to do, why it matters, and how to adapt when progress slows down.
+The product is organized around a dark, tactical UI called the Performance Console. It combines a mission-first dashboard, an adaptive roadmap, workout execution tools, nutrition templates, weekly check-ins, and a lightweight coaching layer so the next action is always obvious.
 
-## What It Does
+## Product Goal
 
-FitFlow Planner turns body transformation into a guided system:
+The app is designed to answer three questions as quickly as possible:
 
-- assesses the current profile with BMI, BMR, calories, macros, and hydration targets
-- builds a weekly workout plan based on goal, experience level, workout days, and equipment
-- shows beginner, intermediate, advanced, and elite gym progressions
-- lets users click each workout day to reveal the exact exercises
-- opens an exercise detail drawer with steps, mistakes, target muscles, alternatives, and demo tips
-- includes a workout mode with a session timer and set counting
-- generates nutrition templates, grocery suggestions, and meal swaps
-- collects weekly check-ins for weight, waist, sleep, steps, stress, energy, and workout completion
-- adapts calories, steps, cardio, and roadmap access based on readiness and recent trend
-- stores state locally and syncs it to the signed-in user when possible
-- provides an AI coach message based on current status and goal
+1. What should I do now?
+2. Why am I doing it?
+3. How should the plan change if progress slows down?
 
-## Core UX
+That principle drives the dashboard, roadmap, landing page, and the shared visual system.
 
-### Interactive roadmap
+## Key Experiences
 
-The Roadmap page is the main planning surface. It includes:
+### Dashboard
 
-- an input panel for age, height, weight, sex, goal, activity, workout days, diet, experience, and equipment
-- a visual node-based roadmap with completion status
-- gated progression based on dependencies and readiness
-- weekly workout plans and adaptive gym splits
-- check-in history and trend-based adjustment guidance
-- nutrition templates and grocery suggestions
-- exercise detail drawer and workout execution panel
-
-### Adaptive workout planning
-
-The workout engine adapts to the selected profile:
-
-- goal: fat loss, weight loss, muscle gain, recomposition
-- experience: beginner, intermediate, advanced
-- equipment: gym or home
-- workout days: 3 to 7 days per week
-
-The gym progression currently includes:
-
-- beginner split with five training days
-- intermediate split with six training days
-- advanced split with six training days
-- elite milestones for strength standards such as total, Wilks, and DOTS thresholds
-
-Each training day uses exactly two body parts and includes six exercises.
-
-### Exercise explorer
-
-Each workout day can be expanded to show the exact exercises. Clicking an exercise opens a detail drawer with:
-
-- how to perform the movement
-- common mistakes to avoid
-- target muscle groups
-- alternative exercises
-- a practical demo tip
-
-### Workout mode
-
-Workout mode is a lightweight execution view that helps the user train instead of only planning.
+The dashboard is the command center for daily execution. It focuses on the current mission instead of showing equal-weight cards everywhere.
 
 It includes:
 
-- a session timer
-- per-exercise set counting
-- quick entry from the current day workout card
+- a sticky top mission strip that highlights the next best action
+- a persistent Today Stack with four ordered steps: Warmup, Main Lifts, Accessories, and Recovery
+- a left rail for section navigation and weekly status
+- a central execution area for the active section
+- a right-side analytics rail for readiness, nutrition targets, trends, and recent check-ins
+- a quick check-in slide-over with progressive disclosure
+- immediate coaching feedback after a check-in is prepared
+- section views for overview, workouts, check-ins, exercise library, and nutrition
+
+### Roadmap
+
+The roadmap is the planning and progression workspace. It pairs a visual node graph with a detailed selection panel so users can understand both structure and reason.
+
+It includes:
+
+- the same Today Stack pattern as the dashboard for continuity
+- a React Flow roadmap that shows progression phases and node dependencies
+- node focus dimming so irrelevant items fade when a node is selected
+- phase progress rings for faster scanning
+- a selected-node panel with unlock criteria and phase rationale
+- adaptive workout plans based on goal, activity, experience, and equipment
+- workout execution controls and a timer-driven session mode
+- check-in history, nutrition planning, and exercise explorer tools
+
+### Landing Page
+
+The landing page is intentionally proof-driven rather than marketing-heavy.
+
+It follows a simple narrative:
+
+- Problem: random plans fail
+- System: adaptive roadmap
+- Proof: weekly metric deltas and athlete log snapshots
+- CTA: start the plan
+
+It also includes a compact visual preview of the product so users can understand the app before signing in.
+
+## Core Features
+
+### Adaptive planning engine
+
+The planning engine generates fitness guidance from the current profile.
+
+It calculates:
+
+- BMI and BMI category
+- BMR and calorie targets
+- protein, carbs, fats, and fiber targets
+- hydration targets
+- weekly workout structure
+- gym progression phases
+- meal templates
+- roadmap dependencies and unlock rules
+
+Supported goals include:
+
+- fat loss
+- weight loss
+- muscle gain
+- recomposition
+
+Supported activity levels include:
+
+- sedentary
+- light
+- moderate
+- active
+- very active
+
+Supported equipment modes include:
+
+- gym
+- home plus bands/dumbbells
+
+### Workout execution
+
+Workout planning is not just static content. The app exposes exercise and workout details that make it usable during training.
+
+Capabilities include:
+
+- weekly workout prescriptions with duration and focus
+- expandable training-day details
+- per-day exercise lists
+- a workout session timer
+- per-exercise set counting in the execution mode
+- lazy-loaded exercise thumbnails and detail drawers
+- movement instructions, common mistakes, alternatives, target muscles, and rep guidance
 
 ### Nutrition planning
 
-The nutrition system builds practical meal templates from the user profile:
+The nutrition system generates practical meal guidance instead of abstract macro numbers.
 
-- cut template
-- balance template
-- performance template
+It includes:
 
-It also provides:
-
-- grocery list ideas
+- meal templates tuned to the current calorie target
+- grocery list suggestions
 - meal swaps with calorie and protein deltas
-- veg, non-veg, and mixed diet filtering
+- diet filtering for veg, non-veg, and mixed eating patterns
 
 ### Weekly check-ins and readiness
 
-Users can submit a weekly check-in with:
+Check-ins track trend data and feed it back into the plan.
+
+Tracked values include:
 
 - date
 - body weight
@@ -99,45 +136,123 @@ Users can submit a weekly check-in with:
 - energy score
 - workout completion percentage
 
-The app converts this into a readiness score and uses it to influence progression.
+The app converts these inputs into readiness-aware guidance so calories, steps, and cardio can be adjusted over time.
 
-### AI coaching
+### Coaching and adaptation
 
-The app generates a daily coaching message based on:
+The app includes a daily coaching message based on:
 
 - goal
 - readiness score
 - recent adjustment trend
 
+This keeps the plan responsive instead of static.
+
 ### Persistence and sync
 
-The app uses a layered persistence approach:
+The app uses layered persistence:
 
-- localStorage for immediate offline persistence
-- authenticated server sync through the user plan state endpoint
-- Prisma/PostgreSQL for long-term storage and user identity
+- localStorage for offline-first state recovery
+- authenticated user-plan-state API sync when signed in
+- Prisma/PostgreSQL for long-term storage
+
+## Visual System
+
+The current UI is built around the Performance Console direction.
+
+Design principles:
+
+- three elevation levels only: base, elevated, and highlighted actionable
+- cyan for action and focus
+- lime for progress and success
+- amber for caution or readiness dips
+- red only for destructive or error states
+- strict spacing rhythm to keep pages from feeling noisy
+- condensed hierarchy for key numbers and metrics
+- readable body typography for long-form planning content
+
+Shared UI primitives live in the shared component layer and are used to keep dashboard and roadmap consistent.
 
 ## Tech Stack
 
-- **Frontend**: Next.js 15, React 19, Tailwind CSS 4, Framer Motion
-- **Routing**: Next.js App Router
-- **Visualization**: React Flow, Recharts
-- **Auth**: NextAuth with Google OAuth
-- **Backend**: Express 5
-- **Database**: PostgreSQL with Prisma
-- **AI**: Google Gemini
-- **Editor**: Monaco Editor and monaco-vim
-- **Testing**: Vitest
-- **Deployment**: Docker, Docker Compose, PM2
-- **Language**: TypeScript
+- Next.js 15.5.14 with the App Router
+- React 19
+- Tailwind CSS 4
+- Framer Motion
+- React Flow
+- Recharts
+- NextAuth with Google OAuth
+- Express 5
+- PostgreSQL with Prisma
+- Google Gemini
+- Monaco Editor and monaco-vim
+- Vitest
+- TypeScript
+- Docker, Docker Compose, and PM2
 
-## Main Pages
+## Project Structure
+
+```text
+.
+├── prisma/
+│   ├── schema.prisma
+│   └── seed.ts
+├── public/
+├── src/
+│   ├── app/
+│   │   ├── api/
+│   │   ├── dashboard/
+│   │   ├── leaderboard/
+│   │   ├── profile/[id]/
+│   │   ├── roadmap/
+│   │   ├── globals.css
+│   │   ├── layout.tsx
+│   │   └── page.tsx
+│   ├── components/
+│   │   ├── dashboard/
+│   │   ├── landing/
+│   │   ├── roadmap/
+│   │   └── shared/
+│   ├── lib/
+│   ├── prisma/
+│   ├── server/
+│   └── types/
+├── docker-compose.yml
+├── Dockerfile
+├── Dockerfile.api
+├── pm2.config.js
+├── README.md
+└── package.json
+```
+
+## Main Routes
 
 - `/` - landing page
-- `/dashboard` - summary view of current plan, calories, readiness, and workout progress
-- `/roadmap` - interactive planning and execution workspace
+- `/dashboard` - mission-first command center for plan execution
+- `/roadmap` - adaptive planning workspace with graph navigation and check-ins
 - `/leaderboard` - ranking view
 - `/profile/[id]` - public profile page
+
+## API Surface
+
+### Next.js API routes
+
+- `GET /api/og` - Open Graph image generation
+- `GET /api/user-plan-state` - fetch the current saved plan state
+- `POST /api/user-plan-state` - save the current plan state
+- `GET /api/auth/[...nextauth]` - NextAuth handler
+- `POST /api/auth/[...nextauth]` - NextAuth handler
+
+### Express routes
+
+The Express server exposes routes for:
+
+- auth
+- lifts
+- leaderboard
+- profile
+- roadmap
+- AI helpers
 
 ## Local Setup
 
@@ -155,17 +270,13 @@ The app uses a layered persistence approach:
 npm install
 ```
 
-### 2. Create environment file
+### 2. Create environment files
 
-Create a local `.env` file and update the values for your machine.
-
-```bash
-copy .env.example .env
-```
+Create a local `.env` file from your existing template if one is available, then fill in the values for your machine.
 
 ### 3. Configure environment variables
 
-Use the following values as a baseline:
+Use the following as a baseline:
 
 ```env
 DATABASE_URL="postgresql://postgres:postgres@localhost:5432/fitness_roadmap"
@@ -227,14 +338,14 @@ http://localhost:3001
 
 ## Production Build
 
-Build the frontend and server separately:
+Build the frontend and the server separately:
 
 ```bash
 npm run build
 npm run build:server
 ```
 
-Start the production app:
+Start the production services:
 
 ```bash
 npm run start
@@ -315,50 +426,16 @@ npm run pm2:delete
 | `npm run pm2:delete`   | Delete PM2 processes                             |
 | `npm run pm2:logs`     | Stream PM2 logs                                  |
 
-## Project Structure
-
-```text
-.
-├── prisma/
-│   ├── schema.prisma
-│   └── seed.ts
-├── public/
-├── src/
-│   ├── app/
-│   │   ├── api/
-│   │   ├── dashboard/
-│   │   ├── leaderboard/
-│   │   ├── profile/[id]/
-│   │   ├── roadmap/
-│   │   ├── globals.css
-│   │   ├── layout.tsx
-│   │   └── page.tsx
-│   ├── components/
-│   │   ├── dashboard/
-│   │   ├── landing/
-│   │   ├── roadmap/
-│   │   └── shared/
-│   ├── lib/
-│   ├── prisma/
-│   ├── server/
-│   └── types/
-├── docker-compose.yml
-├── Dockerfile
-├── Dockerfile.api
-├── pm2.config.js
-└── README.md
-```
-
 ## Data Model Overview
 
-The Prisma schema currently centers around these entities:
+The Prisma schema centers around these entities:
 
-- **User**: profile data, goal, bodyweight, units, accounts, sessions
-- **Lift**: logged lifts, one-rep max, notes, videos, timestamps
-- **Node**: roadmap nodes and unlock criteria
-- **UserNode**: per-user roadmap status
-- **Achievement**: achievements earned by users
-- **UserPlanState**: persisted planner state for synced roadmap settings and check-ins
+- `User` - profile data, goal, bodyweight, units, accounts, sessions
+- `Lift` - logged lifts, one-rep max, notes, videos, timestamps
+- `Node` - roadmap nodes and unlock criteria
+- `UserNode` - per-user roadmap status
+- `Achievement` - achievements earned by users
+- `UserPlanState` - persisted planner state for synced roadmap settings and check-ins
 
 Enums used in the schema include:
 
@@ -368,137 +445,17 @@ Enums used in the schema include:
 - `Track`
 - `NodeStatus`
 
-## API Surface
+## Development Notes
 
-### Auth
+- The app is intentionally dark themed and data dense, but the current layout keeps the hierarchy focused on one mission at a time.
+- The shared `lab-*` classes in `src/app/globals.css` define the surface and typography language.
+- The dashboard and roadmap both use the Today Stack pattern so execution feels consistent across pages.
+- The codebase is split between Next.js route handlers and an Express API layer, so you need both processes running for full local functionality.
 
-- `GET /api/auth/[...nextauth]`
-- `POST /api/auth/[...nextauth]`
+## Verification
 
-### App-Specific Routes
-
-- `GET /api/og` - Open Graph image generation
-- `GET /api/user-plan-state` - fetch the current saved plan state for the authenticated user
-- `POST /api/user-plan-state` - save plan state for the authenticated user
-
-### Express API Routes
-
-The Express server also exposes routes for:
-
-- auth
-- lifts
-- leaderboard
-- profile
-- roadmap
-- AI chat
-
-## Important Runtime Details
-
-- frontend development server: `http://localhost:3001`
-- backend API server: `http://localhost:5000`
-- API requests from the frontend are proxied through `/api/*`
-- the API includes a readiness check at `/health/ready`
-- the API uses Prisma-backed persistence and JWT auth for protected routes
-
-## Roadmap Flow
-
-The roadmap is organized around a progression loop:
-
-1. Baseline assessment
-2. Calorie strategy
-3. Macro targets
-4. Hydration protocol
-5. Weekly training split
-6. Meal combinations
-7. Progress tracking
-8. Adaptive adjustments
-
-## Troubleshooting
-
-- If the frontend loads but the roadmap does not sync, check `DATABASE_URL`, the API server, and `/health/ready`.
-- If AI chat returns an error, verify `GEMINI_API_KEY`.
-- If auth sessions do not persist, verify `NEXTAUTH_URL`, `NEXTAUTH_SECRET`, and Google OAuth settings.
-- If Docker is used, make sure the API container is built with `npm run build:server` before startup.
-
-## Notes
-
-This repository is the root project used by the visible website. Earlier subfolder references are no longer the active source of truth. 8. Adaptive adjustments
-
-The app unlocks later phases based on completed dependencies and readiness signals.
-
-## Workout flow
-
-The training experience is built around practical execution:
-
-- pick a goal
-- select experience level
-- choose available equipment
-- review the adapted split
-- expand a day to see six exercises
-- inspect exercise details
-- start workout mode
-- record sets
-- review weekly trends and adjust
-
-## Troubleshooting
-
-### The app starts on the wrong port
-
-The frontend is configured for `3001`. If another app already uses that port, update the scripts and `NEXTAUTH_URL` together.
-
-### Prisma client errors
-
-Run:
-
-```bash
-npm run db:generate
-```
-
-If the schema changed significantly, also run:
-
-```bash
-npm run db:push
-```
-
-### Auth does not persist
-
-Check:
-
-- `NEXTAUTH_URL`
-- `NEXTAUTH_SECRET`
-- Google OAuth credentials
-- browser cookies
-- whether the app is running under `http://localhost:3001`
-
-### AI chat or Gemini features fail
-
-Check:
-
-- `GEMINI_API_KEY`
-- network access
-- server logs from the Express process
-
-### Build succeeds but the browser shows stale data
-
-Clear:
-
-- browser localStorage for the app
-- `.next`
-- `dist`
-
-Then restart the dev server.
-
-## Development notes
-
-- The UI uses a dark VS Code-like theme intentionally.
-- Roadmap state is persisted locally and also synchronized to the authenticated user when available.
-- The current fitness planner emphasizes transformation and adherence over one-size-fits-all bodybuilding plans.
-- The app is designed to be iterative, so a lot of the logic is centralized in planner modules rather than scattered across components.
+The current build completes successfully with `npm run build`.
 
 ## License
 
-MIT
-
-## Disclaimer
-
-This app provides general fitness planning guidance and should not replace medical or professional advice. Users should adapt training and nutrition to their own health conditions, recovery, and professional recommendations.
+This repository does not currently include a license file.

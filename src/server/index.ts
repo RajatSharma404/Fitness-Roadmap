@@ -4,7 +4,7 @@ import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import crypto from "node:crypto";
 import { prisma } from "../lib/prisma";
-import { verifyJWT } from "../lib/jwt";
+import { authMiddleware } from "./middleware/auth";
 import liftsRouter from "./routes/lifts";
 import roadmapRouter from "./routes/roadmap";
 import leaderboardRouter from "./routes/leaderboard";
@@ -57,34 +57,6 @@ app.use((req, res, next) => {
   next();
 });
 
-// JWT middleware
-export const authMiddleware = async (
-  req: express.Request,
-  res: express.Response,
-  next: express.NextFunction,
-) => {
-  try {
-    const authHeader = req.headers.authorization;
-    if (!authHeader?.startsWith("Bearer ")) {
-      res.status(401).json({ error: "No token provided" });
-      return;
-    }
-
-    const token = authHeader.substring(7);
-    const payload = await verifyJWT(token);
-
-    if (!payload) {
-      res.status(401).json({ error: "Invalid token" });
-      return;
-    }
-
-    req.user = payload;
-    next();
-  } catch {
-    res.status(401).json({ error: "Authentication failed" });
-  }
-};
-
 // Public routes
 app.use("/api/auth", authRouter);
 
@@ -92,7 +64,7 @@ app.use("/api/auth", authRouter);
 app.use("/api/lifts", authMiddleware, liftsRouter);
 app.use("/api/roadmap", authMiddleware, roadmapRouter);
 app.use("/api/leaderboard", leaderboardRouter); // Public
-app.use("/api/profile", authMiddleware, profileRouter);
+app.use("/api/profile", profileRouter);
 app.use("/api/ai", authMiddleware, aiRouter);
 
 // Health check

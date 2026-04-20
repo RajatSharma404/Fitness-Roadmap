@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="420" viewBox="0 0 720 420" role="img">
+  <rect width="720" height="420" fill="#101418"/>
+  <rect x="24" y="24" width="672" height="372" rx="20" fill="#1a222b" stroke="#2b3a4a"/>
+  <rect x="180" y="250" width="360" height="22" rx="11" fill="#3c3c3c"/>
+  <rect x="250" y="200" width="220" height="50" rx="12" fill="#4ec9b0"/>
+  <circle cx="230" cy="220" r="18" fill="#dcdcaa"/>
+  <circle cx="490" cy="220" r="18" fill="#dcdcaa"/>
+  <text x="360" y="70" text-anchor="middle" fill="#9cdcfe" font-size="30" font-family="Segoe UI, Arial, sans-serif">Hip Thrust Pattern</text>
+  <text x="360" y="380" text-anchor="middle" fill="#9aa1a8" font-size="20" font-family="Segoe UI, Arial, sans-serif">Drive through heels · Squeeze glutes · Avoid overextension</text>
+</svg>

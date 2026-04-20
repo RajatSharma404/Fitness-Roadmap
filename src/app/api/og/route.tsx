@@ -12,24 +12,16 @@ const profileSchema = z.object({
   bestLifts: z.record(z.string(), z.number()).optional(),
 });
 
+const userIdSchema = z.string().trim().min(1).max(64);
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get("userId");
 
-    // Fetch user data
-    const userRes = await fetch(
-      `${process.env.NEXT_PUBLIC_APP_URL}/api/profile/${userId}`,
-      {
-        headers: {
-          Authorization: `Bearer ${process.env.JWT_SECRET}`,
-        },
-      },
-    );
-
-    const rawUser = userRes.ok ? await userRes.json() : null;
-    const parsedUser = profileSchema.safeParse(rawUser);
-    const user = parsedUser.success ? parsedUser.data : null;
+    const user = userIdSchema.safeParse(userId).success
+      ? await fetchUserProfile(request, userId as string)
+      : null;
 
     return new ImageResponse(
       <div
@@ -92,11 +84,7 @@ export async function GET(request: NextRequest) {
             },
             {
               label: "Best Lift",
-              value: user?.bestLifts
-                ? Object.entries(user.bestLifts)
-                    .sort((a, b) => b[1] - a[1])[0]?.[1]
-                    .toFixed(0) + "kg"
-                : "-",
+              value: formatBestLift(user?.bestLifts),
               color: "#06b6d4",
             },
             {
@@ -167,4 +155,24 @@ export async function GET(request: NextRequest) {
     console.error(e);
     return new Response("Failed to generate image", { status: 500 });
   }
+}
+
+async function fetchUserProfile(request: NextRequest, userId: string) {
+  const profileUrl = new URL(
+    `/api/profile/${encodeURIComponent(userId)}`,
+    request.url,
+  );
+  const userRes = await fetch(profileUrl, { cache: "no-store" });
+  const rawUser = userRes.ok ? await userRes.json() : null;
+  const parsedUser = profileSchema.safeParse(rawUser);
+  return parsedUser.success ? parsedUser.data : null;
+}
+
+function formatBestLift(bestLifts: Record<string, number> | undefined) {
+  if (!bestLifts) return "-";
+
+  const topLift = Object.entries(bestLifts).sort((a, b) => b[1] - a[1])[0]?.[1];
+  if (typeof topLift !== "number") return "-";
+
+  return `${topLift.toFixed(0)}kg`;
 }

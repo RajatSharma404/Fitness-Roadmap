@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="420" viewBox="0 0 720 420" role="img" aria-labelledby="title desc">
+  <title id="title">Full Body Exercise Form Example</title>
+  <desc id="desc">Simple stick-figure reference with posture cues.</desc>
+  <rect width="720" height="420" fill="#101418"/>
+  <rect x="24" y="24" width="672" height="372" rx="20" fill="#1a222b" stroke="#2b3a4a"/>
+  <circle cx="360" cy="115" r="36" fill="#4ec9b0"/>
+  <line x1="360" y1="151" x2="360" y2="270" stroke="#d4d4d4" stroke-width="10"/>
+  <line x1="300" y1="195" x2="420" y2="195" stroke="#d4d4d4" stroke-width="10"/>
+  <line x1="360" y1="270" x2="315" y2="338" stroke="#d4d4d4" stroke-width="10"/>
+  <line x1="360" y1="270" x2="405" y2="338" stroke="#d4d4d4" stroke-width="10"/>
+  <text x="360" y="70" text-anchor="middle" fill="#9cdcfe" font-size="28" font-family="Segoe UI, Arial, sans-serif">Exercise Form Example</text>
+  <text x="360" y="386" text-anchor="middle" fill="#9aa1a8" font-size="20" font-family="Segoe UI, Arial, sans-serif">Neutral spine · Full range · Controlled tempo</text>
+</svg>

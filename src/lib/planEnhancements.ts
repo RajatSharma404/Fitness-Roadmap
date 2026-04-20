@@ -32,11 +32,22 @@ export interface PlanAdjustment {
 
 export interface ExerciseDetail {
   name: string;
+  bodyPart: string;
+  modality: "bodyweight" | "machine";
+  recommendedReps: string;
   howTo: string[];
   commonMistakes: string[];
   targetMuscles: string[];
   alternatives: string[];
   demoTip: string;
+  imageUrl: string;
+  imageAlt: string;
+}
+
+export interface BodyPartExerciseCatalog {
+  bodyPart: string;
+  bodyweight: string[];
+  machine: string[];
 }
 
 export interface MealSlot {
@@ -68,8 +79,317 @@ export interface MealSwap {
   proteinDelta: number;
 }
 
+const bodyPartImageMap: Record<string, string> = {
+  Chest: "/exercise-guides/chest.svg",
+  Back: "/exercise-guides/back.svg",
+  Shoulders: "/exercise-guides/shoulders.svg",
+  Biceps: "/exercise-guides/arms.svg",
+  Triceps: "/exercise-guides/arms.svg",
+  Forearms: "/exercise-guides/arms.svg",
+  Legs: "/exercise-guides/legs.svg",
+  Quads: "/exercise-guides/legs.svg",
+  Hamstrings: "/exercise-guides/legs.svg",
+  Glutes: "/exercise-guides/glutes.svg",
+  Calves: "/exercise-guides/legs.svg",
+  Core: "/exercise-guides/core.svg",
+  Abs: "/exercise-guides/core.svg",
+};
+
+const bodyPartExerciseCatalog: Record<
+  string,
+  { bodyweight: string[]; machine: string[] }
+> = {
+  Chest: {
+    bodyweight: [
+      "Push-up",
+      "Incline push-up",
+      "Decline push-up",
+      "Wide push-up",
+      "Diamond push-up",
+      "Archer push-up",
+      "Pseudo planche push-up",
+      "Chest dips",
+      "Plyometric push-up",
+      "Deficit push-up",
+    ],
+    machine: [
+      "Machine chest press",
+      "Incline machine press",
+      "Smith machine bench press",
+      "Cable chest fly",
+      "Pec deck fly",
+      "Barbell bench press",
+      "Incline barbell press",
+      "Flat dumbbell press",
+      "Incline dumbbell press",
+      "Cable crossover",
+      "Machine chest fly",
+      "Paused bench press",
+    ],
+  },
+  Back: {
+    bodyweight: [
+      "Inverted row",
+      "Pull-up",
+      "Chin-up",
+      "Neutral-grip pull-up",
+      "Commando pull-up",
+      "Towel row",
+      "Scapular pull-up",
+      "Australian row",
+      "Superman hold",
+      "Prone Y-T-I raise",
+    ],
+    machine: [
+      "Lat pulldown",
+      "Wide-grip lat pulldown",
+      "Weighted pulldown",
+      "Seated cable row",
+      "Seated close-grip row",
+      "Chest-supported row",
+      "Chest-supported T-bar row",
+      "T-bar row",
+      "Pendlay row",
+      "One-arm dumbbell row",
+      "Straight-arm pulldown",
+      "Single-arm cable row",
+      "Assisted pull-up",
+      "Weighted pull-up",
+    ],
+  },
+  Shoulders: {
+    bodyweight: [
+      "Pike push-up",
+      "Handstand hold",
+      "Handstand push-up",
+      "Wall walk",
+      "Plank shoulder tap",
+      "Bear crawl",
+      "Dive bomber push-up",
+    ],
+    machine: [
+      "Seated shoulder press",
+      "Overhead press",
+      "Standing OHP",
+      "Lateral raise",
+      "Front raise",
+      "Rear delt fly",
+      "Rear delt cable fly",
+      "Cable lateral raise",
+      "Face pull",
+      "Lateral raise mechanical drops",
+    ],
+  },
+  Biceps: {
+    bodyweight: [
+      "Chin-up",
+      "Bodyweight curl (rings/TRX)",
+      "Towel chin-up",
+      "Isometric chin hold",
+    ],
+    machine: [
+      "Dumbbell biceps curl",
+      "Hammer curl",
+      "EZ-bar curl",
+      "Incline dumbbell curl",
+      "Incline dumbbell curls",
+      "Preacher curl",
+      "Bayesian cable curl",
+      "Cable hammer curl",
+    ],
+  },
+  Triceps: {
+    bodyweight: [
+      "Bench dips",
+      "Diamond push-up",
+      "Close-grip push-up",
+      "Bodyweight triceps extension",
+    ],
+    machine: [
+      "Cable triceps pushdown",
+      "Rope triceps pressdown",
+      "Rope pushdown",
+      "Overhead triceps extension",
+      "Overhead dumbbell triceps extension",
+      "Overhead cable triceps extension",
+      "Overhead cable extension",
+      "Skull crushers",
+      "Close-grip bench press",
+    ],
+  },
+  Legs: {
+    bodyweight: [
+      "Bodyweight squat",
+      "Split squat",
+      "Reverse lunge",
+      "Walking lunge",
+      "Walking lunges",
+      "Step-up",
+      "Cossack squat",
+      "Wall sit",
+      "Jump squat",
+      "Pistol squat",
+    ],
+    machine: [
+      "Goblet squat",
+      "Back squat",
+      "Front squat",
+      "Hack squat",
+      "Leg press",
+      "Leg extension",
+      "Bulgarian split squat",
+      "Walking lunge",
+      "Calf raise",
+      "Stiff-leg deadlift",
+      "Romanian deadlift",
+    ],
+  },
+  Hamstrings: {
+    bodyweight: [
+      "Single-leg hip hinge",
+      "Nordic hamstring curl",
+      "Glute bridge walkout",
+      "Sliding leg curl",
+    ],
+    machine: [
+      "Romanian deadlift",
+      "Lying leg curl",
+      "Seated leg curl",
+      "Hamstring curl",
+      "Stiff-leg deadlift",
+    ],
+  },
+  Glutes: {
+    bodyweight: [
+      "Glute bridge",
+      "Single-leg glute bridge",
+      "Frog pump",
+      "Donkey kick",
+      "Fire hydrant",
+      "Hip thrust",
+    ],
+    machine: [
+      "Hip thrust",
+      "Barbell hip thrust",
+      "Cable glute kickback",
+      "Cable pull-through",
+      "Glute-focused back extension",
+      "45-degree back extension",
+    ],
+  },
+  Core: {
+    bodyweight: [
+      "Plank",
+      "Plank variations",
+      "Dead bug",
+      "Hollow hold",
+      "Side plank",
+      "Mountain climber",
+      "Bird dog",
+      "V-up",
+      "Hanging knee raise",
+      "Hanging leg raise",
+      "Ab wheel rollout",
+    ],
+    machine: [
+      "Cable crunch",
+      "Cable woodchopper",
+      "Decline sit-up",
+      "Machine crunch",
+    ],
+  },
+};
+
+function findExerciseInCatalog(
+  name: string,
+): { bodyPart: string; modality: "bodyweight" | "machine" } | null {
+  for (const [bodyPart, groups] of Object.entries(bodyPartExerciseCatalog)) {
+    if (groups.bodyweight.includes(name)) {
+      return { bodyPart, modality: "bodyweight" };
+    }
+    if (groups.machine.includes(name)) {
+      return { bodyPart, modality: "machine" };
+    }
+  }
+
+  return null;
+}
+
+function defaultRepRangeForBodyPart(bodyPart: string): string {
+  if (["Legs", "Quads", "Hamstrings", "Glutes"].includes(bodyPart)) {
+    return "3-5 sets x 6-12 reps";
+  }
+  if (["Core", "Abs"].includes(bodyPart)) {
+    return "3-4 sets x 10-20 reps";
+  }
+  return "3-4 sets x 8-15 reps";
+}
+
+function buildExerciseImageDataUrl(
+  name: string,
+  bodyPart: string,
+  modality: "bodyweight" | "machine",
+): string {
+  const accent = modality === "bodyweight" ? "#4ec9b0" : "#9cdcfe";
+  const title = `${name}`.slice(0, 40);
+  const subtitle = `${bodyPart} • ${modality}`;
+
+  const svg = `
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="420" viewBox="0 0 720 420" role="img" aria-label="${title} form example">
+  <rect width="720" height="420" fill="#101418"/>
+  <rect x="24" y="24" width="672" height="372" rx="20" fill="#1a222b" stroke="#2b3a4a"/>
+  <circle cx="360" cy="125" r="34" fill="${accent}"/>
+  <line x1="360" y1="159" x2="360" y2="276" stroke="#d4d4d4" stroke-width="10"/>
+  <line x1="304" y1="199" x2="416" y2="199" stroke="#d4d4d4" stroke-width="10"/>
+  <line x1="360" y1="276" x2="315" y2="338" stroke="#d4d4d4" stroke-width="10"/>
+  <line x1="360" y1="276" x2="405" y2="338" stroke="#d4d4d4" stroke-width="10"/>
+  <text x="360" y="72" text-anchor="middle" fill="#9cdcfe" font-size="28" font-family="Segoe UI, Arial, sans-serif">${title}</text>
+  <text x="360" y="356" text-anchor="middle" fill="#dcdcaa" font-size="20" font-family="Segoe UI, Arial, sans-serif">${subtitle}</text>
+  <text x="360" y="386" text-anchor="middle" fill="#9aa1a8" font-size="18" font-family="Segoe UI, Arial, sans-serif">Control tempo • Full range • Stable core</text>
+</svg>`;
+
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+}
+
+function buildGenericExerciseDetail(
+  name: string,
+  bodyPart: string,
+  modality: "bodyweight" | "machine",
+  alternatives: string[],
+): ExerciseDetail {
+  const imageUrl =
+    bodyPartImageMap[bodyPart] ?? "/exercise-guides/full-body.svg";
+
+  return {
+    name,
+    bodyPart,
+    modality,
+    recommendedReps: defaultRepRangeForBodyPart(bodyPart),
+    howTo: [
+      "Set up with stable posture and brace your core before the first rep.",
+      "Move through a full, controlled range of motion without rushing.",
+      "Keep the target muscle under tension and avoid momentum.",
+      "Exhale on effort, inhale on return, and stop 1-2 reps before failure.",
+    ],
+    commonMistakes: [
+      "Cutting range of motion short.",
+      "Using momentum instead of controlled reps.",
+      "Losing bracing and joint alignment under fatigue.",
+    ],
+    targetMuscles: [bodyPart],
+    alternatives,
+    demoTip:
+      "Record one working set from the side. Keep tempo smooth and repeatable rep-to-rep.",
+    imageUrl,
+    imageAlt: `${name} ${bodyPart} form example`,
+  };
+}
+
 const exerciseLibrary: Record<string, Omit<ExerciseDetail, "name">> = {
   "Flat dumbbell press": {
+    bodyPart: "Chest",
+    modality: "machine",
+    recommendedReps: "3-4 sets x 8-12 reps",
     howTo: [
       "Set bench to flat and keep feet planted.",
       "Lower dumbbells to chest line with elbows 45 degrees.",
@@ -83,8 +403,13 @@ const exerciseLibrary: Record<string, Omit<ExerciseDetail, "name">> = {
     targetMuscles: ["Chest", "Front delts", "Triceps"],
     alternatives: ["Push-up", "Machine chest press"],
     demoTip: "Use a 2-second lowering phase for better chest activation.",
+    imageUrl: "/exercise-guides/chest.svg",
+    imageAlt: "Flat dumbbell press form example",
   },
   "Lat pulldown": {
+    bodyPart: "Back",
+    modality: "machine",
+    recommendedReps: "3-4 sets x 8-12 reps",
     howTo: [
       "Grip bar slightly wider than shoulders.",
       "Lean back slightly and pull elbows to ribs.",
@@ -98,8 +423,13 @@ const exerciseLibrary: Record<string, Omit<ExerciseDetail, "name">> = {
     targetMuscles: ["Lats", "Mid-back", "Biceps"],
     alternatives: ["Assisted pull-up", "Band pulldown"],
     demoTip: "Think chest up and drive elbows down, not hands down.",
+    imageUrl: "/exercise-guides/back.svg",
+    imageAlt: "Lat pulldown form example",
   },
   "Goblet squat": {
+    bodyPart: "Legs",
+    modality: "machine",
+    recommendedReps: "3-4 sets x 8-15 reps",
     howTo: [
       "Hold dumbbell at chest and brace core.",
       "Sit between hips while keeping heels grounded.",
@@ -113,12 +443,29 @@ const exerciseLibrary: Record<string, Omit<ExerciseDetail, "name">> = {
     targetMuscles: ["Quads", "Glutes", "Core"],
     alternatives: ["Bodyweight squat", "Leg press"],
     demoTip: "Pause for one second at the bottom to improve control.",
+    imageUrl: "/exercise-guides/legs.svg",
+    imageAlt: "Goblet squat form example",
   },
 };
 
 function fallbackDetail(name: string): ExerciseDetail {
+  const found = findExerciseInCatalog(name);
+  if (found) {
+    const pool = bodyPartExerciseCatalog[found.bodyPart][found.modality];
+    const alternatives = pool.filter((item) => item !== name).slice(0, 3);
+    return buildGenericExerciseDetail(
+      name,
+      found.bodyPart,
+      found.modality,
+      alternatives,
+    );
+  }
+
   return {
     name,
+    bodyPart: "Full Body",
+    modality: "machine",
+    recommendedReps: "3-4 sets x 8-12 reps",
     howTo: [
       "Set up with a stable posture and brace core.",
       "Move through full controlled range of motion.",
@@ -132,13 +479,34 @@ function fallbackDetail(name: string): ExerciseDetail {
     targetMuscles: ["Primary target", "Secondary stabilizers"],
     alternatives: ["Machine variation", "Bodyweight variation"],
     demoTip: "Record one set from side angle to check form weekly.",
+    imageUrl: "/exercise-guides/full-body.svg",
+    imageAlt: `${name} form example`,
   };
 }
 
 export function getExerciseDetail(name: string): ExerciseDetail {
   const known = exerciseLibrary[name];
-  if (!known) return fallbackDetail(name);
-  return { name, ...known };
+  const detail = known ? { name, ...known } : fallbackDetail(name);
+
+  return {
+    ...detail,
+    imageUrl: buildExerciseImageDataUrl(
+      detail.name,
+      detail.bodyPart,
+      detail.modality,
+    ),
+    imageAlt: `${detail.name} ${detail.bodyPart} ${detail.modality} form example`,
+  };
+}
+
+export function getBodyPartExerciseCatalog(): BodyPartExerciseCatalog[] {
+  return Object.entries(bodyPartExerciseCatalog).map(([bodyPart, groups]) => ({
+    bodyPart,
+    bodyweight: [...new Set(groups.bodyweight)].sort((a, b) =>
+      a.localeCompare(b),
+    ),
+    machine: [...new Set(groups.machine)].sort((a, b) => a.localeCompare(b)),
+  }));
 }
 
 function convertExerciseForEquipment(

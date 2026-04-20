@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
 import { prisma } from "../../lib/prisma";
+import { authMiddleware } from "../middleware/auth";
 
 const router = Router();
 
@@ -71,9 +72,14 @@ router.get("/:id", async (req, res) => {
 });
 
 // PATCH /api/profile (authenticated)
-router.patch("/", async (req, res) => {
+router.patch("/", authMiddleware, async (req, res) => {
   try {
-    const userId = req.user!.userId;
+    const userId = req.user?.userId;
+    if (!userId) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
+
     const data = updateProfileSchema.parse(req.body);
 
     const user = await prisma.user.update({

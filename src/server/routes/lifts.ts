@@ -18,7 +18,12 @@ const liftSchema = z.object({
 // GET /api/lifts
 router.get("/", async (req, res) => {
   try {
-    const userId = req.user!.userId;
+    const userId = req.user?.userId;
+    if (!userId) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
+
     const { lift, limit = "50" } = req.query;
 
     const lifts = await prisma.lift.findMany({
@@ -40,7 +45,12 @@ router.get("/", async (req, res) => {
 // POST /api/lifts
 router.post("/", async (req, res) => {
   try {
-    const userId = req.user!.userId;
+    const userId = req.user?.userId;
+    if (!userId) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
+
     const data = liftSchema.parse(req.body);
 
     // Calculate 1RM using Epley formula
@@ -74,7 +84,11 @@ router.post("/", async (req, res) => {
 // GET /api/lifts/stats
 router.get("/stats", async (req, res) => {
   try {
-    const userId = req.user!.userId;
+    const userId = req.user?.userId;
+    if (!userId) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
 
     // Get all lifts for the user
     const lifts = await prisma.lift.findMany({

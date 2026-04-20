@@ -8,7 +8,11 @@ const router = Router();
 // GET /api/roadmap
 router.get("/", async (req, res) => {
   try {
-    const userId = req.user!.userId;
+    const userId = req.user?.userId;
+    if (!userId) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
 
     // Get all nodes
     const nodes = await prisma.node.findMany({
@@ -122,7 +126,11 @@ router.get("/", async (req, res) => {
 // POST /api/roadmap/check-unlocks
 router.post("/check-unlocks", async (req, res) => {
   try {
-    const userId = req.user!.userId;
+    const userId = req.user?.userId;
+    if (!userId) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
 
     // Get all nodes
     const nodes = await prisma.node.findMany({

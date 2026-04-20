@@ -1,26 +1,34 @@
 @import "tailwindcss";
 
 :root {
-  --background: #1e1e1e;
-  --foreground: #d4d4d4;
-  --surface: rgba(37, 37, 38, 0.92);
-  --surface-border: rgba(60, 60, 60, 0.9);
-  --primary: #007acc;
-  --primary-glow: rgba(0, 122, 204, 0.35);
-  --secondary: #4ec9b0;
-  --secondary-glow: rgba(78, 201, 176, 0.3);
-  --text-primary: #d4d4d4;
-  --text-secondary: #9aa1a8;
-  --text-muted: #808080;
-  --success: #4ec9b0;
-  --warning: #ce9178;
-  --error: #f14c4c;
+  --background: #111315;
+  --background-soft: #15191f;
+  --foreground: #edf3f7;
+  --surface: rgba(23, 26, 31, 0.94);
+  --surface-elevated: rgba(27, 32, 39, 0.97);
+  --surface-border: rgba(61, 75, 89, 0.72);
+  --primary: #16d9ff;
+  --primary-glow: rgba(22, 217, 255, 0.35);
+  --secondary: #b7ff45;
+  --secondary-glow: rgba(183, 255, 69, 0.22);
+  --text-primary: #edf3f7;
+  --text-secondary: #adc0cd;
+  --text-muted: #7f95a5;
+  --success: #6be9af;
+  --warning: #ffd36a;
+  --error: #ff6b6b;
+  --space-1: 8px;
+  --space-2: 12px;
+  --space-3: 16px;
+  --space-4: 24px;
+  --space-5: 32px;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-surface: var(--surface);
+  --color-surface-elevated: var(--surface-elevated);
   --color-surface-border: var(--surface-border);
   --color-primary: var(--primary);
   --color-primary-glow: var(--primary-glow);
@@ -32,8 +40,8 @@
   --color-success: var(--success);
   --color-warning: var(--warning);
   --color-error: var(--error);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-body);
+  --font-mono: var(--font-metrics);
 }
 
 html {
@@ -41,9 +49,38 @@ html {
 }
 
 body {
-  background: var(--background);
+  background:
+    radial-gradient(
+      circle at 16% 8%,
+      rgba(22, 217, 255, 0.14),
+      transparent 34%
+    ),
+    radial-gradient(
+      circle at 88% 0%,
+      rgba(183, 255, 69, 0.12),
+      transparent 28%
+    ),
+    linear-gradient(180deg, #101317 0%, #12171d 50%, #0f1318 100%);
   color: var(--foreground);
-  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  font-family: var(--font-body), var(--font-geist-sans), system-ui, sans-serif;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family:
+    var(--font-heading), var(--font-geist-sans), system-ui, sans-serif;
+  letter-spacing: -0.01em;
+}
+
+code,
+kbd,
+samp,
+pre {
+  font-family: var(--font-metrics), var(--font-geist-mono), monospace;
 }
 
 /* Custom scrollbar */
@@ -53,25 +90,147 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(24, 24, 27, 0.5);
+  background: rgba(17, 22, 27, 0.65);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(86, 156, 214, 0.55);
+  background: rgba(22, 217, 255, 0.5);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(86, 156, 214, 0.8);
+  background: rgba(22, 217, 255, 0.78);
 }
 
 /* Glassmorphism utility */
 .glass {
-  background: rgba(37, 37, 38, 0.88);
+  background: rgba(23, 26, 31, 0.88);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(60, 60, 60, 0.8);
+  border: 1px solid rgba(61, 75, 89, 0.7);
+}
+
+.lab-shell {
+  min-height: 100vh;
+  color: var(--text-primary);
+}
+
+.lab-panel {
+  border: 1px solid var(--surface-border);
+  background: var(--surface);
+  border-radius: 16px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.02),
+    0 8px 14px rgba(0, 0, 0, 0.16);
+}
+
+.lab-elevated {
+  border: 1px solid rgba(74, 92, 108, 0.82);
+  background: var(--surface-elevated);
+  border-radius: 16px;
+  box-shadow: 0 14px 24px rgba(0, 0, 0, 0.22);
+}
+
+.lab-surface-base {
+  border: 1px solid rgba(67, 81, 95, 0.45);
+  background: rgba(23, 26, 31, 0.82);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.14);
+}
+
+.lab-surface-elevated {
+  border: 1px solid rgba(74, 92, 108, 0.72);
+  background: rgba(27, 32, 39, 0.94);
+  box-shadow: 0 12px 22px rgba(0, 0, 0, 0.2);
+}
+
+.lab-surface-highlight {
+  border: 1px solid rgba(22, 217, 255, 0.55);
+  background:
+    linear-gradient(rgba(14, 25, 32, 0.96), rgba(14, 25, 32, 0.96)),
+    linear-gradient(120deg, rgba(22, 217, 255, 0.2), rgba(183, 255, 69, 0.12));
+  box-shadow: 0 16px 28px rgba(0, 0, 0, 0.24);
+}
+
+.lab-stack-gap-1 {
+  gap: var(--space-1);
+}
+
+.lab-stack-gap-2 {
+  gap: var(--space-2);
+}
+
+.lab-stack-gap-3 {
+  gap: var(--space-3);
+}
+
+.lab-stack-gap-4 {
+  gap: var(--space-4);
+}
+
+.lab-kicker {
+  color: var(--text-secondary);
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.lab-display {
+  font-family:
+    var(--font-heading), var(--font-geist-sans), system-ui, sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+}
+
+.lab-subtle {
+  color: var(--text-secondary);
+}
+
+.lab-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.lab-chip {
+  border: 1px solid rgba(22, 217, 255, 0.33);
+  background: rgba(12, 34, 41, 0.68);
+  color: #abf2ff;
+  border-radius: 9999px;
+  padding: 0.3rem 0.8rem;
+  font-size: 0.72rem;
+}
+
+.lab-btn-primary {
+  border: 1px solid rgba(22, 217, 255, 0.55);
+  background: linear-gradient(135deg, #0f8fb5 0%, #16d9ff 100%);
+  color: #04171d;
+  font-weight: 700;
+  box-shadow: 0 6px 20px rgba(22, 217, 255, 0.28);
+}
+
+.lab-btn-primary:hover {
+  filter: brightness(1.08);
+}
+
+.lab-btn-secondary {
+  border: 1px solid rgba(132, 166, 184, 0.44);
+  background: rgba(18, 25, 31, 0.84);
+  color: var(--text-primary);
+}
+
+.lab-btn-secondary:hover {
+  border-color: rgba(183, 255, 69, 0.55);
+  color: #dcff9d;
+}
+
+.lab-accent-line {
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(22, 217, 255, 0.7) 50%,
+    transparent 100%
+  );
 }
 
 /* 3D tilt effect base */
@@ -85,13 +244,13 @@ body {
   0%,
   100% {
     box-shadow:
-      0 0 18px rgba(0, 122, 204, 0.4),
-      0 0 32px rgba(0, 122, 204, 0.2);
+      0 0 18px rgba(22, 217, 255, 0.36),
+      0 0 32px rgba(22, 217, 255, 0.2);
   }
   50% {
     box-shadow:
-      0 0 28px rgba(0, 122, 204, 0.55),
-      0 0 56px rgba(0, 122, 204, 0.25);
+      0 0 28px rgba(22, 217, 255, 0.5),
+      0 0 56px rgba(22, 217, 255, 0.24);
   }
 }
 
@@ -133,7 +292,7 @@ body {
   inset: -50%;
   background: radial-gradient(
     circle,
-    rgba(0, 122, 204, 0.35) 0%,
+    rgba(22, 217, 255, 0.35) 0%,
     transparent 70%
   );
   animation: radial-glow 1s ease-out forwards;
@@ -148,7 +307,7 @@ body {
 }
 
 .neon-edge {
-  filter: drop-shadow(0 0 4px rgba(0, 122, 204, 0.7));
+  filter: drop-shadow(0 0 4px rgba(22, 217, 255, 0.7));
 }
 
 .neon-edge path {
@@ -164,51 +323,51 @@ body {
 
 /* ReactFlow custom styles */
 .react-flow {
-  --xy-edge-stroke: rgba(86, 156, 214, 0.7);
+  --xy-edge-stroke: rgba(22, 217, 255, 0.62);
   --xy-edge-stroke-width: 2;
-  --xy-handle-background: #007acc;
-  --xy-handle-border-color: #d4d4d4;
+  --xy-handle-background: #16d9ff;
+  --xy-handle-border-color: #edf3f7;
 }
 
 .react-flow__edge-path {
-  stroke: rgba(86, 156, 214, 0.7);
+  stroke: rgba(22, 217, 255, 0.62);
   stroke-width: 2;
 }
 
 .react-flow__edge.animated path {
-  stroke: #4ec9b0;
+  stroke: #b7ff45;
   stroke-dasharray: 5 5;
   animation: edge-dash 1s linear infinite;
 }
 
 .react-flow__minimap {
-  background: rgba(30, 30, 30, 0.92);
-  border: 1px solid rgba(60, 60, 60, 0.7);
+  background: rgba(17, 22, 27, 0.94);
+  border: 1px solid rgba(67, 81, 95, 0.74);
   border-radius: 8px;
 }
 
 .react-flow__controls {
-  background: rgba(37, 37, 38, 0.95);
-  border: 1px solid rgba(60, 60, 60, 0.7);
+  background: rgba(23, 26, 31, 0.95);
+  border: 1px solid rgba(67, 81, 95, 0.74);
   border-radius: 8px;
 }
 
 .react-flow__controls button {
   background: transparent;
-  color: #d4d4d4;
+  color: #edf3f7;
   border: none;
-  border-bottom: 1px solid rgba(60, 60, 60, 0.7);
+  border-bottom: 1px solid rgba(67, 81, 95, 0.72);
 }
 
 .react-flow__controls button:hover {
-  background: rgba(0, 122, 204, 0.2);
+  background: rgba(22, 217, 255, 0.18);
 }
 
 /* Typewriter effect cursor */
 .typewriter-cursor::after {
   content: "|";
   animation: blink 1s step-end infinite;
-  color: #007acc;
+  color: #16d9ff;
 }
 
 @keyframes blink {
