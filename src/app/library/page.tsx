@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Image from "next/image";
 import { Search, X } from "lucide-react";
 import {
   ActionButton,
@@ -8,6 +9,7 @@ import {
   SectionHeader,
 } from "@/components/shared/UIPrimitives";
 import {
+  getExerciseImageDataUrl,
   getBodyPartExerciseCatalog,
   getExerciseDetail,
 } from "@/lib/planEnhancements";
@@ -123,7 +125,18 @@ export default function LibraryPage() {
               <p className="text-sm font-semibold uppercase tracking-[0.2em] text-white/90">
                 {exercise.bodyPart}
               </p>
-              <p className="mt-4 text-3xl">💪</p>
+              <Image
+                src={getExerciseImageDataUrl(
+                  exercise.name,
+                  exercise.bodyPart,
+                  exercise.modality.toLowerCase() as "bodyweight" | "machine",
+                )}
+                alt={`${exercise.name} preview`}
+                width={128}
+                height={72}
+                unoptimized
+                className="mt-2 h-18 w-32 rounded-md border border-white/10 object-cover"
+              />
             </div>
             <div className="space-y-2 bg-bg-surface p-4">
               <p className="font-display text-lg font-semibold text-[#eeeef2]">

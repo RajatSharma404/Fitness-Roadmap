@@ -351,6 +351,14 @@ function buildExerciseImageDataUrl(
   return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
 }
 
+export function getExerciseImageDataUrl(
+  name: string,
+  bodyPart: string,
+  modality: "bodyweight" | "machine",
+): string {
+  return buildExerciseImageDataUrl(name, bodyPart, modality);
+}
+
 function buildGenericExerciseDetail(
   name: string,
   bodyPart: string,

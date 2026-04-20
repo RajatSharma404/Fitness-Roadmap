@@ -21,6 +21,7 @@ The app is organized around a route-first shell rather than one oversized scroll
 The shell includes:
 
 - a persistent sidebar with route navigation and readiness status
+- a branded FitFlow logo in the sidebar header
 - a route-aware top bar that changes title and context by page
 - a shared dark design system with reusable cards, metrics, and action buttons
 - a central content area that loads only the route the user needs
@@ -66,6 +67,7 @@ It includes:
 
 - experience-tier toggles for beginner, intermediate, and advanced sessions
 - day-by-day workout cards with exercise details
+- generated visual previews for each exercise card
 - a workout mode overlay for in-session logging
 - PR logging hooks and set input fields
 
@@ -87,7 +89,7 @@ The library page is a searchable exercise catalog.
 It includes:
 
 - body-part and modality filters
-- exercise cards with preview blocks
+- exercise cards with generated movement previews
 - a slide-over detail view for exercise instructions and alternatives
 
 ### Nutrition
@@ -220,6 +222,8 @@ Design principles:
 Shared UI primitives live in the shared component layer and are used to keep dashboard and roadmap consistent.
 
 The shared shell lives in `src/components/layout/` and is responsible for the sidebar, route-aware header, and readiness ring.
+
+Exercise visuals are generated as SVG images from exercise metadata so every workout item has a consistent thumbnail.
 
 ## Tech Stack
 

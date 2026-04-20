@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
   BookOpen,
@@ -47,13 +48,23 @@ export function Sidebar({
   const navContent = (
     <>
       <div className="flex items-center justify-between gap-3 border-b border-[rgba(255,255,255,0.06)] px-5 py-4">
-        <div>
-          <p className="font-display text-lg font-bold tracking-tight text-[#eeeef2]">
-            FitFlow
-          </p>
-          <p className="text-xs uppercase tracking-[0.2em] text-[#636380]">
-            Performance Console
-          </p>
+        <div className="flex items-center gap-3">
+          <Image
+            src="/logo-fitflow.svg"
+            alt="FitFlow logo"
+            width={44}
+            height={44}
+            className="h-11 w-11 rounded-xl"
+            priority
+          />
+          <div>
+            <p className="font-display text-lg font-bold tracking-tight text-[#eeeef2]">
+              FitFlow
+            </p>
+            <p className="text-xs uppercase tracking-[0.2em] text-[#636380]">
+              Performance Console
+            </p>
+          </div>
         </div>
         <button
           type="button"

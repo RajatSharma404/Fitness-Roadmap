@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Image from "next/image";
 import { Play, ChevronDown, ChevronUp, CircleCheckBig } from "lucide-react";
 import {
   ActionButton,
@@ -8,7 +9,10 @@ import {
   SectionHeader,
 } from "@/components/shared/UIPrimitives";
 import { calculateBodyPlan } from "@/lib/bodyPlanner";
-import { getAdaptiveGymProgression } from "@/lib/planEnhancements";
+import {
+  getAdaptiveGymProgression,
+  getExerciseDetail,
+} from "@/lib/planEnhancements";
 import { defaultPlannerSnapshot } from "@/lib/plannerView";
 import { cn } from "@/lib/cn";
 
@@ -130,19 +134,33 @@ export default function WorkoutsPage() {
           </div>
 
           <div className="space-y-3">
-            {activeDay.exercises.map((exercise) => (
+            {activeDay.exercises.map((exercise) => {
+              const detail = getExerciseDetail(exercise);
+
+              return (
               <div
                 key={exercise}
                 className="rounded-xl border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] p-4"
               >
                 <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <p className="font-display text-lg font-semibold text-[#eeeef2]">
-                      {exercise}
-                    </p>
-                    <p className="text-xs uppercase tracking-[0.2em] text-[#636380]">
-                      {activeDay.setsReps}
-                    </p>
+                  <div className="flex items-center gap-3">
+                    <Image
+                      src={detail.imageUrl}
+                      alt={detail.imageAlt}
+                      width={96}
+                      height={68}
+                      unoptimized
+                      className="h-17 w-24 rounded-lg border border-[rgba(255,255,255,0.08)] object-cover"
+                    />
+                    <div>
+                      <p className="font-display text-lg font-semibold text-[#eeeef2]">
+                </div>
+                );
+              })}
+                      <p className="text-xs uppercase tracking-[0.2em] text-[#636380]">
+                        {activeDay.setsReps}
+                      </p>
+                    </div>
                   </div>
                   <div className="flex items-center gap-2">
                     <ActionButton variant="secondary">Log PR</ActionButton>
@@ -210,24 +228,38 @@ export default function WorkoutsPage() {
               </button>
             </div>
             <div className="flex-1 overflow-y-auto p-5 space-y-4">
-              {activeDay.exercises.map((exercise) => (
+              {activeDay.exercises.map((exercise) => {
+                const detail = getExerciseDetail(exercise);
+
+                return (
                 <div
                   key={exercise}
                   className="rounded-2xl border border-[rgba(255,255,255,0.06)] bg-bg-surface p-4"
                 >
                   <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <p className="font-display text-xl font-semibold text-[#eeeef2]">
-                        {exercise}
-                      </p>
-                      <p className="text-sm text-[#636380]">
-                        {activeDay.setsReps}
-                      </p>
+                    <div className="flex items-center gap-3">
+                      <Image
+                        src={detail.imageUrl}
+                        alt={detail.imageAlt}
+                        width={72}
+                        height={52}
+                        unoptimized
+                        className="h-13 w-18 rounded-md border border-[rgba(255,255,255,0.08)] object-cover"
+                      />
+                      <div>
+                        <p className="font-display text-xl font-semibold text-[#eeeef2]">
+                          {exercise}
+                        </p>
+                        <p className="text-sm text-[#636380]">
+                          {activeDay.setsReps}
+                        </p>
+                      </div>
                     </div>
                     <CircleCheckBig className="h-5 w-5 text-green-300" />
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </div>
