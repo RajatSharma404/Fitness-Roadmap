@@ -339,6 +339,12 @@ The generator applies body-part-specific palettes, motifs, and pose highlights f
 - `GET /api/auth/[...nextauth]` - NextAuth handler
 - `POST /api/auth/[...nextauth]` - NextAuth handler
 
+Implementation note for Open Graph route:
+
+- keep the App Router entry at `src/app/api/og/route.ts`
+- keep OG JSX/template logic in `src/app/api/og/og-image.tsx`
+- export `runtime` directly from `route.ts` so Next.js can statically analyze route config during build
+
 ### Express routes
 
 The Express server exposes routes for:
@@ -447,6 +453,14 @@ Start the production services:
 npm run start
 npm run start:api
 ```
+
+### Build troubleshooting
+
+If build fails with `Failed to collect page data for /api/og` or a `PageNotFoundError` for `/api/og`:
+
+- ensure the handler file is `src/app/api/og/route.ts` (not `route.tsx`)
+- keep route metadata exports (for example `runtime`) inside `route.ts`
+- if rendering logic uses JSX, move it into a separate module such as `src/app/api/og/og-image.tsx` and re-export only the handler from `route.ts`
 
 ## Docker
 

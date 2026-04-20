@@ -46,9 +46,6 @@ export function useLazyImage(src: string) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Start with placeholder immediately
-    setImageSrc(src);
-
     const img = new Image();
     img.src = src;
 

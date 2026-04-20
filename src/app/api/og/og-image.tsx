@@ -2,8 +2,6 @@ import { ImageResponse } from "next/og";
 import { NextRequest } from "next/server";
 import { z } from "zod";
 
-export const runtime = "edge";
-
 const profileSchema = z.object({
   name: z.string().optional(),
   goal: z.string().optional(),

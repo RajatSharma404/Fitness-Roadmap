@@ -138,66 +138,69 @@ export default function WorkoutsPage() {
               const detail = getExerciseDetail(exercise);
 
               return (
-              <div
-                key={exercise}
-                className="rounded-xl border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] p-4"
-              >
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <Image
-                      src={detail.imageUrl}
-                      alt={detail.imageAlt}
-                      width={96}
-                      height={68}
-                      unoptimized
-                      className="h-17 w-24 rounded-lg border border-[rgba(255,255,255,0.08)] object-cover"
-                    />
-                    <div>
-                      <p className="font-display text-lg font-semibold text-[#eeeef2]">
-                </div>
-                );
-              })}
-                      <p className="text-xs uppercase tracking-[0.2em] text-[#636380]">
-                        {activeDay.setsReps}
-                      </p>
+                <div
+                  key={exercise}
+                  className="rounded-xl border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] p-4"
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <Image
+                        src={detail.imageUrl}
+                        alt={detail.imageAlt}
+                        width={96}
+                        height={68}
+                        unoptimized
+                        className="h-17 w-24 rounded-lg border border-[rgba(255,255,255,0.08)] object-cover"
+                      />
+                      <div>
+                        <p className="font-display text-lg font-semibold text-[#eeeef2]">
+                          {exercise}
+                        </p>
+                        <p className="text-xs uppercase tracking-[0.2em] text-[#636380]">
+                          {detail.bodyPart}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <ActionButton variant="secondary">Log PR</ActionButton>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setExpandedExercise((current) =>
+                            current === exercise ? null : exercise,
+                          )
+                        }
+                        className="rounded-md border border-[rgba(255,255,255,0.06)] px-3 py-2 text-sm text-[#eeeef2]"
+                      >
+                        {expandedExercise === exercise ? (
+                          <ChevronUp className="h-4 w-4" />
+                        ) : (
+                          <ChevronDown className="h-4 w-4" />
+                        )}
+                      </button>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <ActionButton variant="secondary">Log PR</ActionButton>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setExpandedExercise((current) =>
-                          current === exercise ? null : exercise,
-                        )
-                      }
-                      className="rounded-md border border-[rgba(255,255,255,0.06)] px-3 py-2 text-sm text-[#eeeef2]"
-                    >
-                      {expandedExercise === exercise ? (
-                        <ChevronUp className="h-4 w-4" />
-                      ) : (
-                        <ChevronDown className="h-4 w-4" />
-                      )}
-                    </button>
-                  </div>
-                </div>
 
-                {expandedExercise === exercise ? (
-                  <div className="mt-4 grid gap-2 md:grid-cols-3">
-                    {[1, 2, 3].map((setIndex) => (
-                      <label key={setIndex} className="text-xs text-[#636380]">
-                        Set {setIndex}
-                        <input
-                          type="text"
-                          placeholder="Weight × Reps"
-                          className="mt-1 w-full rounded-md border border-[rgba(255,255,255,0.06)] bg-bg-surface px-3 py-2 text-[#eeeef2]"
-                        />
-                      </label>
-                    ))}
-                  </div>
-                ) : null}
-              </div>
-            ))}
+                  {expandedExercise === exercise ? (
+                    <div className="mt-4 grid gap-2 md:grid-cols-3">
+                      {[1, 2, 3].map((setIndex) => (
+                        <label
+                          key={setIndex}
+                          className="text-xs text-[#636380]"
+                        >
+                          Set {setIndex}
+                          <input
+                            type="text"
+                            placeholder="Weight × Reps"
+                            className="mt-1 w-full rounded-md border border-[rgba(255,255,255,0.06)] bg-bg-surface px-3 py-2 text-[#eeeef2]"
+                          />
+                        </label>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
+              );
+            })}
           </div>
 
           <ActionButton
@@ -232,32 +235,32 @@ export default function WorkoutsPage() {
                 const detail = getExerciseDetail(exercise);
 
                 return (
-                <div
-                  key={exercise}
-                  className="rounded-2xl border border-[rgba(255,255,255,0.06)] bg-bg-surface p-4"
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <Image
-                        src={detail.imageUrl}
-                        alt={detail.imageAlt}
-                        width={72}
-                        height={52}
-                        unoptimized
-                        className="h-13 w-18 rounded-md border border-[rgba(255,255,255,0.08)] object-cover"
-                      />
-                      <div>
-                        <p className="font-display text-xl font-semibold text-[#eeeef2]">
-                          {exercise}
-                        </p>
-                        <p className="text-sm text-[#636380]">
-                          {activeDay.setsReps}
-                        </p>
+                  <div
+                    key={exercise}
+                    className="rounded-2xl border border-[rgba(255,255,255,0.06)] bg-bg-surface p-4"
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <Image
+                          src={detail.imageUrl}
+                          alt={detail.imageAlt}
+                          width={72}
+                          height={52}
+                          unoptimized
+                          className="h-13 w-18 rounded-md border border-[rgba(255,255,255,0.08)] object-cover"
+                        />
+                        <div>
+                          <p className="font-display text-xl font-semibold text-[#eeeef2]">
+                            {exercise}
+                          </p>
+                          <p className="text-sm text-[#636380]">
+                            {activeDay.setsReps}
+                          </p>
+                        </div>
                       </div>
+                      <CircleCheckBig className="h-5 w-5 text-green-300" />
                     </div>
-                    <CircleCheckBig className="h-5 w-5 text-green-300" />
                   </div>
-                </div>
                 );
               })}
             </div>

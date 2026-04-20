@@ -8,7 +8,11 @@ import {
   Card,
   SectionHeader,
 } from "@/components/shared/UIPrimitives";
-import { Skeleton, LibraryGridSkeleton, DetailPanelSkeleton } from "@/components/shared/Skeleton";
+import {
+  Skeleton,
+  LibraryGridSkeleton,
+  DetailPanelSkeleton,
+} from "@/components/shared/Skeleton";
 import { useLazyLoad } from "@/hooks/useLazyLoad";
 import {
   getExerciseImageDataUrl,
@@ -61,9 +65,9 @@ export default function LibraryPage() {
   const [selectedType, setSelectedType] = useState<string>("All");
   const [query, setQuery] = useState("");
   const [activeExercise, setActiveExercise] = useState<string | null>(null);
-  const [addedExercises, setAddedExercises] = useState<Set<string>>(new Set());
-  const [activeIndex, setActiveIndex] = useState<number>(-1);
-  const [isFiltering, setIsFiltering] = useState(false);
+  const [addedExercises, setAddedExercises] = useState<Set<string>>(() =>
+    parseAddedExercises(),
+  );
 
   const exercises = useMemo(() => {
     const entries = catalog.flatMap((entry) => [
@@ -98,18 +102,6 @@ export default function LibraryPage() {
     ? getExerciseDetail(activeExercise)
     : null;
 
-  // Show skeleton briefly when filters change
-  useEffect(() => {
-    setIsFiltering(true);
-    const timer = setTimeout(() => setIsFiltering(false), 100);
-    return () => clearTimeout(timer);
-  }, [selectedBodyPart, selectedModality, selectedType, query]);
-
-  // Load added exercises on mount
-  useEffect(() => {
-    setAddedExercises(parseAddedExercises());
-  }, []);
-
   // Handle keyboard navigation and Esc to close
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -120,32 +112,27 @@ export default function LibraryPage() {
 
       if (!activeExercise) return;
 
+      const currentIndex = exercises.findIndex(
+        (ex) => ex.name === activeExercise,
+      );
+      if (currentIndex < 0) return;
+
       if (event.key === "ArrowRight" || event.key === "ArrowDown") {
         event.preventDefault();
-        const nextIndex = (activeIndex + 1) % exercises.length;
-        setActiveIndex(nextIndex);
+        const nextIndex = (currentIndex + 1) % exercises.length;
         setActiveExercise(exercises[nextIndex]?.name ?? null);
       }
 
       if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
         event.preventDefault();
         const prevIndex =
-          activeIndex - 1 < 0 ? exercises.length - 1 : activeIndex - 1;
-        setActiveIndex(prevIndex);
+          currentIndex - 1 < 0 ? exercises.length - 1 : currentIndex - 1;
         setActiveExercise(exercises[prevIndex]?.name ?? null);
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [activeExercise, activeIndex, exercises]);
-
-  // Update activeIndex when exercises change or activeExercise changes
-  useEffect(() => {
-    if (activeExercise) {
-      const idx = exercises.findIndex((ex) => ex.name === activeExercise);
-      setActiveIndex(idx);
-    }
   }, [activeExercise, exercises]);
 
   function handleAddToWorkout() {
@@ -219,37 +206,156 @@ export default function LibraryPage() {
         </div>
       </Card>
 
-      {isFiltering ? (
-        <LibraryGridSkeleton count={12} />
-      ) : (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {exercises.length === 0 ? (
-            <div className="col-span-full flex flex-col items-center justify-center gap-4 py-12">
-              <p className="text-center text-[#636380]">No exercises match your filters.</p>
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        {exercises.length === 0 ? (
+          <div className="col-span-full flex flex-col items-center justify-center gap-4 py-12">
+            <p className="text-center text-[#636380]">
+              No exercises match your filters.
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                setQuery("");
+                setSelectedBodyPart("All");
+                setSelectedModality("All");
+                setSelectedType("All");
+              }}
+              className="rounded-lg border border-cyan-400/40 px-4 py-2 text-sm text-cyan-300 hover:bg-cyan-400/5"
+            >
+              Reset filters
+            </button>
+          </div>
+        ) : (
+          exercises.map((exercise, index) => (
+            <ExerciseCardWithLazyLoad
+              key={`${exercise.bodyPart}-${exercise.modality}-${exercise.name}-${index}`}
+              exercise={exercise}
+              onSelect={() => setActiveExercise(exercise.name)}
+            />
+          ))
+        )}
+      </div>
+
+      {activeDetail ? (
+        <div
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm"
+          onClick={() => setActiveExercise(null)}
+        >
+          <div
+            className="absolute right-0 top-0 h-full w-full max-w-md overflow-y-auto border-l border-[rgba(255,255,255,0.06)] bg-bg-elevated p-6"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="lab-kicker text-[#60a5fa]">Exercise</p>
+                <h3 className="font-display text-2xl font-bold text-[#eeeef2]">
+                  {activeDetail.name}
+                </h3>
+              </div>
               <button
                 type="button"
-                onClick={() => {
-                  setQuery("");
-                  setSelectedBodyPart("All");
-                  setSelectedModality("All");
-                  setSelectedType("All");
-                }}
-                className="rounded-lg border border-cyan-400/40 px-4 py-2 text-sm text-cyan-300 hover:bg-cyan-400/5"
+                onClick={() => setActiveExercise(null)}
+                className="rounded-md border border-[rgba(255,255,255,0.06)] p-2 text-[#eeeef2]"
               >
-                Reset filters
+                <X className="h-4 w-4" />
               </button>
             </div>
-          ) : (
-            exercises.map((exercise, index) => (
-              <ExerciseCardWithLazyLoad
-                key={`${exercise.bodyPart}-${exercise.modality}-${exercise.name}-${index}`}
-                exercise={exercise}
-                onSelect={() => setActiveExercise(exercise.name)}
-              />
-            ))
-          )}
+
+            <div className="mt-4 space-y-4 text-sm text-[#636380]">
+              <Card level="base" className="overflow-hidden p-0">
+                <Image
+                  src={activeDetail.imageUrl}
+                  alt={activeDetail.imageAlt}
+                  width={720}
+                  height={420}
+                  unoptimized
+                  className="h-48 w-full object-cover"
+                  onError={(e) => {
+                    // Fallback: ensure SVG displays if photo fails
+                    const img = e.target as HTMLImageElement;
+                    if (img.src !== activeDetail.imageUrl) {
+                      img.src = activeDetail.imageUrl;
+                    }
+                  }}
+                />
+              </Card>
+              {activeExercise && addedExercises.has(activeExercise) && (
+                <div className="rounded-md border border-green-500/30 bg-green-500/10 p-2 text-xs text-green-300">
+                  ✓ Added to your workout
+                </div>
+              )}
+              <Card level="base">
+                <p className="text-xs uppercase tracking-[0.2em]">Muscle</p>
+                <p className="mt-1 text-[#eeeef2]">{activeDetail.bodyPart}</p>
+                <p className="mt-2 text-xs uppercase tracking-[0.2em]">
+                  Recommended Reps
+                </p>
+                <p className="mt-1 text-[#eeeef2]">
+                  {activeDetail.recommendedReps}
+                </p>
+                <p className="mt-2 text-xs uppercase tracking-[0.2em]">Type</p>
+                <div className="mt-1 inline-flex rounded-full bg-lime-400/10 px-2 py-1 text-xs text-lime-300">
+                  {activeDetail.exerciseType === "compound" ? "💪" : "🎯"}{" "}
+                  {activeDetail.exerciseType}
+                </div>
+              </Card>
+              <Card level="base">
+                <p className="text-xs uppercase tracking-[0.2em]">
+                  Instructions
+                </p>
+                <ol className="mt-2 space-y-2 text-[#eeeef2]">
+                  {activeDetail.howTo.map((step, index) => (
+                    <li key={step} className="flex gap-2">
+                      <span className="text-cyan-300">{index + 1}.</span>
+                      <span>{step}</span>
+                    </li>
+                  ))}
+                </ol>
+              </Card>
+              <Card level="base">
+                <p className="text-xs uppercase tracking-[0.2em]">Form Cues</p>
+                <ul className="mt-2 space-y-2 text-[#eeeef2]">
+                  {activeDetail.commonMistakes.map((mistake) => (
+                    <li key={mistake}>• {mistake}</li>
+                  ))}
+                </ul>
+              </Card>
+              <Card level="base">
+                <p className="text-xs uppercase tracking-[0.2em]">
+                  Related Exercises
+                </p>
+                <div className="mt-2 space-y-1">
+                  {getRelatedExercises(activeDetail.name, 3).map((related) => (
+                    <button
+                      key={related}
+                      type="button"
+                      onClick={() => setActiveExercise(related)}
+                      className="block w-full text-left rounded-md border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] p-2 text-sm text-cyan-300 transition hover:border-cyan-400/40 hover:bg-cyan-400/5"
+                    >
+                      {related}
+                    </button>
+                  ))}
+                </div>
+              </Card>
+              <ActionButton
+                className="w-full"
+                onClick={handleAddToWorkout}
+                disabled={Boolean(
+                  activeExercise && addedExercises.has(activeExercise),
+                )}
+              >
+                <Plus className="h-4 w-4" />
+                {activeExercise && addedExercises.has(activeExercise)
+                  ? "Added to Workout"
+                  : "Add to Workout"}
+              </ActionButton>
+              <p className="text-xs text-[#636380]">
+                💡 Use arrow keys to navigate · Esc to close
+              </p>
+            </div>
+          </div>
         </div>
-      )}
+      ) : null}
     </div>
   );
 }
@@ -258,7 +364,11 @@ function ExerciseCardWithLazyLoad({
   exercise,
   onSelect,
 }: {
-  exercise: { name: string; bodyPart: string; modality: "Bodyweight" | "Machine" };
+  exercise: {
+    name: string;
+    bodyPart: string;
+    modality: "Bodyweight" | "Machine";
+  };
   onSelect: () => void;
 }) {
   const { ref, isInView } = useLazyLoad({ threshold: 0.1 });
@@ -337,126 +447,6 @@ function ExerciseCardWithLazyLoad({
           </div>
         </div>
       )}
-    </div>
-  );
-}
-        <div
-          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm"
-          onClick={() => setActiveExercise(null)}
-        >
-          <div
-            className="absolute right-0 top-0 h-full w-full max-w-md overflow-y-auto border-l border-[rgba(255,255,255,0.06)] bg-bg-elevated p-6"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="lab-kicker text-[#60a5fa]">Exercise</p>
-                <h3 className="font-display text-2xl font-bold text-[#eeeef2]">
-                  {activeDetail.name}
-                </h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setActiveExercise(null)}
-                className="rounded-md border border-[rgba(255,255,255,0.06)] p-2 text-[#eeeef2]"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-
-            <div className="mt-4 space-y-4 text-sm text-[#636380]">
-              <Card level="base" className="overflow-hidden p-0">
-                <Image
-                  src={activeDetail.imageUrl}
-                  alt={activeDetail.imageAlt}
-                  width={720}
-                  height={420}
-                  unoptimized
-                  className="h-48 w-full object-cover"
-                  onError={(e) => {
-                    // Fallback: ensure SVG displays if photo fails
-                    const img = e.target as HTMLImageElement;
-                    if (img.src !== activeDetail.imageUrl) {
-                      img.src = activeDetail.imageUrl;
-                    }
-                  }}
-                />
-              </Card>
-              {addedExercises.has(activeExercise) && (
-                <div className="rounded-md border border-green-500/30 bg-green-500/10 p-2 text-xs text-green-300">
-                  ✓ Added to your workout
-                </div>
-              )}
-              <Card level="base">
-                <p className="text-xs uppercase tracking-[0.2em]">Muscle</p>
-                <p className="mt-1 text-[#eeeef2]">{activeDetail.bodyPart}</p>
-                <p className="mt-2 text-xs uppercase tracking-[0.2em]">
-                  Recommended Reps
-                </p>
-                <p className="mt-1 text-[#eeeef2]">
-                  {activeDetail.recommendedReps}
-                </p>
-                <p className="mt-2 text-xs uppercase tracking-[0.2em]">Type</p>
-                <div className="mt-1 inline-flex rounded-full bg-lime-400/10 px-2 py-1 text-xs text-lime-300">
-                  {activeDetail.exerciseType === "compound" ? "💪" : "🎯"}{" "}
-                  {activeDetail.exerciseType}
-                </div>
-              </Card>
-              <Card level="base">
-                <p className="text-xs uppercase tracking-[0.2em]">
-                  Instructions
-                </p>
-                <ol className="mt-2 space-y-2 text-[#eeeef2]">
-                  {activeDetail.howTo.map((step, index) => (
-                    <li key={step} className="flex gap-2">
-                      <span className="text-cyan-300">{index + 1}.</span>
-                      <span>{step}</span>
-                    </li>
-                  ))}
-                </ol>
-              </Card>
-              <Card level="base">
-                <p className="text-xs uppercase tracking-[0.2em]">Form Cues</p>
-                <ul className="mt-2 space-y-2 text-[#eeeef2]">
-                  {activeDetail.commonMistakes.map((mistake) => (
-                    <li key={mistake}>• {mistake}</li>
-                  ))}
-                </ul>
-              </Card>
-              <Card level="base">
-                <p className="text-xs uppercase tracking-[0.2em]">
-                  Related Exercises
-                </p>
-                <div className="mt-2 space-y-1">
-                  {getRelatedExercises(activeExercise, 3).map((related) => (
-                    <button
-                      key={related}
-                      type="button"
-                      onClick={() => setActiveExercise(related)}
-                      className="block w-full text-left rounded-md border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] p-2 text-sm text-cyan-300 transition hover:border-cyan-400/40 hover:bg-cyan-400/5"
-                    >
-                      {related}
-                    </button>
-                  ))}
-                </div>
-              </Card>
-              <ActionButton
-                className="w-full"
-                onClick={handleAddToWorkout}
-                disabled={addedExercises.has(activeExercise)}
-              >
-                <Plus className="h-4 w-4" />
-                {addedExercises.has(activeExercise)
-                  ? "Added to Workout"
-                  : "Add to Workout"}
-              </ActionButton>
-              <p className="text-xs text-[#636380]">
-                💡 Use arrow keys to navigate · Esc to close
-              </p>
-            </div>
-          </div>
-        </div>
-      ) : null}
     </div>
   );
 }
