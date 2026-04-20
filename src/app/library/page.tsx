@@ -8,28 +8,15 @@ import {
   Card,
   SectionHeader,
 } from "@/components/shared/UIPrimitives";
-import {
-  Skeleton,
-  LibraryGridSkeleton,
-  DetailPanelSkeleton,
-} from "@/components/shared/Skeleton";
+import { Skeleton } from "@/components/shared/Skeleton";
 import { useLazyLoad } from "@/hooks/useLazyLoad";
 import {
   getExerciseImageDataUrl,
   getBodyPartExerciseCatalog,
   getExerciseDetail,
+  getExerciseSearchTerms,
   getRelatedExercises,
 } from "@/lib/planEnhancements";
-
-function getExercisePhotoUrl(exerciseName: string, bodyPart: string): string {
-  // Try to load real photo, fallback to generated SVG
-  const photoName = exerciseName
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-  // Return pattern that can be extended with real images in public/exercises/
-  return `/exercises/${photoName}.jpg`; // Falls back gracefully with error boundary
-}
 
 function parseAddedExercises(): Set<string> {
   if (typeof window === "undefined") return new Set();
@@ -46,18 +33,6 @@ function saveAddedExercises(exercises: Set<string>): void {
   localStorage.setItem("addedExercises", JSON.stringify(Array.from(exercises)));
 }
 
-const bodyPartColors: Record<string, string> = {
-  Chest: "from-sky-500/50 to-cyan-400/20",
-  Back: "from-violet-500/50 to-fuchsia-400/20",
-  Shoulders: "from-amber-500/50 to-yellow-400/20",
-  Biceps: "from-emerald-500/50 to-green-400/20",
-  Triceps: "from-rose-500/50 to-red-400/20",
-  Legs: "from-lime-500/50 to-green-400/20",
-  Hamstrings: "from-teal-500/50 to-cyan-400/20",
-  Glutes: "from-pink-500/50 to-rose-400/20",
-  Core: "from-blue-500/50 to-indigo-400/20",
-};
-
 export default function LibraryPage() {
   const catalog = useMemo(() => getBodyPartExerciseCatalog(), []);
   const [selectedBodyPart, setSelectedBodyPart] = useState<string>("All");
@@ -68,6 +43,11 @@ export default function LibraryPage() {
   const [addedExercises, setAddedExercises] = useState<Set<string>>(() =>
     parseAddedExercises(),
   );
+  const [scrollTop, setScrollTop] = useState(0);
+
+  const VIRTUAL_ROW_HEIGHT = 152;
+  const VIRTUAL_VIEWPORT_HEIGHT = 640;
+  const VIRTUAL_OVERSCAN = 6;
 
   const exercises = useMemo(() => {
     const entries = catalog.flatMap((entry) => [
@@ -91,9 +71,17 @@ export default function LibraryPage() {
       const typeMatch =
         selectedType === "All" ||
         getExerciseDetail(exercise.name).exerciseType === selectedType;
-      const queryMatch = exercise.name
+      const normalizedQuery = query
         .toLowerCase()
-        .includes(query.toLowerCase());
+        .replace(/[\-_/]+/g, " ")
+        .replace(/[^a-z0-9 ]+/g, "")
+        .replace(/\s+/g, " ")
+        .trim();
+      const queryMatch =
+        normalizedQuery.length === 0 ||
+        getExerciseSearchTerms(exercise.name).some((term) =>
+          term.includes(normalizedQuery),
+        );
       return bodyMatch && modalityMatch && typeMatch && queryMatch;
     });
   }, [catalog, query, selectedBodyPart, selectedModality, selectedType]);
@@ -101,6 +89,18 @@ export default function LibraryPage() {
   const activeDetail = activeExercise
     ? getExerciseDetail(activeExercise)
     : null;
+
+  const startIndex = Math.max(
+    0,
+    Math.floor(scrollTop / VIRTUAL_ROW_HEIGHT) - VIRTUAL_OVERSCAN,
+  );
+  const endIndex = Math.min(
+    exercises.length,
+    Math.ceil((scrollTop + VIRTUAL_VIEWPORT_HEIGHT) / VIRTUAL_ROW_HEIGHT) +
+      VIRTUAL_OVERSCAN,
+  );
+  const visibleExercises = exercises.slice(startIndex, endIndex);
+  const virtualTotalHeight = exercises.length * VIRTUAL_ROW_HEIGHT;
 
   // Handle keyboard navigation and Esc to close
   useEffect(() => {
@@ -206,35 +206,59 @@ export default function LibraryPage() {
         </div>
       </Card>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {exercises.length === 0 ? (
-          <div className="col-span-full flex flex-col items-center justify-center gap-4 py-12">
-            <p className="text-center text-[#636380]">
-              No exercises match your filters.
-            </p>
-            <button
-              type="button"
-              onClick={() => {
-                setQuery("");
-                setSelectedBodyPart("All");
-                setSelectedModality("All");
-                setSelectedType("All");
-              }}
-              className="rounded-lg border border-cyan-400/40 px-4 py-2 text-sm text-cyan-300 hover:bg-cyan-400/5"
-            >
-              Reset filters
-            </button>
+      {exercises.length === 0 ? (
+        <div className="flex flex-col items-center justify-center gap-4 py-12">
+          <p className="text-center text-[#636380]">
+            No exercises match your filters.
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              setQuery("");
+              setSelectedBodyPart("All");
+              setSelectedModality("All");
+              setSelectedType("All");
+            }}
+            className="rounded-lg border border-cyan-400/40 px-4 py-2 text-sm text-cyan-300 hover:bg-cyan-400/5"
+          >
+            Reset filters
+          </button>
+        </div>
+      ) : (
+        <Card level="base" className="space-y-3 p-3">
+          <div className="flex items-center justify-between px-1 text-xs uppercase tracking-[0.16em] text-[#636380]">
+            <span>{exercises.length} exercises</span>
+            <span>Virtualized list active</span>
           </div>
-        ) : (
-          exercises.map((exercise, index) => (
-            <ExerciseCardWithLazyLoad
-              key={`${exercise.bodyPart}-${exercise.modality}-${exercise.name}-${index}`}
-              exercise={exercise}
-              onSelect={() => setActiveExercise(exercise.name)}
-            />
-          ))
-        )}
-      </div>
+          <div
+            className="h-[640px] overflow-y-auto rounded-xl border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] p-2"
+            onScroll={(event) => setScrollTop(event.currentTarget.scrollTop)}
+          >
+            <div style={{ height: virtualTotalHeight, position: "relative" }}>
+              {visibleExercises.map((exercise, offset) => {
+                const index = startIndex + offset;
+                return (
+                  <div
+                    key={`${exercise.bodyPart}-${exercise.modality}-${exercise.name}-${index}`}
+                    style={{
+                      position: "absolute",
+                      top: index * VIRTUAL_ROW_HEIGHT,
+                      left: 0,
+                      right: 0,
+                      paddingBottom: 8,
+                    }}
+                  >
+                    <ExerciseCardWithLazyLoad
+                      exercise={exercise}
+                      onSelect={() => setActiveExercise(exercise.name)}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </Card>
+      )}
 
       {activeDetail ? (
         <div

@@ -71,6 +71,8 @@ It includes:
 - generated visual previews for each exercise card
 - per-muscle art styles so chest, back, legs, glutes, core, and arms all render with distinct themes
 - a workout mode overlay for in-session logging
+- completion toggles for each exercise inside workout mode
+- **workout session persistence to Prisma** via authenticated API (`/api/workout-sessions`)
 - PR logging hooks and set input fields
 
 ### Check-ins
@@ -92,6 +94,8 @@ It includes:
 
 - body-part and modality filters
 - **compound vs isolation exercise classification** for movement type filtering
+- **exercise alias search** so synonyms resolve naturally (for example `pull-ups` -> `pullup`, `bench press` -> `barbell bench press`)
+- **virtualized rendering window** so only visible exercise cards stay mounted for large catalogs
 - **skeleton loading states** while filters change and cards render
 - **IntersectionObserver lazy loading** — exercise cards only render when scrolled into view
 - **image skeleton placeholders** that fade to the full SVG/photo when loaded
@@ -163,6 +167,7 @@ Capabilities include:
 - per-day exercise lists
 - a workout session timer
 - per-exercise set counting in the execution mode
+- persisted workout completion history stored in Prisma for signed-in users
 - lazy-loaded exercise thumbnails and detail drawers
 - movement instructions, common mistakes, alternatives, target muscles, and rep guidance
 
@@ -186,7 +191,7 @@ The app implements several techniques to keep the experience smooth at scale:
 - **Image skeleton fading** — placeholder skeletons fade out as SVG/photo images load, improving perceived performance
 - **Memoized calculations** — exercise filtering and catalog building use `useMemo` to avoid unnecessary re-renders
 - **Dynamic imports** — Monaco editor for PR logging is dynamically imported to reduce initial bundle size
-- **Virtualization-ready** — architecture supports later virtualization of large lists without refactoring
+- **Virtualized exercise list rendering** — library cards are windowed so only visible rows stay mounted in the DOM
 
 ### Nutrition planning
 
@@ -232,6 +237,7 @@ The app uses layered persistence:
 
 - localStorage for offline-first state recovery
 - authenticated user-plan-state API sync when signed in
+- authenticated workout-session persistence API for completed workout logs
 - Prisma/PostgreSQL for long-term storage
 - the route pages initialize from a deterministic snapshot so server and client renders stay aligned before hydration
 
@@ -336,6 +342,8 @@ The generator applies body-part-specific palettes, motifs, and pose highlights f
 - `GET /api/og` - Open Graph image generation
 - `GET /api/user-plan-state` - fetch the current saved plan state
 - `POST /api/user-plan-state` - save the current plan state
+- `GET /api/workout-sessions` - fetch recent saved workout sessions for the signed-in user
+- `POST /api/workout-sessions` - save a completed workout session to Prisma
 - `GET /api/auth/[...nextauth]` - NextAuth handler
 - `POST /api/auth/[...nextauth]` - NextAuth handler
 

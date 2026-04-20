@@ -712,6 +712,48 @@ function getExerciseType(name: string): "compound" | "isolation" {
   return "compound"; // Default to compound for unknown exercises
 }
 
+const exerciseAliasMap: Record<string, string[]> = {
+  "pull-up": ["pullup", "pull ups", "pullups", "chin over bar"],
+  "chin-up": ["chinup", "chin ups", "chinups", "underhand pull-up"],
+  "barbell bench press": ["bench press", "flat bench", "bb bench"],
+  "flat dumbbell press": ["dumbbell bench press", "db bench", "flat db press"],
+  "incline barbell press": ["incline bench", "incline barbell bench"],
+  "machine chest press": ["chest press machine", "seated chest press"],
+  "romanian deadlift": ["rdl", "romanian dl"],
+  "stiff-leg deadlift": ["stiff leg deadlift", "sldl"],
+  "lat pulldown": ["lat pull down", "pulldown", "lat pull"],
+  "seated cable row": ["cable row", "seated row"],
+  "one-arm dumbbell row": ["single arm row", "one arm row", "db row"],
+  "overhead press": ["ohp", "shoulder press", "military press"],
+  "seated shoulder press": ["machine shoulder press", "seated ohp"],
+  "bodyweight squat": ["air squat", "bw squat"],
+  "bulgarian split squat": ["bss", "rear foot elevated split squat"],
+  "walking lunge": ["walking lunges", "lunge walk"],
+  "cable triceps pushdown": [
+    "tricep pushdown",
+    "triceps push down",
+    "cable pushdown",
+  ],
+  "rope triceps pressdown": ["rope pushdown", "rope tricep pushdown"],
+  "hanging knee raise": ["knee raise", "captain chair knee raise"],
+  "hanging leg raise": ["leg raise", "toes to bar progression"],
+};
+
+function normalizeExerciseSearchTerm(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/[\-_/]+/g, " ")
+    .replace(/[^a-z0-9 ]+/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+export function getExerciseSearchTerms(name: string): string[] {
+  const canonical = normalizeExerciseSearchTerm(name);
+  const mappedAliases = exerciseAliasMap[canonical] ?? [];
+  return [canonical, ...mappedAliases.map(normalizeExerciseSearchTerm)];
+}
+
 const exerciseLibrary: Record<string, Omit<ExerciseDetail, "name">> = {
   "Flat dumbbell press": {
     bodyPart: "Chest",

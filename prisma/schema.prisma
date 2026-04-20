@@ -26,6 +26,7 @@ model User {
   accounts     Account[]
   sessions     Session[]
   planState    UserPlanState?
+  workoutSessions WorkoutSession[]
 
   @@map("users")
 }
@@ -148,6 +149,26 @@ model UserPlanState {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("user_plan_states")
+}
+
+model WorkoutSession {
+  id                 String   @id @default(cuid())
+  userId             String
+  day                String
+  tier               String
+  phase              String?
+  focus              String
+  setsReps           String
+  exercises          String[]
+  completedExercises String[]
+  durationMinutes    Int?
+  completedAt        DateTime @default(now())
+  createdAt          DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, completedAt(sort: Desc)])
+  @@map("workout_sessions")
 }
 
 enum Goal {

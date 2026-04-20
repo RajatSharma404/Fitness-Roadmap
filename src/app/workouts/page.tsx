@@ -26,6 +26,12 @@ export default function WorkoutsPage() {
   const [selectedDay, setSelectedDay] = useState<string>("Monday");
   const [expandedExercise, setExpandedExercise] = useState<string | null>(null);
   const [workoutModeOpen, setWorkoutModeOpen] = useState(false);
+  const [completedExercises, setCompletedExercises] = useState<Set<string>>(
+    () => new Set(),
+  );
+  const [workoutStartedAt, setWorkoutStartedAt] = useState<number | null>(null);
+  const [isSavingWorkout, setIsSavingWorkout] = useState(false);
+  const [saveFeedback, setSaveFeedback] = useState<string | null>(null);
 
   const plan = useMemo(
     () => calculateBodyPlan(snapshot.input),
@@ -52,6 +58,64 @@ export default function WorkoutsPage() {
     activePhase?.days.find((day) => day.day === selectedDay) ??
     activePhase?.days[0] ??
     null;
+
+  function openWorkoutMode() {
+    setCompletedExercises(new Set());
+    setWorkoutStartedAt(Date.now());
+    setSaveFeedback(null);
+    setWorkoutModeOpen(true);
+  }
+
+  function toggleCompletedExercise(exercise: string) {
+    setCompletedExercises((current) => {
+      const next = new Set(current);
+      if (next.has(exercise)) {
+        next.delete(exercise);
+      } else {
+        next.add(exercise);
+      }
+      return next;
+    });
+  }
+
+  async function saveWorkoutSession() {
+    if (!activeDay || !activePhase || isSavingWorkout) return;
+
+    setIsSavingWorkout(true);
+    setSaveFeedback(null);
+
+    const durationMinutes = workoutStartedAt
+      ? Math.max(1, Math.round((Date.now() - workoutStartedAt) / 60000))
+      : null;
+
+    const response = await fetch("/api/workout-sessions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({
+        day: selectedDay,
+        tier: selectedTier,
+        phase: activePhase.level,
+        focus: activeDay.focus,
+        setsReps: activeDay.setsReps,
+        exercises: activeDay.exercises,
+        completedExercises: Array.from(completedExercises),
+        durationMinutes,
+        completedAt: new Date().toISOString(),
+      }),
+    });
+
+    if (response.ok) {
+      setSaveFeedback("Workout saved to your profile.");
+      setWorkoutModeOpen(false);
+    } else if (response.status === 401) {
+      setSaveFeedback("Sign in to save workout sessions.");
+    } else {
+      setSaveFeedback("Could not save workout. Please try again.");
+    }
+
+    setIsSavingWorkout(false);
+  }
 
   return (
     <div className="space-y-6 pb-8">
@@ -205,10 +269,13 @@ export default function WorkoutsPage() {
 
           <ActionButton
             className="btn-primary flex h-13 w-full items-center justify-center gap-2"
-            onClick={() => setWorkoutModeOpen(true)}
+            onClick={openWorkoutMode}
           >
             <Play className="h-4 w-4" /> Start Workout Mode
           </ActionButton>
+          {saveFeedback ? (
+            <p className="text-sm text-cyan-300">{saveFeedback}</p>
+          ) : null}
         </Card>
       ) : null}
 
@@ -233,6 +300,7 @@ export default function WorkoutsPage() {
             <div className="flex-1 overflow-y-auto p-5 space-y-4">
               {activeDay.exercises.map((exercise) => {
                 const detail = getExerciseDetail(exercise);
+                const isCompleted = completedExercises.has(exercise);
 
                 return (
                   <div
@@ -258,11 +326,42 @@ export default function WorkoutsPage() {
                           </p>
                         </div>
                       </div>
-                      <CircleCheckBig className="h-5 w-5 text-green-300" />
+                      <button
+                        type="button"
+                        onClick={() => toggleCompletedExercise(exercise)}
+                        className="rounded-full p-1"
+                        aria-label={
+                          isCompleted
+                            ? "Mark as not completed"
+                            : "Mark as completed"
+                        }
+                      >
+                        <CircleCheckBig
+                          className={`h-5 w-5 ${isCompleted ? "text-green-300" : "text-[#636380]"}`}
+                        />
+                      </button>
                     </div>
                   </div>
                 );
               })}
+            </div>
+            <div className="border-t border-[rgba(255,255,255,0.06)] p-5">
+              <div className="mb-3 flex items-center justify-between text-sm text-[#636380]">
+                <span>
+                  Completed: {completedExercises.size}/
+                  {activeDay.exercises.length}
+                </span>
+                <span>{activeDay.setsReps}</span>
+              </div>
+              <ActionButton
+                className="btn-primary flex h-11 w-full items-center justify-center"
+                onClick={saveWorkoutSession}
+                disabled={isSavingWorkout}
+              >
+                {isSavingWorkout
+                  ? "Saving workout..."
+                  : "Complete and Save Workout"}
+              </ActionButton>
             </div>
           </div>
         </div>
