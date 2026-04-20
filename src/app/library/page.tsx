@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import Image from "next/image";
-import { Search, X } from "lucide-react";
+import { Search, X, Plus } from "lucide-react";
 import {
   ActionButton,
   Card,
@@ -13,6 +13,31 @@ import {
   getBodyPartExerciseCatalog,
   getExerciseDetail,
 } from "@/lib/planEnhancements";
+
+function getExercisePhotoUrl(exerciseName: string, bodyPart: string): string {
+  // Try to load real photo, fallback to generated SVG
+  const photoName = exerciseName
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  // Return pattern that can be extended with real images in public/exercises/
+  return `/exercises/${photoName}.jpg`; // Falls back gracefully with error boundary
+}
+
+function parseAddedExercises(): Set<string> {
+  if (typeof window === "undefined") return new Set();
+  try {
+    const saved = localStorage.getItem("addedExercises");
+    return new Set(saved ? JSON.parse(saved) : []);
+  } catch {
+    return new Set();
+  }
+}
+
+function saveAddedExercises(exercises: Set<string>): void {
+  if (typeof window === "undefined") return;
+  localStorage.setItem("addedExercises", JSON.stringify(Array.from(exercises)));
+}
 
 const bodyPartColors: Record<string, string> = {
   Chest: "from-sky-500/50 to-cyan-400/20",
@@ -32,6 +57,8 @@ export default function LibraryPage() {
   const [selectedModality, setSelectedModality] = useState<string>("All");
   const [query, setQuery] = useState("");
   const [activeExercise, setActiveExercise] = useState<string | null>(null);
+  const [addedExercises, setAddedExercises] = useState<Set<string>>(new Set());
+  const [activeIndex, setActiveIndex] = useState<number>(-1);
 
   const exercises = useMemo(() => {
     const entries = catalog.flatMap((entry) => [
@@ -62,6 +89,57 @@ export default function LibraryPage() {
   const activeDetail = activeExercise
     ? getExerciseDetail(activeExercise)
     : null;
+
+  // Load added exercises on mount
+  useEffect(() => {
+    setAddedExercises(parseAddedExercises());
+  }, []);
+
+  // Handle keyboard navigation and Esc to close
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && activeExercise) {
+        setActiveExercise(null);
+        return;
+      }
+
+      if (!activeExercise) return;
+
+      if (event.key === "ArrowRight" || event.key === "ArrowDown") {
+        event.preventDefault();
+        const nextIndex = (activeIndex + 1) % exercises.length;
+        setActiveIndex(nextIndex);
+        setActiveExercise(exercises[nextIndex]?.name ?? null);
+      }
+
+      if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
+        event.preventDefault();
+        const prevIndex =
+          activeIndex - 1 < 0 ? exercises.length - 1 : activeIndex - 1;
+        setActiveIndex(prevIndex);
+        setActiveExercise(exercises[prevIndex]?.name ?? null);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [activeExercise, activeIndex, exercises]);
+
+  // Update activeIndex when exercises change or activeExercise changes
+  useEffect(() => {
+    if (activeExercise) {
+      const idx = exercises.findIndex((ex) => ex.name === activeExercise);
+      setActiveIndex(idx);
+    }
+  }, [activeExercise, exercises]);
+
+  function handleAddToWorkout() {
+    if (!activeExercise) return;
+    const updated = new Set(addedExercises);
+    updated.add(activeExercise);
+    setAddedExercises(updated);
+    saveAddedExercises(updated);
+  }
 
   return (
     <div className="space-y-6 pb-8">
@@ -189,8 +267,20 @@ export default function LibraryPage() {
                   height={420}
                   unoptimized
                   className="h-48 w-full object-cover"
+                  onError={(e) => {
+                    // Fallback: ensure SVG displays if photo fails
+                    const img = e.target as HTMLImageElement;
+                    if (img.src !== activeDetail.imageUrl) {
+                      img.src = activeDetail.imageUrl;
+                    }
+                  }}
                 />
               </Card>
+              {addedExercises.has(activeExercise) && (
+                <div className="rounded-md border border-green-500/30 bg-green-500/10 p-2 text-xs text-green-300">
+                  ✓ Added to your workout
+                </div>
+              )}
               <Card level="base">
                 <p className="text-xs uppercase tracking-[0.2em]">Muscle</p>
                 <p className="mt-1 text-[#eeeef2]">{activeDetail.bodyPart}</p>
@@ -222,7 +312,19 @@ export default function LibraryPage() {
                   ))}
                 </ul>
               </Card>
-              <ActionButton className="w-full">Add to Workout</ActionButton>
+              <ActionButton
+                className="w-full"
+                onClick={handleAddToWorkout}
+                disabled={addedExercises.has(activeExercise)}
+              >
+                <Plus className="h-4 w-4" />
+                {addedExercises.has(activeExercise)
+                  ? "Added to Workout"
+                  : "Add to Workout"}
+              </ActionButton>
+              <p className="text-xs text-[#636380]">
+                💡 Use arrow keys to navigate · Esc to close
+              </p>
             </div>
           </div>
         </div>

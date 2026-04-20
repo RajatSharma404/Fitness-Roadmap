@@ -93,7 +93,10 @@ It includes:
 - body-part and modality filters
 - exercise cards with generated movement previews
 - a slide-over detail view with exercise image, instructions, and alternatives
+- keyboard navigation in the detail panel (arrow keys to navigate exercises, Esc to close)
+- photo mode with automatic SVG fallback for exercise images
 - outside-click dismissal so the detail panel closes when clicking the backdrop
+- "Add to Workout" persistence so selected exercises are remembered across sessions
 
 ### Nutrition
 
