@@ -91,12 +91,15 @@ The library page is a searchable exercise catalog.
 It includes:
 
 - body-part and modality filters
+- **compound vs isolation exercise classification** for movement type filtering
 - exercise cards with generated movement previews
 - a slide-over detail view with exercise image, instructions, and alternatives
 - keyboard navigation in the detail panel (arrow keys to navigate exercises, Esc to close)
 - photo mode with automatic SVG fallback for exercise images
 - outside-click dismissal so the detail panel closes when clicking the backdrop
+- **related exercises section** that shows exercises targeting the same muscles
 - "Add to Workout" persistence so selected exercises are remembered across sessions
+- exercise type badge (💪 compound or 🎯 isolation) in the detail panel
 
 ### Nutrition
 
@@ -159,6 +162,17 @@ Capabilities include:
 - per-exercise set counting in the execution mode
 - lazy-loaded exercise thumbnails and detail drawers
 - movement instructions, common mistakes, alternatives, target muscles, and rep guidance
+
+### Exercise classification
+
+Exercises are automatically classified as compound or isolation movements.
+
+This enables:
+
+- filtering workouts by movement type (compound lifts for strength, isolation for hypertrophy)
+- discovery of related exercises that target the same muscle groups
+- exercise alternatives based on target muscle overlap
+- adaptability for different training goals and equipment availability
 
 ### Nutrition planning
 

@@ -12,6 +12,7 @@ import {
   getExerciseImageDataUrl,
   getBodyPartExerciseCatalog,
   getExerciseDetail,
+  getRelatedExercises,
 } from "@/lib/planEnhancements";
 
 function getExercisePhotoUrl(exerciseName: string, bodyPart: string): string {
@@ -55,6 +56,7 @@ export default function LibraryPage() {
   const catalog = useMemo(() => getBodyPartExerciseCatalog(), []);
   const [selectedBodyPart, setSelectedBodyPart] = useState<string>("All");
   const [selectedModality, setSelectedModality] = useState<string>("All");
+  const [selectedType, setSelectedType] = useState<string>("All");
   const [query, setQuery] = useState("");
   const [activeExercise, setActiveExercise] = useState<string | null>(null);
   const [addedExercises, setAddedExercises] = useState<Set<string>>(new Set());
@@ -79,10 +81,13 @@ export default function LibraryPage() {
         selectedBodyPart === "All" || exercise.bodyPart === selectedBodyPart;
       const modalityMatch =
         selectedModality === "All" || exercise.modality === selectedModality;
+      const typeMatch =
+        selectedType === "All" ||
+        getExerciseDetail(exercise.name).exerciseType === selectedType;
       const queryMatch = exercise.name
         .toLowerCase()
         .includes(query.toLowerCase());
-      return bodyMatch && modalityMatch && queryMatch;
+      return bodyMatch && modalityMatch && typeMatch && queryMatch;
     });
   }, [catalog, query, selectedBodyPart, selectedModality]);
 
@@ -187,6 +192,21 @@ export default function LibraryPage() {
             </button>
           ))}
         </div>
+        <div className="flex flex-wrap gap-2">
+          {["All", "Compound", "Isolation"].map((type) => {
+            const typeValue = type === "All" ? "All" : type.toLowerCase();
+            return (
+              <button
+                key={type}
+                type="button"
+                onClick={() => setSelectedType(typeValue)}
+                className={`rounded-full border px-3 py-2 text-sm ${selectedType === typeValue ? "border-lime-400 bg-lime-400/10 text-lime-300" : "border-[rgba(255,255,255,0.06)] text-[#636380]"}`}
+              >
+                {type}
+              </button>
+            );
+          })}
+        </div>
       </Card>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -290,6 +310,11 @@ export default function LibraryPage() {
                 <p className="mt-1 text-[#eeeef2]">
                   {activeDetail.recommendedReps}
                 </p>
+                <p className="mt-2 text-xs uppercase tracking-[0.2em]">Type</p>
+                <div className="mt-1 inline-flex rounded-full bg-lime-400/10 px-2 py-1 text-xs text-lime-300">
+                  {activeDetail.exerciseType === "compound" ? "💪" : "🎯"}{" "}
+                  {activeDetail.exerciseType}
+                </div>
               </Card>
               <Card level="base">
                 <p className="text-xs uppercase tracking-[0.2em]">
@@ -311,6 +336,23 @@ export default function LibraryPage() {
                     <li key={mistake}>• {mistake}</li>
                   ))}
                 </ul>
+              </Card>
+              <Card level="base">
+                <p className="text-xs uppercase tracking-[0.2em]">
+                  Related Exercises
+                </p>
+                <div className="mt-2 space-y-1">
+                  {getRelatedExercises(activeExercise, 3).map((related) => (
+                    <button
+                      key={related}
+                      type="button"
+                      onClick={() => setActiveExercise(related)}
+                      className="block w-full text-left rounded-md border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] p-2 text-sm text-cyan-300 transition hover:border-cyan-400/40 hover:bg-cyan-400/5"
+                    >
+                      {related}
+                    </button>
+                  ))}
+                </div>
               </Card>
               <ActionButton
                 className="w-full"

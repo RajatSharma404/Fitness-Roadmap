@@ -34,6 +34,7 @@ export interface ExerciseDetail {
   name: string;
   bodyPart: string;
   modality: "bodyweight" | "machine";
+  exerciseType: "compound" | "isolation";
   recommendedReps: string;
   howTo: string[];
   commonMistakes: string[];
@@ -611,6 +612,7 @@ function buildGenericExerciseDetail(
   bodyPart: string,
   modality: "bodyweight" | "machine",
   alternatives: string[],
+  exerciseType: "compound" | "isolation" = "compound",
 ): ExerciseDetail {
   const imageUrl =
     bodyPartImageMap[bodyPart] ?? "/exercise-guides/full-body.svg";
@@ -619,6 +621,7 @@ function buildGenericExerciseDetail(
     name,
     bodyPart,
     modality,
+    exerciseType,
     recommendedReps: defaultRepRangeForBodyPart(bodyPart),
     howTo: [
       "Set up with stable posture and brace your core before the first rep.",
@@ -640,10 +643,80 @@ function buildGenericExerciseDetail(
   };
 }
 
+// Define which exercises are compound (multi-joint) vs isolation (single-joint)
+const compoundExercises = new Set([
+  "Push-up",
+  "Incline push-up",
+  "Decline push-up",
+  "Dips",
+  "Chest dips",
+  "Pull-up",
+  "Chin-up",
+  "Weighted pull-up",
+  "Assisted pull-up",
+  "Inverted row",
+  "Australian row",
+  "Machine chest press",
+  "Barbell bench press",
+  "Incline barbell press",
+  "Flat dumbbell press",
+  "Incline dumbbell press",
+  "Lat pulldown",
+  "Seated cable row",
+  "Seated close-grip row",
+  "T-bar row",
+  "Pendlay row",
+  "One-arm dumbbell row",
+  "Overhead press",
+  "Standing OHP",
+  "Seated shoulder press",
+  "Bodyweight squat",
+  "Back squat",
+  "Front squat",
+  "Goblet squat",
+  "Hack squat",
+  "Leg press",
+  "Bulgarian split squat",
+  "Split squat",
+  "Deadlift",
+  "Stiff-leg deadlift",
+  "Romanian deadlift",
+  "Nordic hamstring curl",
+  "Close-grip bench press",
+  "Chest-supported row",
+  "Chest-supported T-bar row",
+]);
+
+function getExerciseType(name: string): "compound" | "isolation" {
+  // Check if exercise is in compound set
+  if (compoundExercises.has(name)) return "compound";
+
+  // Heuristic: if exercise name contains isolation keywords, mark as isolation
+  const isolationKeywords = [
+    "curl",
+    "raise",
+    "fly",
+    "extension",
+    "pushdown",
+    "hold",
+    "leg curl",
+    "leg extension",
+    "calf raise",
+  ];
+  if (
+    isolationKeywords.some((keyword) => name.toLowerCase().includes(keyword))
+  ) {
+    return "isolation";
+  }
+
+  return "compound"; // Default to compound for unknown exercises
+}
+
 const exerciseLibrary: Record<string, Omit<ExerciseDetail, "name">> = {
   "Flat dumbbell press": {
     bodyPart: "Chest",
     modality: "machine",
+    exerciseType: "compound",
     recommendedReps: "3-4 sets x 8-12 reps",
     howTo: [
       "Set bench to flat and keep feet planted.",
@@ -664,6 +737,7 @@ const exerciseLibrary: Record<string, Omit<ExerciseDetail, "name">> = {
   "Lat pulldown": {
     bodyPart: "Back",
     modality: "machine",
+    exerciseType: "compound",
     recommendedReps: "3-4 sets x 8-12 reps",
     howTo: [
       "Grip bar slightly wider than shoulders.",
@@ -684,6 +758,7 @@ const exerciseLibrary: Record<string, Omit<ExerciseDetail, "name">> = {
   "Goblet squat": {
     bodyPart: "Legs",
     modality: "machine",
+    exerciseType: "compound",
     recommendedReps: "3-4 sets x 8-15 reps",
     howTo: [
       "Hold dumbbell at chest and brace core.",
@@ -713,6 +788,7 @@ function fallbackDetail(name: string): ExerciseDetail {
       found.bodyPart,
       found.modality,
       alternatives,
+      getExerciseType(name),
     );
   }
 
@@ -720,6 +796,7 @@ function fallbackDetail(name: string): ExerciseDetail {
     name,
     bodyPart: "Full Body",
     modality: "machine",
+    exerciseType: getExerciseType(name),
     recommendedReps: "3-4 sets x 8-12 reps",
     howTo: [
       "Set up with a stable posture and brace core.",
@@ -752,6 +829,50 @@ export function getExerciseDetail(name: string): ExerciseDetail {
     ),
     imageAlt: `${detail.name} ${detail.bodyPart} ${detail.modality} form example`,
   };
+}
+
+// Find related exercises that share target muscles with the given exercise
+export function getRelatedExercises(
+  exerciseName: string,
+  limit: number = 3,
+): string[] {
+  const catalog = getBodyPartExerciseCatalog();
+  const exercise = getExerciseDetail(exerciseName);
+  const allExercises = catalog.flatMap((entry) => [
+    ...entry.bodyweight,
+    ...entry.machine,
+  ]);
+
+  // Find exercises that share at least one target muscle
+  const targetMuscles = new Set(exercise.targetMuscles);
+  const related = allExercises
+    .filter((name) => {
+      if (name === exerciseName) return false;
+      const other = getExerciseDetail(name);
+      const overlap = other.targetMuscles.some((muscle) =>
+        targetMuscles.has(muscle),
+      );
+      return overlap;
+    })
+    .slice(0, limit);
+
+  return related;
+}
+
+// Get all exercises with a specific exercise type (compound or isolation)
+export function getExercisesByType(
+  exerciseType: "compound" | "isolation",
+): BodyPartExerciseCatalog[] {
+  const catalog = getBodyPartExerciseCatalog();
+  return catalog.map((entry) => ({
+    ...entry,
+    bodyweight: entry.bodyweight.filter(
+      (name) => getExerciseType(name) === exerciseType,
+    ),
+    machine: entry.machine.filter(
+      (name) => getExerciseType(name) === exerciseType,
+    ),
+  }));
 }
 
 export function getBodyPartExerciseCatalog(): BodyPartExerciseCatalog[] {
