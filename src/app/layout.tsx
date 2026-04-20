@@ -27,11 +27,11 @@ export const metadata: Metadata = {
     "Interactive roadmap for fat loss, weight loss, and muscle building using BMI, calories, macros, workout scheduling, hydration, and meal combinations.",
   icons: {
     icon: [
+      { url: "/logo-fitflow-mark.svg", type: "image/svg+xml" },
       { url: "/icon.svg", type: "image/svg+xml" },
-      { url: "/favicon.ico", type: "image/x-icon" },
     ],
-    shortcut: ["/icon.svg"],
-    apple: [{ url: "/icon.svg" }],
+    shortcut: ["/logo-fitflow-mark.svg"],
+    apple: [{ url: "/logo-fitflow-mark.svg" }],
   },
 };
 

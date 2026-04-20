@@ -22,6 +22,7 @@ The shell includes:
 
 - a persistent sidebar with route navigation and readiness status
 - a branded FitFlow logo in the sidebar header
+- a matching FitFlow logo mark used for browser tab icon metadata
 - a route-aware top bar that changes title and context by page
 - a shared dark design system with reusable cards, metrics, and action buttons
 - a central content area that loads only the route the user needs

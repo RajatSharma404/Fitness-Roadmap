@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" role="img" aria-label="FitFlow mark">
+  <defs>
+    <linearGradient id="ffBg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0f1722" />
+      <stop offset="100%" stop-color="#111e2d" />
+    </linearGradient>
+    <linearGradient id="ffAccent" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#22d3ee" />
+      <stop offset="100%" stop-color="#84cc16" />
+    </linearGradient>
+  </defs>
+  <rect x="2" y="2" width="60" height="60" rx="16" fill="url(#ffBg)" stroke="#243748" />
+  <path d="M16 44c8-3 12-10 14-20h4c2 10 7 17 14 20" fill="none" stroke="url(#ffAccent)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" />
+  <circle cx="30" cy="22" r="4" fill="#22d3ee" />
+  <circle cx="43" cy="40" r="3.4" fill="#84cc16" />
+</svg>
