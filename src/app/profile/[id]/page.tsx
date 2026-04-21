@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
-import Image from 'next/image';
-import { useParams } from 'next/navigation';
+import { useCallback, useEffect, useState } from "react";
+import { motion } from "framer-motion";
+import Image from "next/image";
+import { useParams } from "next/navigation";
 import {
   User,
   Trophy,
@@ -12,12 +12,9 @@ import {
   Share2,
   Link as LinkIcon,
   Award,
-  Medal,
   Star,
-  Zap,
-} from 'lucide-react';
-import { AchievementBadge } from '@/components/shared/AchievementBadge';
-import { cn } from '@/lib/cn';
+} from "lucide-react";
+import { AchievementBadge } from "@/components/shared/AchievementBadge";
 
 interface ProfileData {
   id: string;
@@ -42,11 +39,7 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
 
-  useEffect(() => {
-    fetchProfile();
-  }, [params.id]);
-
-  const fetchProfile = async () => {
+  const fetchProfile = useCallback(async () => {
     try {
       const response = await fetch(`/api/profile/${params.id}`);
       if (response.ok) {
@@ -54,11 +47,15 @@ export default function ProfilePage() {
         setProfile(data);
       }
     } catch (error) {
-      console.error('Failed to fetch profile:', error);
+      console.error("Failed to fetch profile:", error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [params.id]);
+
+  useEffect(() => {
+    fetchProfile();
+  }, [fetchProfile]);
 
   const copyShareLink = () => {
     const url = `${window.location.origin}/api/og?userId=${params.id}`;
@@ -129,7 +126,7 @@ export default function ProfilePage() {
               {profile.image ? (
                 <Image
                   src={profile.image}
-                  alt={profile.name || ''}
+                  alt={profile.name || ""}
                   width={96}
                   height={96}
                   className="object-cover"
@@ -142,7 +139,7 @@ export default function ProfilePage() {
             <div className="flex-1">
               <div className="flex items-center gap-3 mb-2">
                 <h2 className="text-2xl font-bold text-white">
-                  {profile.name || 'Anonymous'}
+                  {profile.name || "Anonymous"}
                 </h2>
                 {profile.goal && (
                   <span className="px-3 py-1 bg-violet-500/20 text-violet-300 rounded-full text-sm">
@@ -162,7 +159,9 @@ export default function ProfilePage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <Target className="w-4 h-4" />
-                  <span>Joined {new Date(profile.createdAt).toLocaleDateString()}</span>
+                  <span>
+                    Joined {new Date(profile.createdAt).toLocaleDateString()}
+                  </span>
                 </div>
               </div>
             </div>
@@ -186,12 +185,9 @@ export default function ProfilePage() {
           {Object.keys(profile.bestLifts).length > 0 ? (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {Object.entries(profile.bestLifts).map(([lift, weight]) => (
-                <div
-                  key={lift}
-                  className="p-4 bg-zinc-800/50 rounded-xl"
-                >
+                <div key={lift} className="p-4 bg-zinc-800/50 rounded-xl">
                   <div className="text-sm text-zinc-400 mb-1 capitalize">
-                    {lift.replace('_', ' ')}
+                    {lift.replace("_", " ")}
                   </div>
                   <div className="text-xl font-bold text-white">
                     {weight.toFixed(1)}
@@ -232,19 +228,19 @@ export default function ProfilePage() {
             ))}
 
             {/* Show locked placeholder if fewer than 12 */}
-            {Array.from({ length: Math.max(0, 12 - profile.achievements.length) }).map(
-              (_, i) => (
-                <div
-                  key={`locked-${i}`}
-                  className="flex flex-col items-center gap-2 opacity-30"
-                >
-                  <div className="w-12 h-12 rounded-xl bg-zinc-800 border border-zinc-700 flex items-center justify-center">
-                    <Star className="w-6 h-6 text-zinc-500" />
-                  </div>
-                  <div className="text-xs text-zinc-500">???</div>
+            {Array.from({
+              length: Math.max(0, 12 - profile.achievements.length),
+            }).map((_, i) => (
+              <div
+                key={`locked-${i}`}
+                className="flex flex-col items-center gap-2 opacity-30"
+              >
+                <div className="w-12 h-12 rounded-xl bg-zinc-800 border border-zinc-700 flex items-center justify-center">
+                  <Star className="w-6 h-6 text-zinc-500" />
                 </div>
-              )
-            )}
+                <div className="text-xs text-zinc-500">???</div>
+              </div>
+            ))}
           </div>
         </motion.div>
       </main>

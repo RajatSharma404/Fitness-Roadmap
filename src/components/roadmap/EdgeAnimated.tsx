@@ -1,7 +1,6 @@
-'use client';
+"use client";
 
-import { useEffect, useRef } from 'react';
-import { BaseEdge, EdgeProps, getBezierPath } from '@xyflow/react';
+import { BaseEdge, EdgeProps, getBezierPath } from "@xyflow/react";
 
 export function EdgeAnimated({
   id,
@@ -39,7 +38,7 @@ export function EdgeAnimated({
         markerEnd={markerEnd}
         style={{
           ...style,
-          stroke: '#7c3aed',
+          stroke: "#7c3aed",
           strokeWidth: 3,
           filter: `url(#glow-${id})`,
         }}

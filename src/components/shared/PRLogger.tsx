@@ -1,12 +1,12 @@
-'use client';
+"use client";
 
-import { useState, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { X, Plus, ChevronDown, Dumbbell } from 'lucide-react';
-import dynamic from 'next/dynamic';
-import { cn } from '@/lib/cn';
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { X, Dumbbell } from "lucide-react";
+import dynamic from "next/dynamic";
+import { cn } from "@/lib/cn";
 
-const Editor = dynamic(() => import('@monaco-editor/react'), {
+const Editor = dynamic(() => import("@monaco-editor/react"), {
   ssr: false,
   loading: () => (
     <div className="h-32 bg-zinc-800/50 rounded-lg flex items-center justify-center">
@@ -22,37 +22,37 @@ interface PRLoggerProps {
     name: string;
     weight: number;
     reps: number;
-    setType: 'WORKING' | 'MAX_EFFORT' | 'COMPETITION';
+    setType: "WORKING" | "MAX_EFFORT" | "COMPETITION";
     notes?: string;
     videoUrl?: string;
   }) => void;
 }
 
 const lifts = [
-  { id: 'squat', label: 'Squat' },
-  { id: 'bench', label: 'Bench Press' },
-  { id: 'deadlift', label: 'Deadlift' },
-  { id: 'ohp', label: 'Overhead Press' },
-  { id: 'barbell_row', label: 'Barbell Row' },
+  { id: "squat", label: "Squat" },
+  { id: "bench", label: "Bench Press" },
+  { id: "deadlift", label: "Deadlift" },
+  { id: "ohp", label: "Overhead Press" },
+  { id: "barbell_row", label: "Barbell Row" },
 ];
 
 export function PRLogger({ isOpen, onClose, onSave }: PRLoggerProps) {
-  const [lift, setLift] = useState('squat');
-  const [weight, setWeight] = useState('');
-  const [reps, setReps] = useState('');
-  const [setType, setSetType] = useState<'WORKING' | 'MAX_EFFORT' | 'COMPETITION'>('WORKING');
-  const [notes, setNotes] = useState('');
-  const [videoUrl, setVideoUrl] = useState('');
+  const [lift, setLift] = useState("squat");
+  const [weight, setWeight] = useState("");
+  const [reps, setReps] = useState("");
+  const [setType, setSetType] = useState<
+    "WORKING" | "MAX_EFFORT" | "COMPETITION"
+  >("WORKING");
+  const [notes, setNotes] = useState("");
+  const [videoUrl, setVideoUrl] = useState("");
   const [vimMode, setVimMode] = useState(false);
   const [showCustom, setShowCustom] = useState(false);
-  const [customLift, setCustomLift] = useState('');
+  const [customLift, setCustomLift] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Calculate estimated 1RM
   const estimated1RM =
-    weight && reps
-      ? parseFloat(weight) * (1 + parseInt(reps) / 30)
-      : 0;
+    weight && reps ? parseFloat(weight) * (1 + parseInt(reps) / 30) : 0;
 
   const handleSave = async () => {
     if (!weight || !reps) return;
@@ -69,12 +69,12 @@ export function PRLogger({ isOpen, onClose, onSave }: PRLoggerProps) {
     setIsSubmitting(false);
 
     // Reset form
-    setWeight('');
-    setReps('');
-    setNotes('');
-    setVideoUrl('');
+    setWeight("");
+    setReps("");
+    setNotes("");
+    setVideoUrl("");
     setShowCustom(false);
-    setCustomLift('');
+    setCustomLift("");
     onClose();
   };
 
@@ -104,7 +104,9 @@ export function PRLogger({ isOpen, onClose, onSave }: PRLoggerProps) {
                   </div>
                   <div>
                     <h2 className="text-xl font-bold text-white">Log PR</h2>
-                    <p className="text-sm text-zinc-400">Record your personal record</p>
+                    <p className="text-sm text-zinc-400">
+                      Record your personal record
+                    </p>
                   </div>
                 </div>
                 <button
@@ -130,10 +132,10 @@ export function PRLogger({ isOpen, onClose, onSave }: PRLoggerProps) {
                             key={l.id}
                             onClick={() => setLift(l.id)}
                             className={cn(
-                              'px-4 py-3 rounded-lg text-sm font-medium transition-colors text-left',
+                              "px-4 py-3 rounded-lg text-sm font-medium transition-colors text-left",
                               lift === l.id
-                                ? 'bg-violet-600 text-white'
-                                : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
+                                ? "bg-violet-600 text-white"
+                                : "bg-zinc-800 text-zinc-300 hover:bg-zinc-700",
                             )}
                           >
                             {l.label}
@@ -159,7 +161,7 @@ export function PRLogger({ isOpen, onClose, onSave }: PRLoggerProps) {
                       <button
                         onClick={() => {
                           setShowCustom(false);
-                          setCustomLift('');
+                          setCustomLift("");
                         }}
                         className="text-sm text-zinc-400 hover:text-zinc-300"
                       >
@@ -200,7 +202,9 @@ export function PRLogger({ isOpen, onClose, onSave }: PRLoggerProps) {
                 {/* Estimated 1RM */}
                 {estimated1RM > 0 && (
                   <div className="p-4 bg-cyan-500/10 border border-cyan-500/30 rounded-lg">
-                    <div className="text-sm text-cyan-400 mb-1">Estimated 1RM (Epley)</div>
+                    <div className="text-sm text-cyan-400 mb-1">
+                      Estimated 1RM (Epley)
+                    </div>
                     <div className="text-2xl font-bold text-white">
                       {estimated1RM.toFixed(1)}
                     </div>
@@ -213,20 +217,22 @@ export function PRLogger({ isOpen, onClose, onSave }: PRLoggerProps) {
                     Set Type
                   </label>
                   <div className="flex rounded-lg overflow-hidden border border-zinc-700">
-                    {(['WORKING', 'MAX_EFFORT', 'COMPETITION'] as const).map((type) => (
-                      <button
-                        key={type}
-                        onClick={() => setSetType(type)}
-                        className={cn(
-                          'flex-1 px-4 py-2 text-sm font-medium transition-colors',
-                          setType === type
-                            ? 'bg-violet-600 text-white'
-                            : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
-                        )}
-                      >
-                        {type.replace('_', ' ')}
-                      </button>
-                    ))}
+                    {(["WORKING", "MAX_EFFORT", "COMPETITION"] as const).map(
+                      (type) => (
+                        <button
+                          key={type}
+                          onClick={() => setSetType(type)}
+                          className={cn(
+                            "flex-1 px-4 py-2 text-sm font-medium transition-colors",
+                            setType === type
+                              ? "bg-violet-600 text-white"
+                              : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700",
+                          )}
+                        >
+                          {type.replace("_", " ")}
+                        </button>
+                      ),
+                    )}
                   </div>
                 </div>
 
@@ -247,34 +253,36 @@ export function PRLogger({ isOpen, onClose, onSave }: PRLoggerProps) {
                 {/* Notes */}
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <label className="text-sm font-medium text-zinc-300">Notes</label>
+                    <label className="text-sm font-medium text-zinc-300">
+                      Notes
+                    </label>
                     <button
                       onClick={() => setVimMode(!vimMode)}
                       className={cn(
-                        'text-xs px-2 py-1 rounded transition-colors',
+                        "text-xs px-2 py-1 rounded transition-colors",
                         vimMode
-                          ? 'bg-violet-500/20 text-violet-400'
-                          : 'bg-zinc-800 text-zinc-400'
+                          ? "bg-violet-500/20 text-violet-400"
+                          : "bg-zinc-800 text-zinc-400",
                       )}
                     >
-                      Vim {vimMode ? 'ON' : 'OFF'}
+                      Vim {vimMode ? "ON" : "OFF"}
                     </button>
                   </div>
                   <div className="h-32 border border-zinc-700 rounded-lg overflow-hidden">
                     <Editor
                       value={notes}
-                      onChange={(value) => setNotes(value || '')}
+                      onChange={(value) => setNotes(value || "")}
                       theme="vs-dark"
                       options={{
                         minimap: { enabled: false },
-                        lineNumbers: 'off',
+                        lineNumbers: "off",
                         folding: false,
                         lineDecorationsWidth: 0,
                         lineNumbersMinChars: 0,
                         scrollBeyondLastLine: false,
                         fontSize: 14,
-                        fontFamily: 'Geist Mono, monospace',
-                        wordWrap: 'on',
+                        fontFamily: "Geist Mono, monospace",
+                        wordWrap: "on",
                       }}
                     />
                   </div>
@@ -288,7 +296,7 @@ export function PRLogger({ isOpen, onClose, onSave }: PRLoggerProps) {
                   disabled={!weight || !reps || isSubmitting}
                   className="w-full bg-violet-600 hover:bg-violet-500 disabled:bg-zinc-700 disabled:cursor-not-allowed text-white font-medium py-3 rounded-lg transition-colors"
                 >
-                  {isSubmitting ? 'Saving...' : 'Save PR'}
+                  {isSubmitting ? "Saving..." : "Save PR"}
                 </button>
               </div>
             </div>

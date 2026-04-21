@@ -7,8 +7,6 @@ const router = Router();
 // GET /api/leaderboard
 router.get("/", async (req, res) => {
   try {
-    const { period = "all" } = req.query;
-
     // Get all users with their lifts
     const users = await prisma.user.findMany({
       include: {

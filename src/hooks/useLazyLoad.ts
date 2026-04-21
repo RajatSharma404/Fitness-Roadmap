@@ -42,7 +42,6 @@ export function useLazyLoad(options?: IntersectionObserverInit) {
  * Transitions from placeholder to full image
  */
 export function useLazyImage(src: string) {
-  const [imageSrc, setImageSrc] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -64,5 +63,5 @@ export function useLazyImage(src: string) {
     };
   }, [src]);
 
-  return { imageSrc, isLoading };
+  return { isLoading };
 }
