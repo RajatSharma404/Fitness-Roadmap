@@ -110,14 +110,17 @@ It includes:
 
 ### Nutrition
 
-The nutrition page turns the calorie target into practical meals.
+The nutrition page turns calorie and macro targets into practical Indian meal execution.
 
 It includes:
 
-- macro summary bars
-- meal templates tuned to the current target
-- grocery list generation
-- meal swap suggestions with calorie and protein deltas
+- an India-first meal planner with North, South, and quick-prep presets
+- veg, non-veg, Jain, and mixed diet filtering
+- balanced, high-protein, and budget priority modes
+- practical meal slots with local serving cues (roti, rice, dal, paneer, eggs, chicken, curd)
+- grouped weekly grocery guidance by protein/carb/produce/dairy
+- hydration and recovery checklist tailored to the selected plan
+- Indian snack and meal swaps with simple benefit notes
 
 ## Core Features
 
@@ -192,6 +195,8 @@ The app implements several techniques to keep the experience smooth at scale:
 - **Image skeleton fading** — placeholder skeletons fade out as SVG/photo images load, improving perceived performance
 - **Memoized calculations** — exercise filtering and catalog building use `useMemo` to avoid unnecessary re-renders
 - **Dynamic imports** — Monaco editor for PR logging is dynamically imported to reduce initial bundle size
+- **Route-level code splitting** — heavy chart and roadmap graph surfaces are loaded as lazy chunks instead of inflating route bundles
+- **Shell chrome split** — sidebar and top bar are lazy-mounted via a client shell wrapper to keep the root layout lean
 - **Virtualized exercise list rendering** — library cards are windowed so only visible rows stay mounted in the DOM
 
 ### Nutrition planning
