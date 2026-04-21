@@ -140,7 +140,7 @@ export default function HomePage() {
         className="flex flex-wrap items-center justify-between gap-4"
       >
         <div>
-          <p className="lab-kicker text-[#60a5fa]">Today's Mission</p>
+          <p className="lab-kicker text-[#60a5fa]">Today&apos;s Mission</p>
           <h2 className="font-display text-[28px] font-bold text-[#eeeef2]">
             Good morning. Today&apos;s mission is {activeStepLabel}.
           </h2>

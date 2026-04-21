@@ -231,7 +231,7 @@ export default function LibraryPage() {
             <span>Virtualized list active</span>
           </div>
           <div
-            className="h-[640px] overflow-y-auto rounded-xl border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] p-2"
+            className="h-160 overflow-y-auto rounded-xl border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] p-2"
             onScroll={(event) => setScrollTop(event.currentTarget.scrollTop)}
           >
             <div style={{ height: virtualTotalHeight, position: "relative" }}>
