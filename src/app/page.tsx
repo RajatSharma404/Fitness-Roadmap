@@ -140,7 +140,7 @@ export default function HomePage() {
         className="flex flex-wrap items-center justify-between gap-4"
       >
         <div>
-          <p className="lab-kicker text-[#60a5fa]">Today Mission</p>
+          <p className="lab-kicker text-[#60a5fa]">Today's Mission</p>
           <h2 className="font-display text-[28px] font-bold text-[#eeeef2]">
             Good morning. Today&apos;s mission is {activeStepLabel}.
           </h2>
@@ -152,7 +152,7 @@ export default function HomePage() {
         </div>
         <Link
           href="/roadmap"
-          className="btn-primary inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-[#07070d]"
+          className="lab-btn-primary inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium"
         >
           Open Roadmap <ArrowRight className="h-4 w-4" />
         </Link>
