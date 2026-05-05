@@ -2,7 +2,7 @@
 
 FitFlow Planner is a full-stack fitness roadmap app that turns body transformation into a guided execution system.
 
-The product now uses a persistent App Shell with a fixed sidebar, route-aware top bar, and dedicated surfaces for dashboard execution, roadmap planning, workouts, check-ins, exercise library browsing, and nutrition planning. The interface is built around a dark void theme so the next action stays obvious without visual noise.
+The product now uses a persistent App Shell with a fixed sidebar, route-aware top bar, and dedicated surfaces for dashboard execution, roadmap planning, workouts, check-ins, exercise library browsing, nutrition planning, and educational discovery content. The interface is built around a dark void theme so the next action stays obvious without visual noise.
 
 ## Product Goal
 
@@ -31,6 +31,17 @@ The shell includes:
 
 ## Key Experiences
 
+### Fitness Hub Expansion
+
+The app now includes a broader discovery layer around the core planning flow:
+
+- a guided 6-step roadmap stepper that replaces the old all-in-one planning modal
+- workout goal filtering for fat loss, muscle gain, recomposition, and all goals
+- workout deeplink sharing so a saved session can be copied and reused quickly
+- a visual muscle-map filter in the library for faster exercise discovery
+- dedicated guide detail pages for the educational content hub
+- trust pages and footer links for About, Privacy, and Terms
+
 ### Dashboard
 
 The dashboard is the command center for daily execution. It focuses on the current mission instead of showing equal-weight cards everywhere.
@@ -54,6 +65,7 @@ The roadmap is the planning and progression workspace. It pairs a visual node gr
 It includes:
 
 - a React Flow roadmap that shows progression phases and node dependencies
+- a guided planner stepper for body model, age, goal, activity, equipment, and summary inputs
 - node focus dimming so irrelevant items fade when a node is selected
 - phase progress rings for faster scanning
 - a selected-node panel with unlock criteria and phase rationale
@@ -67,9 +79,11 @@ The workouts page turns the plan into an execution surface.
 It includes:
 
 - experience-tier toggles for beginner, intermediate, and advanced sessions
+- goal filters for all goals, fat loss, muscle gain, and recomposition
 - day-by-day workout cards with exercise details
 - generated visual previews for each exercise card
 - per-muscle art styles so chest, back, legs, glutes, core, and arms all render with distinct themes
+- deeplink sharing for workout plans with copy feedback
 - a workout mode overlay for in-session logging
 - completion toggles for each exercise inside workout mode
 - **workout session persistence to Prisma** via authenticated API (`/api/workout-sessions`)
@@ -93,6 +107,7 @@ The library page is a searchable exercise catalog with performance optimizations
 It includes:
 
 - body-part and modality filters
+- a visual muscle-group BodyMap for targeted browsing
 - **compound vs isolation exercise classification** for movement type filtering
 - **exercise alias search** so synonyms resolve naturally (for example `pull-ups` -> `pullup`, `bench press` -> `barbell bench press`)
 - **virtualized rendering window** so only visible exercise cards stay mounted for large catalogs
@@ -121,6 +136,17 @@ It includes:
 - grouped weekly grocery guidance by protein/carb/produce/dairy
 - hydration and recovery checklist tailored to the selected plan
 - Indian snack and meal swaps with simple benefit notes
+
+### Guides and Trust Pages
+
+The app also includes a lightweight content hub for education and credibility.
+
+It includes:
+
+- a guides landing page that links to six topic-specific articles
+- individual guide pages for progressive overload, form cues, sleep, protein, plateau breaks, and home workouts
+- trust pages for About, Privacy, and Terms
+- a shared footer that surfaces those links across the app
 
 ## Core Features
 
@@ -338,6 +364,11 @@ The generator applies body-part-specific palettes, motifs, and pose highlights f
 - `/checkins` - weekly recovery and readiness tracking
 - `/library` - exercise catalog and detail drawer
 - `/nutrition` - macro planning, meal templates, and grocery list generation
+- `/guides` - educational guide hub with dedicated article pages
+- `/tools` - fitness calculators and utility pages
+- `/about` - app overview and product context
+- `/privacy` - privacy policy
+- `/terms` - terms of use
 - `/leaderboard` - ranking view
 - `/profile/[id]` - public profile page
 
