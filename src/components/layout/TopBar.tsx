@@ -5,6 +5,10 @@ import { cn } from "@/lib/cn";
 
 const titles: Record<string, { title: string; subtitle: string }> = {
   "/": { title: "Dashboard", subtitle: "Mission-first execution" },
+  "/generator": {
+    title: "Generator",
+    subtitle: "Build a personalized workout plan step-by-step",
+  },
   "/roadmap": {
     title: "Roadmap",
     subtitle: "Adaptive body transformation planner",
@@ -21,6 +25,26 @@ const titles: Record<string, { title: string; subtitle: string }> = {
   "/nutrition": {
     title: "Nutrition",
     subtitle: "Macro planning and meal templates",
+  },
+  "/tools": {
+    title: "Tools",
+    subtitle: "Free calorie, macro, and strength calculators",
+  },
+  "/guides": {
+    title: "Guides",
+    subtitle: "Training, form, recovery, and nutrition explainers",
+  },
+  "/about": {
+    title: "About",
+    subtitle: "What FitFlow is and how it helps",
+  },
+  "/terms": {
+    title: "Terms",
+    subtitle: "Usage terms and platform rules",
+  },
+  "/privacy": {
+    title: "Privacy",
+    subtitle: "How your data is handled",
   },
 };
 

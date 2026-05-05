@@ -2,7 +2,14 @@
 
 import { useMemo, useState } from "react";
 import Image from "next/image";
-import { Play, ChevronDown, ChevronUp, CircleCheckBig } from "lucide-react";
+import {
+  Play,
+  ChevronDown,
+  ChevronUp,
+  CircleCheckBig,
+  Share2,
+  Check,
+} from "lucide-react";
 import {
   ActionButton,
   Card,
@@ -23,6 +30,7 @@ export default function WorkoutsPage() {
   const [selectedTier, setSelectedTier] = useState<(typeof tiers)[number]>(
     snapshot.experience,
   );
+  const [selectedGoal, setSelectedGoal] = useState<string>("all");
   const [selectedDay, setSelectedDay] = useState<string>("Monday");
   const [expandedExercise, setExpandedExercise] = useState<string | null>(null);
   const [workoutModeOpen, setWorkoutModeOpen] = useState(false);
@@ -32,6 +40,7 @@ export default function WorkoutsPage() {
   const [workoutStartedAt, setWorkoutStartedAt] = useState<number | null>(null);
   const [isSavingWorkout, setIsSavingWorkout] = useState(false);
   const [saveFeedback, setSaveFeedback] = useState<string | null>(null);
+  const [copyFeedback, setCopyFeedback] = useState<string | null>(null);
 
   const plan = useMemo(
     () => calculateBodyPlan(snapshot.input),
@@ -64,6 +73,14 @@ export default function WorkoutsPage() {
     setWorkoutStartedAt(Date.now());
     setSaveFeedback(null);
     setWorkoutModeOpen(true);
+  }
+
+  function copyWorkoutDeeplink() {
+    const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
+    const deeplink = `${baseUrl}/workouts?tier=${selectedTier}&day=${selectedDay.replace(" ", "-")}`;
+    navigator.clipboard.writeText(deeplink);
+    setCopyFeedback("Deeplink copied!");
+    setTimeout(() => setCopyFeedback(null), 2000);
   }
 
   function toggleCompletedExercise(exercise: string) {
@@ -132,22 +149,34 @@ export default function WorkoutsPage() {
             Choose one tier, select a day, and keep the next workout in focus.
           </p>
         </div>
-        <div className="inline-flex rounded-full border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] p-1">
-          {tiers.map((tier) => (
-            <button
-              key={tier}
-              type="button"
-              onClick={() => setSelectedTier(tier)}
-              className={cn(
-                "rounded-full px-4 py-2 text-sm capitalize transition",
-                selectedTier === tier
-                  ? "bg-cyan-400/10 text-cyan-300"
-                  : "text-[#636380] hover:text-[#eeeef2]",
-              )}
-            >
-              {tier}
-            </button>
-          ))}
+        <div className="flex flex-wrap gap-3">
+          <div className="inline-flex rounded-full border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] p-1">
+            {tiers.map((tier) => (
+              <button
+                key={tier}
+                type="button"
+                onClick={() => setSelectedTier(tier)}
+                className={cn(
+                  "rounded-full px-4 py-2 text-sm capitalize transition",
+                  selectedTier === tier
+                    ? "bg-cyan-400/10 text-cyan-300"
+                    : "text-[#636380] hover:text-[#eeeef2]",
+                )}
+              >
+                {tier}
+              </button>
+            ))}
+          </div>
+          <select
+            value={selectedGoal}
+            onChange={(e) => setSelectedGoal(e.target.value)}
+            className="rounded-full border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] px-4 py-2 text-sm text-[#eeeef2] hover:border-cyan-400/40"
+          >
+            <option value="all">All Goals</option>
+            <option value="fat_loss">Fat Loss</option>
+            <option value="muscle_gain">Muscle Gain</option>
+            <option value="recomposition">Recomposition</option>
+          </select>
         </div>
       </Card>
 
@@ -192,9 +221,23 @@ export default function WorkoutsPage() {
               </h3>
               <p className="mt-1 text-sm text-[#636380]">{activeDay.focus}</p>
             </div>
-            <span className="rounded-full border border-cyan-400/30 bg-cyan-400/10 px-3 py-1 text-xs text-cyan-300">
-              {activeDay.setsReps}
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="rounded-full border border-cyan-400/30 bg-cyan-400/10 px-3 py-1 text-xs text-cyan-300">
+                {activeDay.setsReps}
+              </span>
+              <button
+                type="button"
+                onClick={copyWorkoutDeeplink}
+                className="rounded-md border border-[rgba(255,255,255,0.06)] p-2 text-[#636380] hover:bg-[rgba(255,255,255,0.03)] hover:text-cyan-300 transition"
+                title="Copy workout link"
+              >
+                {copyFeedback ? (
+                  <Check className="h-4 w-4 text-green-300" />
+                ) : (
+                  <Share2 className="h-4 w-4" />
+                )}
+              </button>
+            </div>
           </div>
 
           <div className="space-y-3">
@@ -275,6 +318,9 @@ export default function WorkoutsPage() {
           </ActionButton>
           {saveFeedback ? (
             <p className="text-sm text-cyan-300">{saveFeedback}</p>
+          ) : null}
+          {copyFeedback ? (
+            <p className="text-sm text-green-300">{copyFeedback}</p>
           ) : null}
         </Card>
       ) : null}

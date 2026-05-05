@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { CircleDollarSign, CookingPot, Droplets, Scale } from "lucide-react";
 import {
   ActionButton,
@@ -8,7 +8,7 @@ import {
   SectionHeader,
 } from "@/components/shared/UIPrimitives";
 import { calculateBodyPlan } from "@/lib/bodyPlanner";
-import { defaultPlannerSnapshot } from "@/lib/plannerView";
+import { defaultPlannerSnapshot, readPlannerSnapshot } from "@/lib/plannerView";
 
 type DietPreference = "veg" | "non_veg" | "jain" | "mixed";
 type PlanPriority = "balanced" | "high_protein" | "budget";
@@ -320,7 +320,7 @@ function MacroBar({
 }
 
 export default function NutritionPage() {
-  const [snapshot] = useState(defaultPlannerSnapshot);
+  const [snapshot, setSnapshot] = useState(defaultPlannerSnapshot);
   const [region, setRegion] = useState<RegionPreset>("all");
   const [priority, setPriority] = useState<PlanPriority>("balanced");
   const [diet, setDiet] = useState<DietPreference>(() => {
@@ -331,6 +331,22 @@ export default function NutritionPage() {
   const [selectedPlanId, setSelectedPlanId] = useState(
     INDIA_MEAL_PLANS[0]?.id ?? "",
   );
+
+  // Sync snapshot from storage on mount and when storage changes
+  useEffect(() => {
+    const sync = () => {
+      const next = readPlannerSnapshot();
+      setSnapshot(next);
+      // Reset diet preference if it changes in storage
+      if (next.input.diet === "veg") setDiet("veg");
+      else if (next.input.diet === "non_veg") setDiet("non_veg");
+      else setDiet("mixed");
+    };
+
+    sync();
+    window.addEventListener("storage", sync);
+    return () => window.removeEventListener("storage", sync);
+  }, []);
 
   const plan = useMemo(
     () => calculateBodyPlan(snapshot.input),

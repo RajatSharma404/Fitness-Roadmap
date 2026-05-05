@@ -22,16 +22,51 @@ interface SidebarNavItem {
   href: string;
   label: string;
   icon: React.ComponentType<{ className?: string }>;
+  section: "core" | "plan" | "learn";
 }
 
 const navItems: SidebarNavItem[] = [
-  { href: "/", label: "Dashboard", icon: Home },
-  { href: "/roadmap", label: "Roadmap", icon: LayoutDashboard },
-  { href: "/workouts", label: "Workouts", icon: Dumbbell },
-  { href: "/checkins", label: "Check-ins", icon: NotebookPen },
-  { href: "/library", label: "Library", icon: BookOpen },
-  { href: "/nutrition", label: "Nutrition", icon: ChartColumnIncreasing },
+  { href: "/", label: "Dashboard", icon: Home, section: "core" },
+  {
+    href: "/roadmap",
+    label: "Roadmap",
+    icon: LayoutDashboard,
+    section: "core",
+  },
+  {
+    href: "/generator",
+    label: "Generator",
+    icon: Menu,
+    section: "plan",
+  },
+  { href: "/workouts", label: "Workouts", icon: Dumbbell, section: "plan" },
+  {
+    href: "/checkins",
+    label: "Check-ins",
+    icon: NotebookPen,
+    section: "plan",
+  },
+  {
+    href: "/library",
+    label: "Library",
+    icon: BookOpen,
+    section: "plan",
+  },
+  {
+    href: "/nutrition",
+    label: "Nutrition",
+    icon: ChartColumnIncreasing,
+    section: "plan",
+  },
+  { href: "/tools", label: "Tools", icon: Settings, section: "learn" },
+  { href: "/guides", label: "Guides", icon: BookOpen, section: "learn" },
 ];
+
+const sectionTitles: Record<SidebarNavItem["section"], string> = {
+  core: "Core",
+  plan: "Plan",
+  learn: "Learn",
+};
 
 interface SidebarProps {
   readiness?: number;
@@ -76,28 +111,37 @@ export function Sidebar({
         </button>
       </div>
 
-      <nav className="flex-1 space-y-1 px-3 py-4">
-        {navItems.map((item) => {
-          const active = pathname === item.href;
-          const Icon = item.icon;
+      <nav className="flex-1 space-y-3 overflow-y-auto px-3 py-4">
+        {(["core", "plan", "learn"] as const).map((section) => (
+          <div key={section} className="space-y-1">
+            <p className="px-3 text-[10px] uppercase tracking-[0.2em] text-[#636380]">
+              {sectionTitles[section]}
+            </p>
+            {navItems
+              .filter((item) => item.section === section)
+              .map((item) => {
+                const active = pathname === item.href;
+                const Icon = item.icon;
 
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              onClick={() => setIsOpen(false)}
-              className={cn(
-                "flex items-center rounded-md px-3 py-2 text-sm transition-all duration-150",
-                active
-                  ? "border-l-2 border-cyan-400 bg-cyan-400/5 text-cyan-300 font-medium"
-                  : "text-[#636380] hover:bg-[rgba(255,255,255,0.03)] hover:text-[#eeeef2]",
-              )}
-            >
-              <Icon className="mr-3 h-4 w-4" />
-              {item.label}
-            </Link>
-          );
-        })}
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setIsOpen(false)}
+                    className={cn(
+                      "flex items-center rounded-md px-3 py-2 text-sm transition-all duration-150",
+                      active
+                        ? "border-l-2 border-cyan-400 bg-cyan-400/5 text-cyan-300 font-medium"
+                        : "text-[#636380] hover:bg-[rgba(255,255,255,0.03)] hover:text-[#eeeef2]",
+                    )}
+                  >
+                    <Icon className="mr-3 h-4 w-4" />
+                    {item.label}
+                  </Link>
+                );
+              })}
+          </div>
+        ))}
       </nav>
 
       <div className="border-t border-[rgba(255,255,255,0.06)] px-5 py-4 space-y-4">
@@ -125,6 +169,19 @@ export function Sidebar({
           <Settings className="h-4 w-4" />
           Settings
         </button>
+        <div className="flex flex-wrap gap-x-2 gap-y-1 text-xs text-[#636380]">
+          <Link href="/about" className="hover:text-[#eeeef2]">
+            About
+          </Link>
+          <span>|</span>
+          <Link href="/terms" className="hover:text-[#eeeef2]">
+            Terms
+          </Link>
+          <span>|</span>
+          <Link href="/privacy" className="hover:text-[#eeeef2]">
+            Privacy
+          </Link>
+        </div>
       </div>
     </>
   );

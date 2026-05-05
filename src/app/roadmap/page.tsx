@@ -9,6 +9,7 @@ import {
   SectionHeader,
 } from "@/components/shared/UIPrimitives";
 import { ProgressRing } from "@/components/layout/ProgressRing";
+import { RoadmapStepper } from "@/components/roadmap/RoadmapStepper";
 import { calculateBodyPlan } from "@/lib/bodyPlanner";
 import {
   computeReadinessScore,
@@ -290,178 +291,34 @@ export default function RoadmapPage() {
       </div>
 
       {settingsOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-end bg-black/60 p-3 backdrop-blur-sm">
-          <div className="h-full w-full max-w-md overflow-y-auto rounded-2xl border border-[rgba(255,255,255,0.06)] bg-bg-elevated p-5">
-            <SectionHeader
-              kicker="Settings"
-              title="Your Inputs"
-              description="Update the planner inputs from a modal instead of the main page."
-              action={
-                <button
-                  type="button"
-                  className="text-sm text-[#636380]"
-                  onClick={() => setSettingsOpen(false)}
-                >
-                  Close
-                </button>
-              }
-            />
-            <div className="mt-4 space-y-3">
-              <label className="block text-sm text-[#636380]">
-                Age
-                <input
-                  className="mt-1 w-full rounded-md border border-[rgba(255,255,255,0.06)] bg-bg-surface px-3 py-2 text-[#eeeef2]"
-                  type="number"
-                  value={draftInput.age}
-                  onChange={(event) =>
-                    setDraftInput((prev) => ({
-                      ...prev,
-                      age: Number(event.target.value),
-                    }))
-                  }
-                />
-              </label>
-              <label className="block text-sm text-[#636380]">
-                Weight (kg)
-                <input
-                  className="mt-1 w-full rounded-md border border-[rgba(255,255,255,0.06)] bg-bg-surface px-3 py-2 text-[#eeeef2]"
-                  type="number"
-                  value={draftInput.weightKg}
-                  onChange={(event) =>
-                    setDraftInput((prev) => ({
-                      ...prev,
-                      weightKg: Number(event.target.value),
-                    }))
-                  }
-                />
-              </label>
-              <label className="block text-sm text-[#636380]">
-                Goal
-                <select
-                  className="mt-1 w-full rounded-md border border-[rgba(255,255,255,0.06)] bg-bg-surface px-3 py-2 text-[#eeeef2]"
-                  value={draftInput.goal}
-                  onChange={(event) =>
-                    setDraftInput((prev) => ({
-                      ...prev,
-                      goal: event.target.value as typeof draftInput.goal,
-                    }))
-                  }
-                >
-                  {(
-                    [
-                      "fat_loss",
-                      "weight_loss",
-                      "muscle_gain",
-                      "recomposition",
-                    ] as const
-                  ).map((goal) => (
-                    <option key={goal} value={goal}>
-                      {goal.replaceAll("_", " ")}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="block text-sm text-[#636380]">
-                Activity
-                <select
-                  className="mt-1 w-full rounded-md border border-[rgba(255,255,255,0.06)] bg-bg-surface px-3 py-2 text-[#eeeef2]"
-                  value={draftInput.activity}
-                  onChange={(event) =>
-                    setDraftInput((prev) => ({
-                      ...prev,
-                      activity: event.target
-                        .value as typeof draftInput.activity,
-                    }))
-                  }
-                >
-                  {(
-                    [
-                      "sedentary",
-                      "light",
-                      "moderate",
-                      "active",
-                      "very_active",
-                    ] as const
-                  ).map((activity) => (
-                    <option key={activity} value={activity}>
-                      {activity.replaceAll("_", " ")}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <div className="grid grid-cols-2 gap-3">
-                <label className="block text-sm text-[#636380]">
-                  Experience
-                  <select
-                    className="mt-1 w-full rounded-md border border-[rgba(255,255,255,0.06)] bg-bg-surface px-3 py-2 text-[#eeeef2]"
-                    value={draftExperience}
-                    onChange={(event) =>
-                      setDraftExperience(
-                        event.target.value as typeof draftExperience,
-                      )
-                    }
-                  >
-                    {(["beginner", "intermediate", "advanced"] as const).map(
-                      (value) => (
-                        <option key={value} value={value}>
-                          {value}
-                        </option>
-                      ),
-                    )}
-                  </select>
-                </label>
-                <label className="block text-sm text-[#636380]">
-                  Equipment
-                  <select
-                    className="mt-1 w-full rounded-md border border-[rgba(255,255,255,0.06)] bg-bg-surface px-3 py-2 text-[#eeeef2]"
-                    value={draftEquipment}
-                    onChange={(event) =>
-                      setDraftEquipment(
-                        event.target.value as typeof draftEquipment,
-                      )
-                    }
-                  >
-                    {(["gym", "home"] as const).map((value) => (
-                      <option key={value} value={value}>
-                        {value}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              </div>
-            </div>
-            <div className="mt-5 flex gap-2">
-              <ActionButton
-                className="flex-1"
-                onClick={() => {
-                  const nextSnapshot = {
-                    input: draftInput,
-                    checkins: snapshot.checkins,
-                    equipment: draftEquipment,
-                    experience: draftExperience,
-                  };
-                  setSnapshot(nextSnapshot);
-                  saveSnapshot(
-                    draftInput,
-                    dedupeCheckinsByDate(snapshot.checkins),
-                    draftEquipment,
-                    draftExperience,
-                  );
-                  setSettingsOpen(false);
-                }}
-              >
-                Save Inputs
-              </ActionButton>
-              <ActionButton
-                variant="secondary"
-                className="flex-1"
-                onClick={() => setSettingsOpen(false)}
-              >
-                Cancel
-              </ActionButton>
-            </div>
-          </div>
-        </div>
+        <RoadmapStepper
+          input={draftInput}
+          experience={draftExperience}
+          equipment={draftEquipment}
+          onInputChange={setDraftInput}
+          onExperienceChange={(exp: string) =>
+            setDraftExperience(exp as "beginner" | "intermediate" | "advanced")
+          }
+          onEquipmentChange={(eq: string) =>
+            setDraftEquipment(eq as "home" | "gym")
+          }
+          onClose={() => setSettingsOpen(false)}
+          onSave={() => {
+            const nextSnapshot = {
+              input: draftInput,
+              checkins: snapshot.checkins,
+              equipment: draftEquipment,
+              experience: draftExperience,
+            };
+            setSnapshot(nextSnapshot);
+            saveSnapshot(
+              draftInput,
+              dedupeCheckinsByDate(snapshot.checkins),
+              draftEquipment,
+              draftExperience,
+            );
+          }}
+        />
       ) : null}
     </div>
   );

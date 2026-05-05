@@ -9,6 +9,7 @@ import {
   SectionHeader,
 } from "@/components/shared/UIPrimitives";
 import { Skeleton } from "@/components/shared/Skeleton";
+import { BodyMap } from "@/components/library/BodyMap";
 import { useLazyLoad } from "@/hooks/useLazyLoad";
 import {
   getExerciseImageDataUrl,
@@ -38,12 +39,27 @@ export default function LibraryPage() {
   const [selectedBodyPart, setSelectedBodyPart] = useState<string>("All");
   const [selectedModality, setSelectedModality] = useState<string>("All");
   const [selectedType, setSelectedType] = useState<string>("All");
+  const [selectedMuscles, setSelectedMuscles] = useState<Set<string>>(
+    () => new Set(),
+  );
   const [query, setQuery] = useState("");
   const [activeExercise, setActiveExercise] = useState<string | null>(null);
   const [addedExercises, setAddedExercises] = useState<Set<string>>(() =>
     parseAddedExercises(),
   );
   const [scrollTop, setScrollTop] = useState(0);
+
+  function toggleMuscle(muscle: string) {
+    setSelectedMuscles((prev) => {
+      const next = new Set(prev);
+      if (next.has(muscle)) {
+        next.delete(muscle);
+      } else {
+        next.add(muscle);
+      }
+      return next;
+    });
+  }
 
   const VIRTUAL_ROW_HEIGHT = 152;
   const VIRTUAL_VIEWPORT_HEIGHT = 640;
@@ -71,6 +87,12 @@ export default function LibraryPage() {
       const typeMatch =
         selectedType === "All" ||
         getExerciseDetail(exercise.name).exerciseType === selectedType;
+
+      // Map muscle groups to body parts for filtering
+      const muscleMatch =
+        selectedMuscles.size === 0 ||
+        selectedMuscles.has(exercise.bodyPart.toLowerCase());
+
       const normalizedQuery = query
         .toLowerCase()
         .replace(/[\-_/]+/g, " ")
@@ -82,9 +104,18 @@ export default function LibraryPage() {
         getExerciseSearchTerms(exercise.name).some((term) =>
           term.includes(normalizedQuery),
         );
-      return bodyMatch && modalityMatch && typeMatch && queryMatch;
+      return (
+        bodyMatch && modalityMatch && typeMatch && queryMatch && muscleMatch
+      );
     });
-  }, [catalog, query, selectedBodyPart, selectedModality, selectedType]);
+  }, [
+    catalog,
+    query,
+    selectedBodyPart,
+    selectedModality,
+    selectedType,
+    selectedMuscles,
+  ]);
 
   const activeDetail = activeExercise
     ? getExerciseDetail(activeExercise)
@@ -204,6 +235,15 @@ export default function LibraryPage() {
             );
           })}
         </div>
+      </Card>
+
+      <Card level="base" className="space-y-3">
+        <SectionHeader
+          kicker="Muscle Targeting"
+          title="Visual filter by muscle"
+          description="Tap to filter exercises by specific muscle groups."
+        />
+        <BodyMap selected={selectedMuscles} onToggle={toggleMuscle} />
       </Card>
 
       {exercises.length === 0 ? (

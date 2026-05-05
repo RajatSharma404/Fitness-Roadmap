@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import {
   ActionButton,
   Card,
@@ -53,7 +53,7 @@ function saveCheckins(next: WeeklyCheckIn[]) {
 }
 
 export default function CheckinsPage() {
-  const [snapshot] = useState(defaultPlannerSnapshot);
+  const [snapshot, setSnapshot] = useState(defaultPlannerSnapshot);
   const [entries, setEntries] = useState<WeeklyCheckIn[]>(() =>
     dedupeCheckinsByDate(snapshot.checkins),
   );
@@ -67,6 +67,23 @@ export default function CheckinsPage() {
     energy: 7,
     workoutCompletion: 75,
   });
+
+  // Sync snapshot from storage on mount and when storage changes
+  useEffect(() => {
+    const sync = () => {
+      const next = readPlannerSnapshot();
+      setSnapshot(next);
+      setEntries(dedupeCheckinsByDate(next.checkins));
+      setDraft((prev) => ({
+        ...prev,
+        weightKg: next.input.weightKg,
+      }));
+    };
+
+    sync();
+    window.addEventListener("storage", sync);
+    return () => window.removeEventListener("storage", sync);
+  }, []);
 
   const plan = useMemo(
     () => calculateBodyPlan(snapshot.input),
