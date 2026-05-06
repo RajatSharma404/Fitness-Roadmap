@@ -22,6 +22,7 @@ import {
   defaultPlannerSnapshot,
   dedupeCheckinsByDate,
   readPlannerSnapshot,
+  syncPlannerSnapshotFromServer,
 } from "@/lib/plannerView";
 import { cn } from "@/lib/cn";
 
@@ -76,6 +77,9 @@ export default function HomePage() {
   useEffect(() => {
     const sync = () => setSnapshot(readPlannerSnapshot());
     sync();
+    void syncPlannerSnapshotFromServer().then((serverSnapshot) => {
+      setSnapshot(serverSnapshot);
+    });
     window.addEventListener("storage", sync);
     return () => window.removeEventListener("storage", sync);
   }, []);

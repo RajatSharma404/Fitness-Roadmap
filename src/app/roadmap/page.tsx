@@ -16,10 +16,11 @@ import {
   getEnhancedNodeStatus,
 } from "@/lib/planEnhancements";
 import {
-  defaultPlannerInput,
   defaultPlannerSnapshot,
   dedupeCheckinsByDate,
+  persistPlannerSnapshot,
   readPlannerSnapshot,
+  syncPlannerSnapshotFromServer,
 } from "@/lib/plannerView";
 const RoadmapFlow = dynamic(() => import("@/components/roadmap/RoadmapFlow"), {
   ssr: false,
@@ -28,49 +29,17 @@ const RoadmapFlow = dynamic(() => import("@/components/roadmap/RoadmapFlow"), {
   ),
 });
 
-function readProgress(): Record<string, boolean> {
-  if (typeof window === "undefined") return {};
-  try {
-    const saved = localStorage.getItem("bodyPlanProgress");
-    return saved ? (JSON.parse(saved) as Record<string, boolean>) : {};
-  } catch {
-    return {};
-  }
-}
-
-function saveProgress(progress: Record<string, boolean>) {
-  localStorage.setItem("bodyPlanProgress", JSON.stringify(progress));
-}
-
-function saveSnapshot(
-  input: typeof defaultPlannerInput,
-  checkins: ReturnType<typeof dedupeCheckinsByDate>,
-  equipment: string,
-  experience: string,
-) {
-  localStorage.setItem("bodyPlanInput", JSON.stringify(input));
-  localStorage.setItem(
-    "bodyPlanEnhancedState",
-    JSON.stringify({
-      input,
-      checkins,
-      equipment,
-      experience,
-      progress: readProgress(),
-    }),
-  );
-}
-
 export default function RoadmapPage() {
   const [snapshot, setSnapshot] = useState(defaultPlannerSnapshot);
-  const [progress, setProgress] = useState<Record<string, boolean>>(() =>
-    readProgress(),
+  const [progress, setProgress] = useState<Record<string, boolean>>(
+    defaultPlannerSnapshot.progress,
   );
   const [selectedNodeId, setSelectedNodeId] = useState<string>("assessment");
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [draftInput, setDraftInput] = useState(snapshot.input);
   const [draftEquipment, setDraftEquipment] = useState(snapshot.equipment);
   const [draftExperience, setDraftExperience] = useState(snapshot.experience);
+  const [saveMessage, setSaveMessage] = useState<string | null>(null);
 
   useEffect(() => {
     const sync = () => {
@@ -79,10 +48,17 @@ export default function RoadmapPage() {
       setDraftInput(next.input);
       setDraftEquipment(next.equipment);
       setDraftExperience(next.experience);
-      setProgress(readProgress());
+      setProgress(next.progress);
     };
 
     sync();
+    void syncPlannerSnapshotFromServer().then((serverSnapshot) => {
+      setSnapshot(serverSnapshot);
+      setDraftInput(serverSnapshot.input);
+      setDraftEquipment(serverSnapshot.equipment);
+      setDraftExperience(serverSnapshot.experience);
+      setProgress(serverSnapshot.progress);
+    });
     window.addEventListener("storage", sync);
     return () => window.removeEventListener("storage", sync);
   }, []);
@@ -264,14 +240,27 @@ export default function RoadmapPage() {
 
           <div className="flex gap-2">
             <ActionButton
-              onClick={() => {
+              onClick={async () => {
                 if (selectedNodeStatus !== "locked") {
                   const next = {
                     ...progress,
                     [selectedNode.id]: !progress[selectedNode.id],
                   };
                   setProgress(next);
-                  saveProgress(next);
+
+                  const saved = await persistPlannerSnapshot({
+                    input: snapshot.input,
+                    checkins: snapshot.checkins,
+                    equipment: snapshot.equipment,
+                    experience: snapshot.experience,
+                    progress: next,
+                  });
+                  setSnapshot((current) => ({ ...current, progress: next }));
+                  setSaveMessage(
+                    saved
+                      ? "Roadmap progress synced."
+                      : "Roadmap progress saved locally.",
+                  );
                 }
               }}
               disabled={selectedNodeStatus === "locked"}
@@ -287,6 +276,9 @@ export default function RoadmapPage() {
               Clear Focus Dimming
             </ActionButton>
           </div>
+          {saveMessage ? (
+            <p className="text-sm text-cyan-300">{saveMessage}</p>
+          ) : null}
         </Card>
       </div>
 
@@ -309,14 +301,20 @@ export default function RoadmapPage() {
               checkins: snapshot.checkins,
               equipment: draftEquipment,
               experience: draftExperience,
+              progress,
             };
             setSnapshot(nextSnapshot);
-            saveSnapshot(
-              draftInput,
-              dedupeCheckinsByDate(snapshot.checkins),
-              draftEquipment,
-              draftExperience,
-            );
+            void persistPlannerSnapshot({
+              input: draftInput,
+              checkins: dedupeCheckinsByDate(snapshot.checkins),
+              equipment: draftEquipment,
+              experience: draftExperience,
+              progress,
+            }).then((saved) => {
+              setSaveMessage(
+                saved ? "Inputs saved and synced." : "Inputs saved locally.",
+              );
+            });
           }}
         />
       ) : null}

@@ -5,6 +5,40 @@ import { calculateWilksScore } from "../../lib/formulas";
 
 const router = Router();
 
+function criteriaSatisfied(
+  criteria: { lift?: string; metric: string; value: number; type?: string },
+  bestLifts: Record<string, number>,
+  userUnit: "KG" | "LBS" | undefined,
+  bodyweightKg: number,
+  sbdTotal: number,
+  wilksScore: number,
+): boolean {
+  if (criteria.type === "total" && criteria.metric === "sbd_total") {
+    return sbdTotal >= criteria.value;
+  }
+
+  if (criteria.type === "wilks" && criteria.metric === "wilks_score") {
+    return wilksScore >= criteria.value;
+  }
+
+  if (criteria.type === "dots" && criteria.metric === "dots_score") {
+    return wilksScore >= criteria.value * 0.9;
+  }
+
+  if (criteria.lift && criteria.metric === "1rm_bw_ratio") {
+    const lift1RM = bestLifts[criteria.lift] || 0;
+    const liftKg = userUnit === "LBS" ? lift1RM / 2.20462 : lift1RM;
+    const ratio = bodyweightKg > 0 ? liftKg / bodyweightKg : 0;
+    return ratio >= criteria.value;
+  }
+
+  if (criteria.lift && criteria.metric === "1rm_absolute") {
+    return (bestLifts[criteria.lift] || 0) >= criteria.value;
+  }
+
+  return false;
+}
+
 // GET /api/roadmap
 router.get("/", async (req, res) => {
   try {
@@ -87,25 +121,14 @@ router.get("/", async (req, res) => {
 
       let criteriaMet = false;
 
-      if (criteria.type === "total" && criteria.metric === "sbd_total") {
-        criteriaMet = sbdTotal >= criteria.value;
-      } else if (
-        criteria.type === "wilks" &&
-        criteria.metric === "wilks_score"
-      ) {
-        criteriaMet = wilksScore >= criteria.value;
-      } else if (criteria.type === "dots" && criteria.metric === "dots_score") {
-        // Simplified dots check
-        criteriaMet = wilksScore >= criteria.value * 0.9; // Approximate
-      } else if (criteria.lift && criteria.metric === "1rm_bw_ratio") {
-        const lift1RM = bestLifts[criteria.lift] || 0;
-        const liftKg = user?.unit === "LBS" ? lift1RM / 2.20462 : lift1RM;
-        const ratio = bodyweightKg > 0 ? liftKg / bodyweightKg : 0;
-        criteriaMet = ratio >= criteria.value;
-      } else if (criteria.lift && criteria.metric === "1rm_absolute") {
-        const lift1RM = bestLifts[criteria.lift] || 0;
-        criteriaMet = lift1RM >= criteria.value;
-      }
+      criteriaMet = criteriaSatisfied(
+        criteria,
+        bestLifts,
+        user?.unit,
+        bodyweightKg,
+        sbdTotal,
+        wilksScore,
+      );
 
       return {
         ...node,
@@ -202,23 +225,14 @@ router.post("/check-unlocks", async (req, res) => {
 
       let criteriaMet = false;
 
-      if (criteria.type === "total" && criteria.metric === "sbd_total") {
-        criteriaMet = sbdTotal >= criteria.value;
-      } else if (
-        criteria.type === "wilks" &&
-        criteria.metric === "wilks_score"
-      ) {
-        criteriaMet = wilksScore >= criteria.value;
-      } else if (criteria.type === "dots" && criteria.metric === "dots_score") {
-        criteriaMet = wilksScore >= criteria.value * 0.9;
-      } else if (criteria.lift && criteria.metric === "1rm_bw_ratio") {
-        const lift1RM = bestLifts[criteria.lift] || 0;
-        const liftKg = user?.unit === "LBS" ? lift1RM / 2.20462 : lift1RM;
-        const ratio = bodyweightKg > 0 ? liftKg / bodyweightKg : 0;
-        criteriaMet = ratio >= criteria.value;
-      } else if (criteria.lift && criteria.metric === "1rm_absolute") {
-        criteriaMet = (bestLifts[criteria.lift] || 0) >= criteria.value;
-      }
+      criteriaMet = criteriaSatisfied(
+        criteria,
+        bestLifts,
+        user?.unit,
+        bodyweightKg,
+        sbdTotal,
+        wilksScore,
+      );
 
       if (criteriaMet) {
         if (!userNode) {
@@ -227,24 +241,26 @@ router.post("/check-unlocks", async (req, res) => {
               data: {
                 userId,
                 nodeId: node.id,
-                status: "COMPLETED",
+                status: "ACTIVE",
                 unlockedAt: new Date(),
-                completedAt: new Date(),
               },
             }),
           );
-        } else {
+          newlyUnlocked.push(node.id);
+        } else if (userNode.status === "LOCKED") {
           writes.push(
             prisma.userNode.update({
               where: { id: userNode.id },
               data: {
-                status: "COMPLETED",
-                completedAt: new Date(),
+                status: "ACTIVE",
+                unlockedAt: userNode.unlockedAt ?? new Date(),
               },
             }),
           );
+          newlyUnlocked.push(node.id);
+        } else {
+          // Leave ACTIVE/COMPLETED nodes unchanged during unlock checks.
         }
-        newlyUnlocked.push(node.id);
       } else if (!userNode && dependenciesMet) {
         // Node is active (dependencies met but criteria not)
         writes.push(
@@ -278,6 +294,55 @@ router.post("/check-unlocks", async (req, res) => {
   } catch (error) {
     console.error("Check unlocks error:", error);
     res.status(500).json({ error: "Failed to check unlocks" });
+  }
+});
+
+// POST /api/roadmap/complete-node
+router.post("/complete-node", async (req, res) => {
+  try {
+    const userId = req.user?.userId;
+    if (!userId) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
+
+    const nodeId = String(req.body?.nodeId ?? "").trim();
+    if (!nodeId) {
+      res.status(400).json({ error: "nodeId is required" });
+      return;
+    }
+
+    const userNode = await prisma.userNode.findUnique({
+      where: {
+        userId_nodeId: {
+          userId,
+          nodeId,
+        },
+      },
+    });
+
+    if (!userNode || userNode.status === "LOCKED") {
+      res.status(400).json({ error: "Node is locked or not unlocked yet" });
+      return;
+    }
+
+    if (userNode.status === "COMPLETED") {
+      res.json({ ok: true, alreadyCompleted: true });
+      return;
+    }
+
+    const completed = await prisma.userNode.update({
+      where: { id: userNode.id },
+      data: {
+        status: "COMPLETED",
+        completedAt: new Date(),
+      },
+    });
+
+    res.json({ ok: true, node: completed });
+  } catch (error) {
+    console.error("Complete node error:", error);
+    res.status(500).json({ error: "Failed to complete node" });
   }
 });
 

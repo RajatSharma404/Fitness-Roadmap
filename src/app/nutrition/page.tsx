@@ -8,7 +8,11 @@ import {
   SectionHeader,
 } from "@/components/shared/UIPrimitives";
 import { calculateBodyPlan } from "@/lib/bodyPlanner";
-import { defaultPlannerSnapshot, readPlannerSnapshot } from "@/lib/plannerView";
+import {
+  defaultPlannerSnapshot,
+  readPlannerSnapshot,
+  syncPlannerSnapshotFromServer,
+} from "@/lib/plannerView";
 
 type DietPreference = "veg" | "non_veg" | "jain" | "mixed";
 type PlanPriority = "balanced" | "high_protein" | "budget";
@@ -344,6 +348,12 @@ export default function NutritionPage() {
     };
 
     sync();
+    void syncPlannerSnapshotFromServer().then((serverSnapshot) => {
+      setSnapshot(serverSnapshot);
+      if (serverSnapshot.input.diet === "veg") setDiet("veg");
+      else if (serverSnapshot.input.diet === "non_veg") setDiet("non_veg");
+      else setDiet("mixed");
+    });
     window.addEventListener("storage", sync);
     return () => window.removeEventListener("storage", sync);
   }, []);

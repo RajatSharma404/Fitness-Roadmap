@@ -273,6 +273,39 @@ The app uses layered persistence:
 - Prisma/PostgreSQL for long-term storage
 - the route pages initialize from a deterministic snapshot so server and client renders stay aligned before hydration
 
+### State consistency (May 2026 upgrade)
+
+State persistence has been unified so the app no longer mixes unrelated per-page storage behavior.
+
+What changed:
+
+- a shared planner snapshot utility now handles read, local save, server sync, and server persist flows
+- route pages (`/`, `/generator`, `/roadmap`, `/checkins`, `/workouts`, `/nutrition`) now hydrate from the same snapshot contract
+- when signed in, snapshot changes are posted to `POST /api/user-plan-state`; when signed out or offline, data still persists locally
+- roadmap progress is now part of the same persisted snapshot instead of a separate `bodyPlanProgress` state silo
+
+Result:
+
+- consistent cross-route behavior
+- better cross-device continuity for authenticated users
+- safer fallback behavior when API sync is unavailable
+
+### Security and progression hardening (May 2026 upgrade)
+
+Several critical backend safeguards were implemented:
+
+- **session-sync hardening**: the legacy Express `POST /api/auth/session-sync` token minting endpoint is intentionally disabled to prevent bearer-token issuance without strong server-verified session proof
+- **roadmap semantics fix**: unlock checks now move nodes to `ACTIVE` (not `COMPLETED`)
+- **explicit completion path**: node completion now uses a dedicated endpoint (`POST /api/roadmap/complete-node`) so unlock and completion remain separate lifecycle states
+- **broader route protection**: middleware now protects additional personalized routes (`/generator`, `/workouts`, `/checkins`, `/nutrition`, `/library`) in addition to existing protected pages
+- **AI prompt-surface reduction**: AI context payloads are now shape-limited and truncated before prompt composition to reduce token bloat and injection risk
+
+### UX behavior updates
+
+- `/dashboard` now renders the dashboard experience directly (no redirect bounce)
+- workout goal selector now affects generated workout programming instead of being a visual-only control
+- shared design tokens were corrected (missing `text-secondary` variable fixed)
+
 ## Visual System
 
 The current UI is built around a dark fitness console direction.
@@ -307,7 +340,7 @@ The generator applies body-part-specific palettes, motifs, and pose highlights f
 - React Flow
 - Recharts
 - NextAuth with Google OAuth
-- Express 5
+- Express 5 (legacy backend, not required for active web runtime)
 - PostgreSQL with Prisma
 - Google Gemini
 - Monaco Editor and monaco-vim
@@ -358,7 +391,7 @@ The generator applies body-part-specific palettes, motifs, and pose highlights f
 ## Main Routes
 
 - `/` - dashboard home and daily command center
-- `/dashboard` - legacy dashboard route that redirects to `/`
+- `/dashboard` - dashboard route alias that renders the dashboard experience
 - `/roadmap` - adaptive planning workspace with graph navigation and phase controls
 - `/workouts` - workout execution and set logging
 - `/checkins` - weekly recovery and readiness tracking
@@ -381,6 +414,16 @@ The generator applies body-part-specific palettes, motifs, and pose highlights f
 - `POST /api/user-plan-state` - save the current plan state
 - `GET /api/workout-sessions` - fetch recent saved workout sessions for the signed-in user
 - `POST /api/workout-sessions` - save a completed workout session to Prisma
+- `GET /api/lifts` - fetch signed-in user lift logs (supports `lift` and `limit` query params)
+- `POST /api/lifts` - create a lift log and compute Epley 1RM
+- `GET /api/lifts/stats` - fetch aggregate lift stats for the signed-in user
+- `GET /api/roadmap` - fetch roadmap nodes with user status and criteria checks
+- `POST /api/roadmap/check-unlocks` - evaluate and unlock eligible nodes to `ACTIVE`
+- `POST /api/roadmap/complete-node` - explicitly mark an active node as `COMPLETED`
+- `GET /api/leaderboard` - public leaderboard payload
+- `PATCH /api/profile` - authenticated self profile update
+- `GET /api/profile/[id]` - public profile details with best lifts and achievement summary
+- `POST /api/ai/chat` - authenticated AI coach SSE streaming endpoint
 - `GET /api/auth/[...nextauth]` - NextAuth handler
 - `POST /api/auth/[...nextauth]` - NextAuth handler
 
@@ -390,16 +433,31 @@ Implementation note for Open Graph route:
 - keep OG JSX/template logic in `src/app/api/og/og-image.tsx`
 - export `runtime` directly from `route.ts` so Next.js can statically analyze route config during build
 
-### Express routes
+### Express routes (legacy only)
 
-The Express server exposes routes for:
+The Express server still contains legacy routes for:
 
-- auth
+- auth (session-sync endpoint disabled)
 - lifts
 - leaderboard
 - profile
 - roadmap
-- AI helpers
+- AI helpers (legacy path)
+
+Roadmap route notes:
+
+- `POST /api/roadmap/check-unlocks` promotes eligible nodes to `ACTIVE`
+- `POST /api/roadmap/complete-node` explicitly marks an active node as `COMPLETED`
+
+Auth route notes:
+
+- `POST /api/auth/session-sync` currently returns `410 Gone` by design until a fully server-verified session bridge is implemented
+
+Boundary note:
+
+- The web app now uses the Next.js App Router API boundary directly for active frontend `/api/*` calls.
+- The previous catch-all `/api` proxy rewrite to the Express server has been removed.
+- Running the web app does not require starting the Express API.
 
 ## Local Setup
 
@@ -440,7 +498,7 @@ FRONTEND_URLS="http://localhost:3001"
 Notes:
 
 - the frontend runs on port `3001`
-- the Express API runs on port `5000`
+- the Express API on port `5000` is optional legacy runtime
 - `DATABASE_URL` should point to your PostgreSQL instance
 - `NEXTAUTH_URL` should match the local or deployed app URL
 - `JWT_SECRET` should be at least 32 characters
@@ -463,7 +521,7 @@ npm run db:migrate
 
 ### 5. Start the app in development
 
-Open two terminals.
+Start the frontend in one terminal.
 
 Terminal 1 - Next.js frontend:
 
@@ -471,7 +529,7 @@ Terminal 1 - Next.js frontend:
 npm run dev
 ```
 
-Terminal 2 - Express API:
+Optional Terminal 2 - legacy Express API (only for legacy route testing):
 
 ```bash
 npm run dev:api

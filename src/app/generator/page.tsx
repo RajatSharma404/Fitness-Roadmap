@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ActionButton,
   Card,
@@ -13,7 +13,11 @@ import {
   GoalType,
   ActivityLevel,
 } from "@/lib/bodyPlanner";
-import { readPlannerSnapshot } from "@/lib/plannerView";
+import {
+  persistPlannerSnapshot,
+  readPlannerSnapshot,
+  syncPlannerSnapshotFromServer,
+} from "@/lib/plannerView";
 
 type GeneratorStep = 1 | 2 | 3 | 4 | 5;
 
@@ -24,24 +28,6 @@ const steps: Array<{ id: GeneratorStep; label: string }> = [
   { id: 4, label: "Lifestyle" },
   { id: 5, label: "Review" },
 ];
-
-function saveGenerator(
-  input: PlannerInput,
-  equipment: "gym" | "home",
-  experience: "beginner" | "intermediate" | "advanced",
-) {
-  localStorage.setItem("bodyPlanInput", JSON.stringify(input));
-  const current = readPlannerSnapshot();
-  localStorage.setItem(
-    "bodyPlanEnhancedState",
-    JSON.stringify({
-      input,
-      checkins: current.checkins,
-      equipment,
-      experience,
-    }),
-  );
-}
 
 export default function GeneratorPage() {
   const initial = readPlannerSnapshot();
@@ -60,11 +46,51 @@ export default function GeneratorPage() {
   const [experience, setExperience] = useState<
     "beginner" | "intermediate" | "advanced"
   >(initial.experience);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    void syncPlannerSnapshotFromServer().then((snapshot) => {
+      setSex(snapshot.input.sex);
+      setGoal(snapshot.input.goal);
+      setAge(snapshot.input.age);
+      setHeightCm(snapshot.input.heightCm);
+      setWeightKg(snapshot.input.weightKg);
+      setActivity(snapshot.input.activity);
+      setWorkoutDays(snapshot.input.workoutDays);
+      setDiet(snapshot.input.diet);
+      setEquipment(snapshot.equipment);
+      setExperience(snapshot.experience);
+    });
+  }, []);
 
   const assembled = useMemo<PlannerInput>(
     () => ({ age, sex, heightCm, weightKg, goal, activity, workoutDays, diet }),
     [age, sex, heightCm, weightKg, goal, activity, workoutDays, diet],
   );
+
+  async function handleSaveGenerator() {
+    if (isSaving) return;
+
+    setIsSaving(true);
+    setSaveMessage(null);
+
+    const current = readPlannerSnapshot();
+    const saved = await persistPlannerSnapshot({
+      input: assembled,
+      checkins: current.checkins,
+      equipment,
+      experience,
+      progress: current.progress,
+    });
+
+    setSaveMessage(
+      saved
+        ? "Plan saved and synced to your profile."
+        : "Plan saved locally. Sign in to sync across devices.",
+    );
+    setIsSaving(false);
+  }
 
   return (
     <div className="space-y-6 pb-8">
@@ -295,10 +321,8 @@ export default function GeneratorPage() {
             </ActionButton>
           ) : (
             <>
-              <ActionButton
-                onClick={() => saveGenerator(assembled, equipment, experience)}
-              >
-                Save Plan
+              <ActionButton onClick={handleSaveGenerator} disabled={isSaving}>
+                {isSaving ? "Saving..." : "Save Plan"}
               </ActionButton>
               <Link
                 href="/roadmap"
@@ -315,6 +339,9 @@ export default function GeneratorPage() {
             </>
           )}
         </div>
+        {saveMessage ? (
+          <p className="text-sm text-cyan-300">{saveMessage}</p>
+        ) : null}
       </Card>
     </div>
   );

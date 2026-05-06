@@ -28,7 +28,7 @@ const weeklyCheckinSchema = z.object({
 
 const persistedPlanStateSchema = z.object({
   input: plannerInputSchema,
-  progress: z.record(z.string(), z.boolean()),
+  progress: z.record(z.string(), z.boolean()).default({}),
   checkins: z.array(weeklyCheckinSchema).max(104),
   equipment: z.enum(["gym", "home"]),
   experience: z.enum(["beginner", "intermediate", "advanced"]),

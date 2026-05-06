@@ -45,6 +45,31 @@ router.post("/chat", aiLimiter, async (req, res) => {
     }
 
     const { message, context } = parsed.data;
+    const safeGoal = String(context?.goal ?? "General Strength").slice(0, 120);
+    const safeBodyweight =
+      typeof context?.bodyweight === "number" ? context.bodyweight : 70;
+    const safeUnit =
+      context?.unit && ["kg", "lbs", "KG", "LBS"].includes(context.unit)
+        ? context.unit
+        : "kg";
+    const safeRecentPRs = Array.isArray(context?.PRs)
+      ? context.PRs.slice(0, 20).map((entry) => {
+          const candidate = entry as {
+            name?: unknown;
+            weight?: unknown;
+            reps?: unknown;
+          };
+          return {
+            name: String(candidate.name ?? "").slice(0, 60),
+            weight:
+              typeof candidate.weight === "number" ? candidate.weight : null,
+            reps: typeof candidate.reps === "number" ? candidate.reps : null,
+          };
+        })
+      : [];
+    const unlockedNodeCount = Array.isArray(context?.unlockedNodes)
+      ? context.unlockedNodes.length
+      : 0;
 
     // Set up SSE headers
     res.setHeader("Content-Type", "text/event-stream");
@@ -55,10 +80,10 @@ router.post("/chat", aiLimiter, async (req, res) => {
     const systemPrompt = `You are an expert strength training coach. Be concise but thorough.
 
 User Context:
-- Goal: ${context?.goal || "General Strength"}
-- Bodyweight: ${context?.bodyweight || 70} ${context?.unit || "kg"}
-- Unlocked Nodes: ${context?.unlockedNodes?.length || 0}
-- Recent PRs: ${JSON.stringify(context?.PRs || [])}
+- Goal: ${safeGoal}
+- Bodyweight: ${safeBodyweight} ${safeUnit}
+- Unlocked Nodes: ${unlockedNodeCount}
+- Recent PRs: ${JSON.stringify(safeRecentPRs)}
 
 Provide evidence-based advice on training, technique, programming, and recovery.
 Keep responses under 300 words unless detailed programming is requested.`;

@@ -18,22 +18,5 @@ module.exports = {
       merge_logs: true,
       max_memory_restart: "1G",
     },
-    {
-      name: "fitness-roadmap-api",
-      script: "cmd.exe",
-      args: ["/c", "npm run build:server && npm run start:api"],
-      interpreter: "none",
-      instances: 1,
-      exec_mode: "fork",
-      env: {
-        NODE_ENV: "production",
-        PORT: 5001,
-      },
-      error_file: "./logs/api-error.log",
-      out_file: "./logs/api-out.log",
-      log_date_format: "YYYY-MM-DD HH:mm:ss",
-      merge_logs: true,
-      max_memory_restart: "512M",
-    },
   ],
 };

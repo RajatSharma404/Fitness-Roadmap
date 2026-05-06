@@ -17,7 +17,9 @@ import {
 import {
   defaultPlannerSnapshot,
   dedupeCheckinsByDate,
+  persistPlannerSnapshot,
   readPlannerSnapshot,
+  syncPlannerSnapshotFromServer,
 } from "@/lib/plannerView";
 
 const CheckinsCharts = dynamic(
@@ -39,19 +41,6 @@ const CheckinsCharts = dynamic(
   },
 );
 
-function saveCheckins(next: WeeklyCheckIn[]) {
-  const current = readPlannerSnapshot();
-  localStorage.setItem(
-    "bodyPlanEnhancedState",
-    JSON.stringify({
-      input: current.input,
-      checkins: next,
-      equipment: current.equipment,
-      experience: current.experience,
-    }),
-  );
-}
-
 export default function CheckinsPage() {
   const [snapshot, setSnapshot] = useState(defaultPlannerSnapshot);
   const [entries, setEntries] = useState<WeeklyCheckIn[]>(() =>
@@ -67,6 +56,8 @@ export default function CheckinsPage() {
     energy: 7,
     workoutCompletion: 75,
   });
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState<string | null>(null);
 
   // Sync snapshot from storage on mount and when storage changes
   useEffect(() => {
@@ -81,6 +72,14 @@ export default function CheckinsPage() {
     };
 
     sync();
+    void syncPlannerSnapshotFromServer().then((serverSnapshot) => {
+      setSnapshot(serverSnapshot);
+      setEntries(dedupeCheckinsByDate(serverSnapshot.checkins));
+      setDraft((prev) => ({
+        ...prev,
+        weightKg: serverSnapshot.input.weightKg,
+      }));
+    });
     window.addEventListener("storage", sync);
     return () => window.removeEventListener("storage", sync);
   }, []);
@@ -104,12 +103,30 @@ export default function CheckinsPage() {
     ),
   }));
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    if (isSaving) return;
+
+    setIsSaving(true);
+    setSaveMessage(null);
+
     const next = dedupeCheckinsByDate([...entries, draft])
       .sort((a, b) => b.date.localeCompare(a.date))
       .slice(0, 12);
     setEntries(next);
-    saveCheckins(next);
+    const saved = await persistPlannerSnapshot({
+      input: snapshot.input,
+      checkins: next,
+      equipment: snapshot.equipment,
+      experience: snapshot.experience,
+      progress: snapshot.progress,
+    });
+
+    setSaveMessage(
+      saved
+        ? "Check-in saved and synced to your profile."
+        : "Check-in saved locally. Sign in to sync across devices.",
+    );
+    setIsSaving(false);
   };
 
   return (
@@ -272,9 +289,13 @@ export default function CheckinsPage() {
           <ActionButton
             className="btn-primary h-13 w-full"
             onClick={handleSave}
+            disabled={isSaving}
           >
-            Save Weekly Check-in
+            {isSaving ? "Saving..." : "Save Weekly Check-in"}
           </ActionButton>
+          {saveMessage ? (
+            <p className="text-sm text-cyan-300">{saveMessage}</p>
+          ) : null}
           <Card level="elevated">
             <p className="text-xs uppercase tracking-[0.2em] text-[#636380]">
               Instant coach response

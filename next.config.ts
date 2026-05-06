@@ -1,11 +1,5 @@
 import type { NextConfig } from "next";
 
-const apiProxyTarget =
-  process.env.API_PROXY_TARGET ??
-  (process.env.NODE_ENV === "development"
-    ? "http://localhost:5000"
-    : undefined);
-
 const nextConfig: NextConfig = {
   output: "standalone",
   outputFileTracingRoot: process.cwd(),
@@ -16,18 +10,6 @@ const nextConfig: NextConfig = {
         hostname: "lh3.googleusercontent.com",
       },
     ],
-  },
-  async rewrites() {
-    if (!apiProxyTarget) {
-      return [];
-    }
-
-    return [
-      {
-        source: "/api/:path*",
-        destination: `${apiProxyTarget}/api/:path*`,
-      },
-    ];
   },
 };
 

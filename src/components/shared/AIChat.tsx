@@ -80,7 +80,12 @@ export function AIChat({ isOpen, onClose, context }: AIChatProps) {
         }),
       });
 
-      if (!response.ok) throw new Error("Failed to get response");
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error("AUTH_REQUIRED");
+        }
+        throw new Error("Failed to get response");
+      }
 
       const reader = response.body?.getReader();
       if (!reader) throw new Error("No reader");
@@ -121,13 +126,16 @@ export function AIChat({ isOpen, onClose, context }: AIChatProps) {
           m.id === assistantId ? { ...m, isStreaming: false } : m,
         ),
       );
-    } catch {
+    } catch (error) {
       setMessages((prev) =>
         prev.map((m) =>
           m.id === assistantId
             ? {
                 ...m,
-                content: "Sorry, I had trouble connecting. Please try again.",
+                content:
+                  error instanceof Error && error.message === "AUTH_REQUIRED"
+                    ? "Please sign in to use AI Coach."
+                    : "Sorry, I had trouble connecting. Please try again.",
                 isStreaming: false,
               }
             : m,

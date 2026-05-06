@@ -5,6 +5,7 @@ import { cn } from "@/lib/cn";
 
 const titles: Record<string, { title: string; subtitle: string }> = {
   "/": { title: "Dashboard", subtitle: "Mission-first execution" },
+  "/dashboard": { title: "Dashboard", subtitle: "Mission-first execution" },
   "/generator": {
     title: "Generator",
     subtitle: "Build a personalized workout plan step-by-step",

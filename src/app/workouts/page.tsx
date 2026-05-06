@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import {
   Play,
@@ -20,13 +20,17 @@ import {
   getAdaptiveGymProgression,
   getExerciseDetail,
 } from "@/lib/planEnhancements";
-import { defaultPlannerSnapshot } from "@/lib/plannerView";
+import {
+  defaultPlannerSnapshot,
+  readPlannerSnapshot,
+  syncPlannerSnapshotFromServer,
+} from "@/lib/plannerView";
 import { cn } from "@/lib/cn";
 
 const tiers = ["beginner", "intermediate", "advanced"] as const;
 
 export default function WorkoutsPage() {
-  const [snapshot] = useState(defaultPlannerSnapshot);
+  const [snapshot, setSnapshot] = useState(defaultPlannerSnapshot);
   const [selectedTier, setSelectedTier] = useState<(typeof tiers)[number]>(
     snapshot.experience,
   );
@@ -42,9 +46,33 @@ export default function WorkoutsPage() {
   const [saveFeedback, setSaveFeedback] = useState<string | null>(null);
   const [copyFeedback, setCopyFeedback] = useState<string | null>(null);
 
+  useEffect(() => {
+    const sync = () => {
+      const next = readPlannerSnapshot();
+      setSnapshot(next);
+      setSelectedTier(next.experience);
+    };
+
+    sync();
+    void syncPlannerSnapshotFromServer().then((serverSnapshot) => {
+      setSnapshot(serverSnapshot);
+      setSelectedTier(serverSnapshot.experience);
+    });
+
+    window.addEventListener("storage", sync);
+    return () => window.removeEventListener("storage", sync);
+  }, []);
+
   const plan = useMemo(
-    () => calculateBodyPlan(snapshot.input),
-    [snapshot.input],
+    () =>
+      calculateBodyPlan({
+        ...snapshot.input,
+        goal:
+          selectedGoal === "all"
+            ? snapshot.input.goal
+            : (selectedGoal as typeof snapshot.input.goal),
+      }),
+    [snapshot, selectedGoal],
   );
   const adaptiveGym = useMemo(
     () =>
@@ -54,12 +82,7 @@ export default function WorkoutsPage() {
         snapshot.input.workoutDays,
         snapshot.equipment,
       ),
-    [
-      plan.gymProgression,
-      selectedTier,
-      snapshot.input.workoutDays,
-      snapshot.equipment,
-    ],
+    [plan.gymProgression, selectedTier, snapshot],
   );
 
   const activePhase = adaptiveGym[0] ?? adaptiveGym.at(-1) ?? null;
