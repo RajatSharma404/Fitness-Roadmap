@@ -25,9 +25,10 @@ export async function middleware(request: NextRequest) {
   );
 
   // Redirect unauthenticated users from protected routes to home
-  if (isProtectedRoute && !token) {
-    return NextResponse.redirect(new URL("/", request.url));
-  }
+  // NOTE: Disabled for local testing so you can navigate the UI without logging in.
+  // if (isProtectedRoute && !token) {
+  //   return NextResponse.redirect(new URL("/", request.url));
+  // }
 
   return NextResponse.next();
 }
