@@ -21,6 +21,8 @@ The app is organized around a route-first shell rather than one oversized scroll
 The shell includes:
 
 - a persistent sidebar with route navigation and readiness status
+- a dynamic NextAuth user profile card with login/logout actions and Google avatars
+- a globally mounted AI Coach floating action widget that can be triggered from anywhere
 - a branded FitFlow logo in the sidebar header
 - a matching FitFlow logo mark used for browser tab icon metadata
 - a route-aware top bar that changes title and context by page
@@ -68,7 +70,8 @@ It includes:
 - a guided planner stepper for body model, age, goal, activity, equipment, and summary inputs
 - node focus dimming so irrelevant items fade when a node is selected
 - phase progress rings for faster scanning
-- a selected-node panel with unlock criteria and phase rationale
+- an interactive Node Drawer with unlock criteria, phase rationale, and dynamic lift progression charts fetching history from `/api/lifts`
+- inline triggers within the Node Drawer to "Log PR" and "Ask AI Coach"
 - phase progression controls that can be updated from the roadmap view
 - route links into workouts, check-ins, library, and nutrition without leaving the shell
 
@@ -87,7 +90,7 @@ It includes:
 - a workout mode overlay for in-session logging
 - completion toggles for each exercise inside workout mode
 - **workout session persistence to Prisma** via authenticated API (`/api/workout-sessions`)
-- PR logging hooks and set input fields
+- **PR logging hooks** with an integrated modal to record sets, reps, weight, and track estimated 1RM
 
 ### Check-ins
 
@@ -149,6 +152,17 @@ It includes:
 - a shared footer that surfaces those links across the app
 
 ## Core Features
+
+### Global AI Coaching Widget
+
+A universally accessible, floating AI Coach chat widget built with Server-Sent Events (SSE).
+
+It features:
+
+- A globally mounted component in the `ShellChrome` layout, making it accessible across the entire application without breaking user flows.
+- Dynamic context building that injects the user's specific training data—such as bodyweight, goal, PR history, and unlocked roadmap nodes—directly into the system prompt for hyper-personalized responses.
+- Event-driven dispatch (`window.dispatchEvent(new CustomEvent("open-ai-chat"))`) to seamlessly integrate the coach with specific page components like Roadmap nodes.
+- Direct integration with Google Gemini for fast, fitness-optimized responses.
 
 ### Adaptive planning engine
 
@@ -224,6 +238,7 @@ The app implements several techniques to keep the experience smooth at scale:
 - **Route-level code splitting** — heavy chart and roadmap graph surfaces are loaded as lazy chunks instead of inflating route bundles
 - **Shell chrome split** — sidebar and top bar are lazy-mounted via a client shell wrapper to keep the root layout lean
 - **Virtualized exercise list rendering** — library cards are windowed so only visible rows stay mounted in the DOM
+- **Deferred State Updates** — complex component mounts (like PR loggers) utilize microtasks and timeouts to prevent cascading renders within effects.
 
 ### Nutrition planning
 
@@ -252,16 +267,6 @@ Tracked values include:
 - workout completion percentage
 
 The app converts these inputs into readiness-aware guidance so calories, steps, and cardio can be adjusted over time.
-
-### Coaching and adaptation
-
-The app includes a daily coaching message based on:
-
-- goal
-- readiness score
-- recent adjustment trend
-
-This keeps the plan responsive instead of static.
 
 ### Persistence and sync
 
@@ -335,14 +340,13 @@ The generator applies body-part-specific palettes, motifs, and pose highlights f
 
 - Next.js 15.5.14 with the App Router
 - React 19
+- NextAuth.js (Session & Provider Management)
 - Tailwind CSS 4
 - Framer Motion
 - React Flow
 - Recharts
-- NextAuth with Google OAuth
-- Express 5 (legacy backend, not required for active web runtime)
-- PostgreSQL with Prisma
-- Google Gemini
+- PostgreSQL with Prisma (seeded via TSX)
+- Google Gemini (Streaming Server-Sent Events)
 - Monaco Editor and monaco-vim
 - Vitest
 - TypeScript
@@ -382,7 +386,6 @@ The generator applies body-part-specific palettes, motifs, and pose highlights f
 │   └── types/
 ├── docker-compose.yml
 ├── Dockerfile
-├── Dockerfile.api
 ├── pm2.config.js
 ├── README.md
 └── package.json
@@ -433,31 +436,10 @@ Implementation note for Open Graph route:
 - keep OG JSX/template logic in `src/app/api/og/og-image.tsx`
 - export `runtime` directly from `route.ts` so Next.js can statically analyze route config during build
 
-### Express routes (legacy only)
-
-The Express server still contains legacy routes for:
-
-- auth (session-sync endpoint disabled)
-- lifts
-- leaderboard
-- profile
-- roadmap
-- AI helpers (legacy path)
-
-Roadmap route notes:
-
-- `POST /api/roadmap/check-unlocks` promotes eligible nodes to `ACTIVE`
-- `POST /api/roadmap/complete-node` explicitly marks an active node as `COMPLETED`
-
-Auth route notes:
-
-- `POST /api/auth/session-sync` currently returns `410 Gone` by design until a fully server-verified session bridge is implemented
-
 Boundary note:
 
-- The web app now uses the Next.js App Router API boundary directly for active frontend `/api/*` calls.
-- The previous catch-all `/api` proxy rewrite to the Express server has been removed.
-- Running the web app does not require starting the Express API.
+- The web app operates fully on the Next.js App Router API boundary for all `/api/*` frontend calls.
+- The legacy Express API layer was formally deprecated and removed to simplify deployment and fully embrace server actions and App Router endpoints.
 
 ## Local Setup
 
@@ -498,7 +480,6 @@ FRONTEND_URLS="http://localhost:3001"
 Notes:
 
 - the frontend runs on port `3001`
-- the Express API on port `5000` is optional legacy runtime
 - `DATABASE_URL` should point to your PostgreSQL instance
 - `NEXTAUTH_URL` should match the local or deployed app URL
 - `JWT_SECRET` should be at least 32 characters
@@ -521,18 +502,10 @@ npm run db:migrate
 
 ### 5. Start the app in development
 
-Start the frontend in one terminal.
-
-Terminal 1 - Next.js frontend:
+Start the frontend in a terminal:
 
 ```bash
 npm run dev
-```
-
-Optional Terminal 2 - legacy Express API (only for legacy route testing):
-
-```bash
-npm run dev:api
 ```
 
 Then open:
@@ -543,18 +516,16 @@ http://localhost:3001
 
 ## Production Build
 
-Build the frontend and the server separately:
+Build the frontend:
 
 ```bash
 npm run build
-npm run build:server
 ```
 
-Start the production services:
+Start the production server:
 
 ```bash
 npm run start
-npm run start:api
 ```
 
 ### Build troubleshooting
@@ -578,7 +549,6 @@ docker-compose up -d
 The Docker setup starts:
 
 - Next.js frontend on `3001`
-- Express API on `5000`
 - PostgreSQL in the compose network
 
 ## PM2 Deployment
@@ -620,18 +590,15 @@ npm run pm2:delete
 | Script                 | Description                                      |
 | ---------------------- | ------------------------------------------------ |
 | `npm run dev`          | Start the Next.js dev server on port 3001        |
-| `npm run dev:api`      | Start the Express API in development mode        |
 | `npm run build`        | Build the Next.js app for production             |
-| `npm run build:server` | Type-check and build the server TypeScript       |
 | `npm run start`        | Start the Next.js production server on port 3001 |
-| `npm run start:api`    | Start the Express API in production-style mode   |
 | `npm run lint`         | Run ESLint across the codebase                   |
 | `npm run test`         | Run Vitest in watch mode                         |
 | `npm run test:run`     | Run Vitest once                                  |
 | `npm run db:generate`  | Generate Prisma client                           |
 | `npm run db:push`      | Push Prisma schema to the database               |
 | `npm run db:migrate`   | Run Prisma migration flow                        |
-| `npm run db:seed`      | Seed the database                                |
+| `npm run db:seed`      | Seed the database with modern `tsx`              |
 | `npm run db:studio`    | Open Prisma Studio                               |
 | `npm run pm2:start`    | Start PM2 processes                              |
 | `npm run pm2:stop`     | Stop PM2 processes                               |
@@ -663,12 +630,11 @@ Enums used in the schema include:
 - The app is intentionally dark themed and data dense, but the routed shell keeps each page focused on one task at a time.
 - The shared `lab-*` classes and the newer `card`, `btn-primary`, `step-*`, and `metric-number` utilities in `src/app/globals.css` define the current surface language.
 - The dashboard is now the root route, while `/dashboard` remains as a redirect for older links.
-- The codebase is split between Next.js route handlers and an Express API layer, so you need both processes running for full local functionality.
 - Route pages that read persisted planner state use a shared deterministic snapshot helper in `src/lib/plannerView.ts` to avoid hydration drift.
 
 ## Verification
 
-The current build completes successfully with `npm run build`.
+The current build completes successfully with `npm run build`. Tests run automatically via `npm run test:run`.
 
 ## License
 
