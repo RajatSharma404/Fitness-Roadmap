@@ -311,6 +311,17 @@ Several critical backend safeguards were implemented:
 - workout goal selector now affects generated workout programming instead of being a visual-only control
 - shared design tokens were corrected (missing `text-secondary` variable fixed)
 
+### MuscleWiki Upgrade (June 2026)
+
+A suite of interactive features matching professional-tier muscle atlas services was integrated:
+
+- **Interactive 2D Photographic Body Map:** Replaced the legacy blocky WebGL model with realistic, high-fidelity anatomical photographs. Includes quick toggles for gender (Male vs. Female) and orientation (Front vs. Back) with high-precision percentage-based SVG coordinate hitboxes.
+- **Granular Equipment Categorization:** Exercises are dynamically classified into 7 equipment modalities: Barbell, Dumbbell, Kettlebell, Cable, Machine, Band, and Bodyweight, exposing a full filter menu in the Library.
+- **Connected Fitness Calculators:**
+  - **Calorie & Macro Calculators:** Fully integrated with the user's active session and local/server profile snapshots to dynamically pre-fill target metrics.
+  - **One Rep Max (1RM) PR Integration:** Embedded a "Quick-fill from PRs" dashboard that queries `/api/lifts`, allowing users to auto-populate weight/rep metrics directly from their recorded training history.
+- **Mini Muscle Map Highlights:** Embedded side-by-side front/back mini silhouettes in the exercise detail side-drawer to highlight target and stabilizing muscles instantly.
+
 ## Visual System
 
 The current UI is built around a dark fitness console direction.
