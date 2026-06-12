@@ -30,10 +30,20 @@ export interface PlanAdjustment {
   note: string;
 }
 
+export type EquipmentCategory =
+  | "barbell"
+  | "dumbbell"
+  | "kettlebell"
+  | "cable"
+  | "machine"
+  | "band"
+  | "bodyweight";
+
 export interface ExerciseDetail {
   name: string;
   bodyPart: string;
   modality: "bodyweight" | "machine";
+  equipment: EquipmentCategory;
   exerciseType: "compound" | "isolation";
   recommendedReps: string;
   howTo: string[];
@@ -607,6 +617,58 @@ export function getExerciseImageDataUrl(
   return buildExerciseImageDataUrl(name, bodyPart, modality);
 }
 
+export function getExerciseEquipment(
+  name: string,
+  modality: "bodyweight" | "machine"
+): EquipmentCategory {
+  const lowerName = name.toLowerCase();
+
+  if (modality === "bodyweight") {
+    if (lowerName.includes("band")) return "band";
+    return "bodyweight";
+  }
+
+  if (
+    lowerName.includes("barbell") ||
+    lowerName.includes("smith") ||
+    lowerName.includes("ez-bar") ||
+    lowerName.includes("bench press") ||
+    lowerName.includes("ohp") ||
+    lowerName.includes(" squat") ||
+    lowerName.includes("deadlift") ||
+    lowerName.includes("pendlay")
+  ) {
+    return "barbell";
+  }
+  if (
+    lowerName.includes("dumbbell") ||
+    lowerName.includes("db") ||
+    lowerName.includes("goblet") ||
+    lowerName.includes("bulgarian") ||
+    lowerName.includes("arnold")
+  ) {
+    return "dumbbell";
+  }
+  if (lowerName.includes("kettlebell") || lowerName.includes("kb")) {
+    return "kettlebell";
+  }
+  if (
+    lowerName.includes("cable") ||
+    lowerName.includes("pulldown") ||
+    lowerName.includes("crossover") ||
+    lowerName.includes("woodchopper") ||
+    lowerName.includes("pushdown") ||
+    lowerName.includes("rope")
+  ) {
+    return "cable";
+  }
+  if (lowerName.includes("band")) {
+    return "band";
+  }
+
+  return "machine";
+}
+
 function buildGenericExerciseDetail(
   name: string,
   bodyPart: string,
@@ -621,6 +683,7 @@ function buildGenericExerciseDetail(
     name,
     bodyPart,
     modality,
+    equipment: getExerciseEquipment(name, modality),
     exerciseType,
     recommendedReps: defaultRepRangeForBodyPart(bodyPart),
     howTo: [
@@ -754,7 +817,10 @@ export function getExerciseSearchTerms(name: string): string[] {
   return [canonical, ...mappedAliases.map(normalizeExerciseSearchTerm)];
 }
 
-const exerciseLibrary: Record<string, Omit<ExerciseDetail, "name">> = {
+const exerciseLibrary: Record<
+  string,
+  Omit<ExerciseDetail, "name" | "equipment">
+> = {
   "Flat dumbbell press": {
     bodyPart: "Chest",
     modality: "machine",
@@ -838,6 +904,7 @@ function fallbackDetail(name: string): ExerciseDetail {
     name,
     bodyPart: "Full Body",
     modality: "machine",
+    equipment: getExerciseEquipment(name, "machine"),
     exerciseType: getExerciseType(name),
     recommendedReps: "3-4 sets x 8-12 reps",
     howTo: [
@@ -864,13 +931,14 @@ export function getExerciseDetail(name: string): ExerciseDetail {
 
   return {
     ...detail,
+    equipment: getExerciseEquipment(detail.name, detail.modality),
     imageUrl: buildExerciseImageDataUrl(
       detail.name,
       detail.bodyPart,
       detail.modality,
     ),
     imageAlt: `${detail.name} ${detail.bodyPart} ${detail.modality} form example`,
-  };
+  } as ExerciseDetail;
 }
 
 // Find related exercises that share target muscles with the given exercise

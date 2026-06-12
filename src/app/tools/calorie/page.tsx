@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Card, SectionHeader } from "@/components/shared/UIPrimitives";
 import { calculateBodyPlan, PlannerInput } from "@/lib/bodyPlanner";
+import { readPlannerSnapshot, syncPlannerSnapshotFromServer } from "@/lib/plannerView";
 
 const defaultInput: PlannerInput = {
   age: 28,
@@ -17,6 +18,19 @@ const defaultInput: PlannerInput = {
 
 export default function CalorieToolPage() {
   const [input, setInput] = useState<PlannerInput>(defaultInput);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const snap = readPlannerSnapshot();
+      setInput(snap.input);
+    }, 0);
+
+    void syncPlannerSnapshotFromServer().then((serverSnap) => {
+      setInput(serverSnap.input);
+    });
+
+    return () => clearTimeout(timer);
+  }, []);
 
   const result = useMemo(() => calculateBodyPlan(input), [input]);
 

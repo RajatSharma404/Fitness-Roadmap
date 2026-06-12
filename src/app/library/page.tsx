@@ -10,6 +10,7 @@ import {
 } from "@/components/shared/UIPrimitives";
 import { Skeleton } from "@/components/shared/Skeleton";
 import { BodyMap } from "@/components/library/BodyMap";
+import { MiniBodyMap } from "@/components/library/MiniBodyMap";
 import { useLazyLoad } from "@/hooks/useLazyLoad";
 import {
   getExerciseImageDataUrl,
@@ -83,7 +84,8 @@ export default function LibraryPage() {
       const bodyMatch =
         selectedBodyPart === "All" || exercise.bodyPart === selectedBodyPart;
       const modalityMatch =
-        selectedModality === "All" || exercise.modality === selectedModality;
+        selectedModality === "All" ||
+        getExerciseDetail(exercise.name).equipment === selectedModality.toLowerCase();
       const typeMatch =
         selectedType === "All" ||
         getExerciseDetail(exercise.name).exerciseType === selectedType;
@@ -209,7 +211,7 @@ export default function LibraryPage() {
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
-          {["All", "Bodyweight", "Machine"].map((modality) => (
+          {["All", "Barbell", "Dumbbell", "Kettlebell", "Cable", "Machine", "Band", "Bodyweight"].map((modality) => (
             <button
               key={modality}
               type="button"
@@ -343,6 +345,7 @@ export default function LibraryPage() {
                   }}
                 />
               </Card>
+              <MiniBodyMap targetMuscles={activeDetail.targetMuscles} />
               {activeExercise && addedExercises.has(activeExercise) && (
                 <div className="rounded-md border border-green-500/30 bg-green-500/10 p-2 text-xs text-green-300">
                   ✓ Added to your workout
@@ -350,7 +353,9 @@ export default function LibraryPage() {
               )}
               <Card level="base">
                 <p className="text-xs uppercase tracking-[0.2em]">Muscle</p>
-                <p className="mt-1 text-[#eeeef2]">{activeDetail.bodyPart}</p>
+                <p className="mt-1 text-[#eeeef2]">
+                  {activeDetail.bodyPart} ({activeDetail.targetMuscles.join(", ")})
+                </p>
                 <p className="mt-2 text-xs uppercase tracking-[0.2em]">
                   Recommended Reps
                 </p>

@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Card, SectionHeader } from "@/components/shared/UIPrimitives";
-import { calculateBodyPlan, GoalType } from "@/lib/bodyPlanner";
+import { calculateBodyPlan, GoalType, PlannerInput } from "@/lib/bodyPlanner";
+import { readPlannerSnapshot, syncPlannerSnapshotFromServer } from "@/lib/plannerView";
 
 type Preset = "balanced" | "high_protein" | "low_carb";
 
@@ -24,21 +25,43 @@ export default function MacroToolPage() {
   const [calories, setCalories] = useState(2000);
   const [goal, setGoal] = useState<GoalType>("fat_loss");
   const [preset, setPreset] = useState<Preset>("balanced");
+  const [plannerInput, setPlannerInput] = useState<PlannerInput | null>(null);
 
-  const plannerTarget = useMemo(
-    () =>
-      calculateBodyPlan({
-        age: 28,
-        sex: "male",
-        heightCm: 170,
-        weightKg: 80,
-        goal,
-        activity: "moderate",
-        workoutDays: 5,
-        diet: "mixed",
-      }).macros,
-    [goal],
-  );
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const snap = readPlannerSnapshot();
+      setPlannerInput(snap.input);
+      setGoal(snap.input.goal);
+      const initialCalories = calculateBodyPlan(snap.input).targetCalories;
+      setCalories(Math.round(initialCalories));
+    }, 0);
+
+    void syncPlannerSnapshotFromServer().then((serverSnap) => {
+      setPlannerInput(serverSnap.input);
+      setGoal(serverSnap.input.goal);
+      const serverCalories = calculateBodyPlan(serverSnap.input).targetCalories;
+      setCalories(Math.round(serverCalories));
+    });
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  const plannerTarget = useMemo(() => {
+    const activeInput = plannerInput || {
+      age: 28,
+      sex: "male" as const,
+      heightCm: 170,
+      weightKg: 80,
+      goal,
+      activity: "moderate" as const,
+      workoutDays: 5,
+      diet: "mixed" as const,
+    };
+    return calculateBodyPlan({
+      ...activeInput,
+      goal,
+    }).macros;
+  }, [plannerInput, goal]);
 
   const manual = useMemo(
     () => splitMacros(calories, preset),

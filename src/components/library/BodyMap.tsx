@@ -41,34 +41,60 @@ interface BodyMapProps {
 
 export function BodyMap({ selected, onToggle }: BodyMapProps) {
   const [view, setView] = useState<"front" | "back">("front");
+  const [gender, setGender] = useState<"male" | "female">("male");
   const [hoveredMuscle, setHoveredMuscle] = useState<string | null>(null);
 
   const activeMuscles = view === "front" ? frontMuscles : backMuscles;
-  const imageSrc = view === "front" ? "/images/body-front.png" : "/images/body-back.png";
+  const imageSrc = `/images/body-${gender}-${view}.png`;
 
   return (
     <div className="space-y-4">
       {/* Controls */}
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <div className="flex gap-2 rounded-lg bg-[rgba(255,255,255,0.02)] p-1 border border-[rgba(255,255,255,0.06)]">
-          <button
-            onClick={() => setView("front")}
-            className={cn(
-              "rounded-md px-4 py-1.5 text-xs font-semibold uppercase tracking-widest transition",
-              view === "front" ? "bg-cyan-500/20 text-cyan-300" : "text-[#636380] hover:text-[#eeeef2]"
-            )}
-          >
-            Front
-          </button>
-          <button
-            onClick={() => setView("back")}
-            className={cn(
-              "rounded-md px-4 py-1.5 text-xs font-semibold uppercase tracking-widest transition",
-              view === "back" ? "bg-cyan-500/20 text-cyan-300" : "text-[#636380] hover:text-[#eeeef2]"
-            )}
-          >
-            Back
-          </button>
+        <div className="flex gap-4">
+          {/* Front/Back Toggle */}
+          <div className="flex gap-2 rounded-lg bg-[rgba(255,255,255,0.02)] p-1 border border-[rgba(255,255,255,0.06)]">
+            <button
+              onClick={() => setView("front")}
+              className={cn(
+                "rounded-md px-4 py-1.5 text-xs font-semibold uppercase tracking-widest transition",
+                view === "front" ? "bg-cyan-500/20 text-cyan-300" : "text-[#636380] hover:text-[#eeeef2]"
+              )}
+            >
+              Front
+            </button>
+            <button
+              onClick={() => setView("back")}
+              className={cn(
+                "rounded-md px-4 py-1.5 text-xs font-semibold uppercase tracking-widest transition",
+                view === "back" ? "bg-cyan-500/20 text-cyan-300" : "text-[#636380] hover:text-[#eeeef2]"
+              )}
+            >
+              Back
+            </button>
+          </div>
+
+          {/* Male/Female Toggle */}
+          <div className="flex gap-2 rounded-lg bg-[rgba(255,255,255,0.02)] p-1 border border-[rgba(255,255,255,0.06)]">
+            <button
+              onClick={() => setGender("male")}
+              className={cn(
+                "rounded-md px-4 py-1.5 text-xs font-semibold uppercase tracking-widest transition",
+                gender === "male" ? "bg-cyan-500/20 text-cyan-300" : "text-[#636380] hover:text-[#eeeef2]"
+              )}
+            >
+              Male
+            </button>
+            <button
+              onClick={() => setGender("female")}
+              className={cn(
+                "rounded-md px-4 py-1.5 text-xs font-semibold uppercase tracking-widest transition",
+                gender === "female" ? "bg-cyan-500/20 text-cyan-300" : "text-[#636380] hover:text-[#eeeef2]"
+              )}
+            >
+              Female
+            </button>
+          </div>
         </div>
 
         {selected.size > 0 && (
