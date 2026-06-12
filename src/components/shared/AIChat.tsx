@@ -15,7 +15,7 @@ interface Message {
 
 interface AIChatProps {
   isOpen: boolean;
-  onClose: () => void;
+  onToggle: () => void;
   context: {
     goal?: string;
     PRs: Array<{ name: string; weight: number; reps: number }>;
@@ -24,7 +24,7 @@ interface AIChatProps {
   };
 }
 
-export function AIChat({ isOpen, onClose, context }: AIChatProps) {
+export function AIChat({ isOpen, onToggle, context }: AIChatProps) {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "welcome",
@@ -150,7 +150,7 @@ export function AIChat({ isOpen, onClose, context }: AIChatProps) {
     <>
       {/* Floating FAB */}
       <motion.button
-        onClick={() => (isOpen ? onClose() : undefined)}
+        onClick={onToggle}
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         className={cn(
@@ -183,7 +183,7 @@ export function AIChat({ isOpen, onClose, context }: AIChatProps) {
                   <div className="text-xs text-zinc-400">Powered by Gemini</div>
                 </div>
                 <button
-                  onClick={onClose}
+                  onClick={onToggle}
                   className="p-1 hover:bg-zinc-800 rounded transition-colors"
                 >
                   <X className="w-4 h-4 text-zinc-400" />

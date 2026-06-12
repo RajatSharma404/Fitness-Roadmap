@@ -26,6 +26,7 @@ import {
   syncPlannerSnapshotFromServer,
 } from "@/lib/plannerView";
 import { cn } from "@/lib/cn";
+import { PRLogger } from "@/components/shared/PRLogger";
 
 const tiers = ["beginner", "intermediate", "advanced"] as const;
 
@@ -45,6 +46,39 @@ export default function WorkoutsPage() {
   const [isSavingWorkout, setIsSavingWorkout] = useState(false);
   const [saveFeedback, setSaveFeedback] = useState<string | null>(null);
   const [copyFeedback, setCopyFeedback] = useState<string | null>(null);
+  const [prLoggerOpen, setPrLoggerOpen] = useState(false);
+  const [activePRName, setActivePRName] = useState<string | undefined>(undefined);
+
+  async function handleSavePR(data: {
+    name: string;
+    weight: number;
+    reps: number;
+    setType: "WORKING" | "MAX_EFFORT" | "COMPETITION";
+    notes?: string;
+    videoUrl?: string;
+  }) {
+    try {
+      const res = await fetch("/api/lifts", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (res.ok) {
+        setSaveFeedback(`Successfully logged PR of ${data.weight}kg for ${data.name}!`);
+        setTimeout(() => setSaveFeedback(null), 5000);
+      } else if (res.status === 401) {
+        setSaveFeedback("Please sign in to save PRs.");
+      } else {
+        setSaveFeedback("Failed to save PR. Please try again.");
+      }
+    } catch (err) {
+      console.error("Error saving PR:", err);
+      setSaveFeedback("An error occurred while saving the PR.");
+    }
+  }
 
   useEffect(() => {
     const sync = () => {
@@ -292,7 +326,15 @@ export default function WorkoutsPage() {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <ActionButton variant="secondary">Log PR</ActionButton>
+                      <ActionButton
+                        variant="secondary"
+                        onClick={() => {
+                          setActivePRName(exercise);
+                          setPrLoggerOpen(true);
+                        }}
+                      >
+                        Log PR
+                      </ActionButton>
                       <button
                         type="button"
                         onClick={() =>
@@ -435,6 +477,12 @@ export default function WorkoutsPage() {
           </div>
         </div>
       ) : null}
+      <PRLogger
+        isOpen={prLoggerOpen}
+        onClose={() => setPrLoggerOpen(false)}
+        initialLiftName={activePRName}
+        onSave={handleSavePR}
+      />
     </div>
   );
 }

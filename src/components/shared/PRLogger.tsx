@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Dumbbell } from "lucide-react";
 import dynamic from "next/dynamic";
@@ -18,6 +18,7 @@ const Editor = dynamic(() => import("@monaco-editor/react"), {
 interface PRLoggerProps {
   isOpen: boolean;
   onClose: () => void;
+  initialLiftName?: string;
   onSave: (data: {
     name: string;
     weight: number;
@@ -36,7 +37,7 @@ const lifts = [
   { id: "barbell_row", label: "Barbell Row" },
 ];
 
-export function PRLogger({ isOpen, onClose, onSave }: PRLoggerProps) {
+export function PRLogger({ isOpen, onClose, initialLiftName, onSave }: PRLoggerProps) {
   const [lift, setLift] = useState("squat");
   const [weight, setWeight] = useState("");
   const [reps, setReps] = useState("");
@@ -49,6 +50,31 @@ export function PRLogger({ isOpen, onClose, onSave }: PRLoggerProps) {
   const [showCustom, setShowCustom] = useState(false);
   const [customLift, setCustomLift] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const timer = setTimeout(() => {
+      if (initialLiftName) {
+        const found = lifts.find(
+          (l) =>
+            l.label.toLowerCase() === initialLiftName.toLowerCase() ||
+            l.id.toLowerCase() === initialLiftName.toLowerCase(),
+        );
+        if (found) {
+          setLift(found.id);
+          setShowCustom(false);
+        } else {
+          setCustomLift(initialLiftName);
+          setShowCustom(true);
+        }
+      } else {
+        setLift("squat");
+        setShowCustom(false);
+        setCustomLift("");
+      }
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [isOpen, initialLiftName]);
 
   // Calculate estimated 1RM
   const estimated1RM =

@@ -22,6 +22,8 @@ import {
   readPlannerSnapshot,
   syncPlannerSnapshotFromServer,
 } from "@/lib/plannerView";
+import { NodeDrawer } from "@/components/roadmap/NodeDrawer";
+import { PRLogger } from "@/components/shared/PRLogger";
 const RoadmapFlow = dynamic(() => import("@/components/roadmap/RoadmapFlow"), {
   ssr: false,
   loading: () => (
@@ -40,6 +42,52 @@ export default function RoadmapPage() {
   const [draftEquipment, setDraftEquipment] = useState(snapshot.equipment);
   const [draftExperience, setDraftExperience] = useState(snapshot.experience);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
+
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [liftHistory, setLiftHistory] = useState<Array<{ date: string; oneRM: number }>>([]);
+  const [prLoggerOpen, setPrLoggerOpen] = useState(false);
+
+  function getExerciseForNode(nodeId: string): string | undefined {
+    const mapping: Record<string, string> = {
+      assessment: "Squat",
+      calories: "Bench Press",
+      macros: "Deadlift",
+      hydration: "Overhead Press",
+      training: "Squat",
+      nutrition_execution: "Bench Press",
+      progress_tracking: "Deadlift",
+      adjustments: "Overhead Press",
+    };
+    return mapping[nodeId];
+  }
+
+  function getMusclesForNode(nodeId: string): string[] {
+    const mapping: Record<string, string[]> = {
+      assessment: ["Quads", "Glutes", "Hamstrings"],
+      calories: ["Chest", "Triceps", "Shoulders"],
+      macros: ["Back", "Hamstrings", "Glutes"],
+      hydration: ["Shoulders", "Triceps"],
+      training: ["Quads", "Glutes", "Hamstrings"],
+      nutrition_execution: ["Chest", "Triceps"],
+      progress_tracking: ["Back", "Hamstrings"],
+      adjustments: ["Shoulders", "Core"],
+    };
+    return mapping[nodeId] ?? [];
+  }
+
+  function getUnlockCriteriaForNode(nodeId: string, title: string): Record<string, unknown> {
+    const mapping: Record<string, Record<string, unknown>> = {
+      assessment: { type: "lift", lift: "Squat", value: 1.0, unit: "x BW" },
+      calories: { type: "lift", lift: "Bench Press", value: 0.8, unit: "x BW" },
+      macros: { type: "lift", lift: "Deadlift", value: 1.2, unit: "x BW" },
+      hydration: { type: "lift", lift: "Overhead Press", value: 0.5, unit: "x BW" },
+      training: { type: "lift", lift: "Squat", value: 1.2, unit: "x BW" },
+      nutrition_execution: { type: "lift", lift: "Bench Press", value: 1.0, unit: "x BW" },
+      progress_tracking: { type: "lift", lift: "Deadlift", value: 1.5, unit: "x BW" },
+      adjustments: { type: "lift", lift: "Overhead Press", value: 0.7, unit: "x BW" },
+    };
+    return mapping[nodeId] ?? { type: "simple", lift: title, value: 0, unit: "" };
+  }
 
   useEffect(() => {
     const sync = () => {
@@ -67,6 +115,7 @@ export default function RoadmapPage() {
     () => calculateBodyPlan(snapshot.input),
     [snapshot.input],
   );
+
   const readiness = useMemo(() => {
     const latest = dedupeCheckinsByDate(snapshot.checkins)[0];
     return latest ? computeReadinessScore(latest) : 74;
@@ -75,17 +124,101 @@ export default function RoadmapPage() {
   const completedCount = plan.roadmapNodes.filter(
     (node) => progress[node.id],
   ).length;
+
   const completionRate = Math.round(
     (completedCount / plan.roadmapNodes.length) * 100,
   );
+
   const selectedNode =
     plan.roadmapNodes.find((node) => node.id === selectedNodeId) ??
     plan.roadmapNodes[0];
+
   const selectedNodeStatus = getEnhancedNodeStatus(
     selectedNode,
     progress,
     snapshot.checkins,
   );
+
+  const activeLift = selectedNode ? getExerciseForNode(selectedNode.id) : undefined;
+
+  const nodeForDrawer = useMemo(() => {
+    if (!selectedNode) return null;
+    return {
+      id: selectedNode.id,
+      name: selectedNode.title,
+      track: selectedNode.track,
+      description: selectedNode.description,
+      muscles: getMusclesForNode(selectedNode.id),
+      unlockCriteria: getUnlockCriteriaForNode(selectedNode.id, selectedNode.title),
+      status: selectedNodeStatus,
+    };
+  }, [selectedNode, selectedNodeStatus]);
+
+  useEffect(() => {
+    if (drawerOpen && selectedNode) {
+      if (activeLift) {
+        fetch(`/api/lifts?lift=${encodeURIComponent(activeLift)}`)
+          .then((res) => (res.ok ? res.json() : []))
+          .then((data) => {
+            if (Array.isArray(data)) {
+              const formatted = data
+                .map((l: { date: string; oneRM: number }) => ({
+                  date: l.date,
+                  oneRM: l.oneRM ?? 0,
+                }))
+                .reverse();
+              setLiftHistory(formatted);
+            }
+          })
+          .catch((err) => console.error("Error fetching lift history:", err));
+      } else {
+        const timer = setTimeout(() => {
+          setLiftHistory([]);
+        }, 0);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [drawerOpen, selectedNodeId, selectedNode, activeLift]);
+
+  async function handleSavePR(data: {
+    name: string;
+    weight: number;
+    reps: number;
+    setType: "WORKING" | "MAX_EFFORT" | "COMPETITION";
+    notes?: string;
+    videoUrl?: string;
+  }) {
+    try {
+      const res = await fetch("/api/lifts", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (res.ok) {
+        setSaveMessage(`Successfully logged PR of ${data.weight}kg for ${data.name}!`);
+        if (activeLift && data.name.toLowerCase() === activeLift.toLowerCase()) {
+          const formattedDate = new Date().toISOString();
+          const epley1RM = data.weight * (1 + data.reps / 30);
+          setLiftHistory((prev) => [...prev, { date: formattedDate, oneRM: epley1RM }]);
+        }
+        setTimeout(() => setSaveMessage(null), 5000);
+      } else if (res.status === 401) {
+        setSaveMessage("Please sign in to save PRs.");
+      } else {
+        setSaveMessage("Failed to save PR. Please try again.");
+      }
+    } catch (err) {
+      console.error("Error saving PR:", err);
+      setSaveMessage("An error occurred while saving the PR.");
+    }
+  }
+
+  function handleAskAI() {
+    window.dispatchEvent(new CustomEvent("open-ai-chat"));
+  }
 
   const phaseGroups = useMemo(() => {
     const map = new Map<number, (typeof plan.roadmapNodes)[number][]>();
@@ -318,6 +451,22 @@ export default function RoadmapPage() {
           }}
         />
       ) : null}
+
+      <NodeDrawer
+        node={nodeForDrawer}
+        liftHistory={liftHistory}
+        isOpen={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        onLogPR={() => setPrLoggerOpen(true)}
+        onAskAI={handleAskAI}
+      />
+
+      <PRLogger
+        isOpen={prLoggerOpen}
+        onClose={() => setPrLoggerOpen(false)}
+        initialLiftName={activeLift}
+        onSave={handleSavePR}
+      />
     </div>
   );
 }

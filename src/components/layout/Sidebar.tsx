@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
+import { useSession, signIn, signOut } from "next-auth/react";
 import {
   BookOpen,
   ChartColumnIncreasing,
@@ -14,6 +15,10 @@ import {
   NotebookPen,
   Settings,
   X,
+  Trophy,
+  User,
+  LogOut,
+  LogIn,
 } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { ProgressRing } from "./ProgressRing";
@@ -31,6 +36,12 @@ const navItems: SidebarNavItem[] = [
     href: "/roadmap",
     label: "Roadmap",
     icon: LayoutDashboard,
+    section: "core",
+  },
+  {
+    href: "/leaderboard",
+    label: "Leaderboard",
+    icon: Trophy,
     section: "core",
   },
   {
@@ -79,6 +90,7 @@ export function Sidebar({
 }: Readonly<SidebarProps>) {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
+  const { data: session, status } = useSession();
 
   const navContent = (
     <>
@@ -162,13 +174,54 @@ export function Sidebar({
           </p>
           <p className="mt-1 font-semibold text-cyan-300">{todayLabel}</p>
         </div>
-        <button
-          type="button"
-          className="flex w-full items-center justify-center gap-2 rounded-md border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.02)] px-3 py-2 text-sm text-[#eeeef2] transition hover:border-cyan-400/50 hover:bg-cyan-400/5"
-        >
-          <Settings className="h-4 w-4" />
-          Settings
-        </button>
+
+        {status === "authenticated" && session?.user ? (
+          <div className="flex items-center gap-3 p-2 rounded-lg border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)]">
+            <Link
+              href={`/profile/${session.user.id}`}
+              onClick={() => setIsOpen(false)}
+              className="flex items-center gap-3 flex-1 min-w-0"
+            >
+              <div className="w-9 h-9 rounded-full bg-zinc-700 flex items-center justify-center overflow-hidden shrink-0 border border-white/10">
+                {session.user.image ? (
+                  <Image
+                    src={session.user.image}
+                    alt={session.user.name || ""}
+                    width={36}
+                    height={36}
+                    className="object-cover"
+                  />
+                ) : (
+                  <User className="w-5 h-5 text-zinc-400" />
+                )}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold text-[#eeeef2] truncate">
+                  {session.user.name || "User"}
+                </p>
+                <p className="text-xs text-[#636380] truncate">View Profile</p>
+              </div>
+            </Link>
+            <button
+              onClick={() => signOut({ callbackUrl: "/" })}
+              type="button"
+              className="p-1.5 hover:bg-zinc-800 rounded-md text-zinc-400 hover:text-red-400 transition-colors shrink-0"
+              title="Sign Out"
+            >
+              <LogOut className="h-4 w-4" />
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
+            type="button"
+            className="flex w-full items-center justify-center gap-2 rounded-md border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.02)] px-3 py-2 text-sm text-[#eeeef2] transition hover:border-cyan-400/50 hover:bg-cyan-400/5"
+          >
+            <LogIn className="h-4 w-4 text-[#60a5fa]" />
+            Sign In
+          </button>
+        )}
+
         <div className="flex flex-wrap gap-x-2 gap-y-1 text-xs text-[#636380]">
           <Link href="/about" className="hover:text-[#eeeef2]">
             About
@@ -220,3 +273,4 @@ export function Sidebar({
     </>
   );
 }
+

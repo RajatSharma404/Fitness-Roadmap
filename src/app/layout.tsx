@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { DM_Sans, JetBrains_Mono, Syne } from "next/font/google";
 import { AppShell } from "@/components/layout/AppShell";
+import { NextAuthProvider } from "@/components/providers/NextAuthProvider";
 import "./globals.css";
 
 const displayFont = Syne({
@@ -46,8 +47,11 @@ export default function RootLayout({
       className={`${displayFont.variable} ${bodyFont.variable} ${metricsFont.variable} h-full antialiased dark`}
     >
       <body className="min-h-full bg-bg-void text-text-primary">
-        <AppShell>{children}</AppShell>
+        <NextAuthProvider>
+          <AppShell>{children}</AppShell>
+        </NextAuthProvider>
       </body>
     </html>
   );
 }
+
