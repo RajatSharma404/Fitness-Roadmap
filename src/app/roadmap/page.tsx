@@ -158,7 +158,7 @@ export default function RoadmapPage() {
     if (drawerOpen && selectedNode) {
       if (activeLift) {
         fetch(`/api/lifts?lift=${encodeURIComponent(activeLift)}`)
-          .then((res) => (res.ok ? res.json() : []))
+          .then((res) => (res.ok ? res.json() : Promise.reject(res)))
           .then((data) => {
             if (Array.isArray(data)) {
               const formatted = data
@@ -170,7 +170,22 @@ export default function RoadmapPage() {
               setLiftHistory(formatted);
             }
           })
-          .catch((err) => console.error("Error fetching lift history:", err));
+          .catch(() => {
+            // Local fallback for guest users
+            try {
+              const guestPRs = JSON.parse(localStorage.getItem("guestPRs") || "[]");
+              const matching = guestPRs
+                .filter((p: { name: string }) => p.name?.toLowerCase() === activeLift.toLowerCase())
+                .map((p: { date: string; oneRM: number }) => ({
+                  date: p.date,
+                  oneRM: p.oneRM ?? 0,
+                }))
+                .reverse();
+              setLiftHistory(matching);
+            } catch {
+              setLiftHistory([]);
+            }
+          });
       } else {
         const timer = setTimeout(() => {
           setLiftHistory([]);
@@ -197,22 +212,36 @@ export default function RoadmapPage() {
         body: JSON.stringify(data),
       });
 
+      const epley1RM = data.weight * (1 + data.reps / 30);
+      const formattedDate = new Date().toISOString();
+
       if (res.ok) {
         setSaveMessage(`Successfully logged PR of ${data.weight}kg for ${data.name}!`);
         if (activeLift && data.name.toLowerCase() === activeLift.toLowerCase()) {
-          const formattedDate = new Date().toISOString();
-          const epley1RM = data.weight * (1 + data.reps / 30);
           setLiftHistory((prev) => [...prev, { date: formattedDate, oneRM: epley1RM }]);
         }
         setTimeout(() => setSaveMessage(null), 5000);
-      } else if (res.status === 401) {
-        setSaveMessage("Please sign in to save PRs.");
       } else {
-        setSaveMessage("Failed to save PR. Please try again.");
+        // Fallback for guest mode or server offline
+        const guestPRs = JSON.parse(localStorage.getItem("guestPRs") || "[]");
+        const newEntry = { ...data, oneRM: epley1RM, date: formattedDate };
+        localStorage.setItem("guestPRs", JSON.stringify([newEntry, ...guestPRs]));
+
+        if (activeLift && data.name.toLowerCase() === activeLift.toLowerCase()) {
+          setLiftHistory((prev) => [...prev, { date: formattedDate, oneRM: epley1RM }]);
+        }
+        setSaveMessage(`Logged PR of ${data.weight}kg for ${data.name} (Saved locally)!`);
+        setTimeout(() => setSaveMessage(null), 5000);
       }
     } catch (err) {
       console.error("Error saving PR:", err);
-      setSaveMessage("An error occurred while saving the PR.");
+      // Fallback
+      const epley1RM = data.weight * (1 + data.reps / 30);
+      const formattedDate = new Date().toISOString();
+      const guestPRs = JSON.parse(localStorage.getItem("guestPRs") || "[]");
+      localStorage.setItem("guestPRs", JSON.stringify([{ ...data, oneRM: epley1RM, date: formattedDate }, ...guestPRs]));
+      setSaveMessage(`Logged PR of ${data.weight}kg for ${data.name} (Saved locally)!`);
+      setTimeout(() => setSaveMessage(null), 5000);
     }
   }
 

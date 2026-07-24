@@ -66,17 +66,31 @@ export default function WorkoutsPage() {
         body: JSON.stringify(data),
       });
 
+      const epley1RM = data.weight * (1 + data.reps / 30);
+      const formattedDate = new Date().toISOString();
+
       if (res.ok) {
         setSaveFeedback(`Successfully logged PR of ${data.weight}kg for ${data.name}!`);
         setTimeout(() => setSaveFeedback(null), 5000);
-      } else if (res.status === 401) {
-        setSaveFeedback("Please sign in to save PRs.");
       } else {
-        setSaveFeedback("Failed to save PR. Please try again.");
+        const guestPRs = JSON.parse(localStorage.getItem("guestPRs") || "[]");
+        localStorage.setItem(
+          "guestPRs",
+          JSON.stringify([{ ...data, oneRM: epley1RM, date: formattedDate }, ...guestPRs]),
+        );
+        setSaveFeedback(`Logged PR of ${data.weight}kg for ${data.name} (Saved locally)!`);
+        setTimeout(() => setSaveFeedback(null), 5000);
       }
     } catch (err) {
       console.error("Error saving PR:", err);
-      setSaveFeedback("An error occurred while saving the PR.");
+      const epley1RM = data.weight * (1 + data.reps / 30);
+      const guestPRs = JSON.parse(localStorage.getItem("guestPRs") || "[]");
+      localStorage.setItem(
+        "guestPRs",
+        JSON.stringify([{ ...data, oneRM: epley1RM, date: new Date().toISOString() }, ...guestPRs]),
+      );
+      setSaveFeedback(`Logged PR of ${data.weight}kg for ${data.name} (Saved locally)!`);
+      setTimeout(() => setSaveFeedback(null), 5000);
     }
   }
 
@@ -160,32 +174,43 @@ export default function WorkoutsPage() {
 
     const durationMinutes = workoutStartedAt
       ? Math.max(1, Math.round((Date.now() - workoutStartedAt) / 60000))
-      : null;
+      : 30;
 
-    const response = await fetch("/api/workout-sessions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({
-        day: selectedDay,
-        tier: selectedTier,
-        phase: activePhase.level,
-        focus: activeDay.focus,
-        setsReps: activeDay.setsReps,
-        exercises: activeDay.exercises,
-        completedExercises: Array.from(completedExercises),
-        durationMinutes,
-        completedAt: new Date().toISOString(),
-      }),
-    });
+    const payload = {
+      day: selectedDay,
+      tier: selectedTier,
+      phase: activePhase.level,
+      focus: activeDay.focus,
+      setsReps: activeDay.setsReps,
+      exercises: activeDay.exercises,
+      completedExercises: Array.from(completedExercises),
+      durationMinutes,
+      completedAt: new Date().toISOString(),
+    };
 
-    if (response.ok) {
-      setSaveFeedback("Workout saved to your profile.");
+    try {
+      const response = await fetch("/api/workout-sessions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(payload),
+      });
+
+      if (response.ok) {
+        setSaveFeedback("Workout saved to your profile!");
+        setWorkoutModeOpen(false);
+      } else {
+        // Fallback: local storage for guest session
+        const history = JSON.parse(localStorage.getItem("guestWorkoutSessions") || "[]");
+        localStorage.setItem("guestWorkoutSessions", JSON.stringify([payload, ...history]));
+        setSaveFeedback("Workout completed! (Saved locally)");
+        setWorkoutModeOpen(false);
+      }
+    } catch {
+      const history = JSON.parse(localStorage.getItem("guestWorkoutSessions") || "[]");
+      localStorage.setItem("guestWorkoutSessions", JSON.stringify([payload, ...history]));
+      setSaveFeedback("Workout completed! (Saved locally)");
       setWorkoutModeOpen(false);
-    } else if (response.status === 401) {
-      setSaveFeedback("Sign in to save workout sessions.");
-    } else {
-      setSaveFeedback("Could not save workout. Please try again.");
     }
 
     setIsSavingWorkout(false);
