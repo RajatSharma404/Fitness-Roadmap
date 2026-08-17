@@ -33,6 +33,7 @@ import {
 } from "@/lib/plannerView";
 import { NodeDrawer } from "@/components/roadmap/NodeDrawer";
 import { PRLogger } from "@/components/shared/PRLogger";
+import { evaluateMilestoneUnlocks } from "@/lib/roadmapUnlockEngine";
 import { cn } from "@/lib/cn";
 
 const RoadmapFlow = dynamic(() => import("@/components/roadmap/RoadmapFlow"), {
@@ -347,7 +348,6 @@ export default function RoadmapPage() {
         if (activeLift && data.name.toLowerCase() === activeLift.toLowerCase()) {
           setLiftHistory((prev) => [...prev, { date: formattedDate, oneRM: epley1RM }]);
         }
-        setTimeout(() => setSaveMessage(null), 5000);
       } else {
         const guestPRs = JSON.parse(localStorage.getItem("guestPRs") || "[]");
         const newEntry = { ...data, oneRM: epley1RM, date: formattedDate };
@@ -357,8 +357,39 @@ export default function RoadmapPage() {
           setLiftHistory((prev) => [...prev, { date: formattedDate, oneRM: epley1RM }]);
         }
         setSaveMessage(`Logged PR of ${data.weight}kg for ${data.name} (Saved locally)!`);
-        setTimeout(() => setSaveMessage(null), 5000);
       }
+
+      // Automatically evaluate milestone unlocks against updated PR
+      const allCurrentLifts = [
+        { name: data.name, weight: data.weight, reps: data.reps, oneRM: epley1RM },
+      ];
+      const unlockResult = evaluateMilestoneUnlocks({
+        lifts: allCurrentLifts,
+        checkins: snapshot.checkins,
+        currentProgress: progress,
+        userWeightKg: snapshot.input.weightKg,
+        userGender: snapshot.input.sex,
+        roadmapNodes: plan.roadmapNodes,
+      });
+
+      if (unlockResult.newlyUnlockedNodeIds.length > 0) {
+        setProgress(unlockResult.updatedProgress);
+        void persistPlannerSnapshot({
+          ...snapshot,
+          progress: unlockResult.updatedProgress,
+        });
+
+        // Trigger celebratory unlock events
+        unlockResult.unlockEvents.forEach((ev) => {
+          window.dispatchEvent(
+            new CustomEvent("roadmap-milestone-unlocked", {
+              detail: ev,
+            }),
+          );
+        });
+      }
+
+      setTimeout(() => setSaveMessage(null), 5000);
     } catch (err) {
       console.error("Error saving PR:", err);
       const epley1RM = data.weight * (1 + data.reps / 30);
@@ -371,7 +402,13 @@ export default function RoadmapPage() {
   }
 
   function handleAskAI() {
-    window.dispatchEvent(new CustomEvent("open-ai-chat"));
+    window.dispatchEvent(
+      new CustomEvent("open-ai-chat-prompt", {
+        detail: {
+          prompt: `Give me tactical cues, warm-up sets, and progression strategies to complete the "${selectedNode.title}" milestone on the ${selectedNode.track} track.`,
+        },
+      }),
+    );
   }
 
   const trackCategories: Array<{

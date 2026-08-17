@@ -1,42 +1,45 @@
 "use client";
 
-import dynamic from "next/dynamic";
-import { ReactNode, useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
-import { Footer } from "./Footer";
-import { AIChat } from "../shared/AIChat";
+import { motion, AnimatePresence } from "framer-motion";
+import { Trophy, Sparkles, X } from "lucide-react";
+import { Sidebar } from "@/components/layout/Sidebar";
+import { TopBar } from "@/components/layout/TopBar";
+import { Footer } from "@/components/layout/Footer";
+import { AIChat } from "@/components/shared/AIChat";
 import {
   defaultPlannerSnapshot,
   readPlannerSnapshot,
   syncPlannerSnapshotFromServer,
 } from "@/lib/plannerView";
 
-const Sidebar = dynamic(() => import("./Sidebar").then((mod) => mod.Sidebar), {
-  ssr: false,
-  loading: () => (
-    <aside className="hidden h-screen w-55 shrink-0 border-r border-[rgba(255,255,255,0.06)] bg-[rgba(13,13,22,0.92)] backdrop-blur-xl md:flex md:flex-col" />
-  ),
-});
-
-const TopBar = dynamic(() => import("./TopBar").then((mod) => mod.TopBar), {
-  ssr: false,
-  loading: () => (
-    <header className="flex min-h-22 flex-col gap-2 border-b border-[rgba(255,255,255,0.06)] bg-[rgba(13,13,22,0.82)] px-6 py-4 backdrop-blur-xl md:px-8" />
-  ),
-});
-
-interface ShellChromeProps {
-  children: ReactNode;
+interface LiftItem {
+  id: string;
+  name: string;
+  weight: number;
+  reps: number;
+  date: string;
 }
 
-export function ShellChrome({ children }: Readonly<ShellChromeProps>) {
+interface MilestoneToast {
+  title: string;
+  xp: number;
+  reason: string;
+}
+
+export function ShellChrome({ children }: { children: React.ReactNode }) {
   const { data: session } = useSession();
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [snapshot, setSnapshot] = useState(defaultPlannerSnapshot);
-  const [lifts, setLifts] = useState<Array<{ name: string; weight: number; reps: number }>>([]);
+  const [lifts, setLifts] = useState<LiftItem[]>([]);
+  const [milestoneToast, setMilestoneToast] = useState<MilestoneToast | null>(null);
 
   useEffect(() => {
-    const sync = () => setSnapshot(readPlannerSnapshot());
+    const sync = () => {
+      setSnapshot(readPlannerSnapshot());
+    };
+
     sync();
     void syncPlannerSnapshotFromServer().then((serverSnapshot) => {
       setSnapshot(serverSnapshot);
@@ -58,8 +61,24 @@ export function ShellChrome({ children }: Readonly<ShellChromeProps>) {
     const handleOpenChat = () => {
       setIsChatOpen(true);
     };
+    const handleMilestoneUnlocked = (e: Event) => {
+      const customEvent = e as CustomEvent<MilestoneToast>;
+      if (customEvent.detail) {
+        setMilestoneToast(customEvent.detail);
+        setTimeout(() => {
+          setMilestoneToast((current) =>
+            current?.title === customEvent.detail.title ? null : current,
+          );
+        }, 6000);
+      }
+    };
+
     window.addEventListener("open-ai-chat", handleOpenChat);
-    return () => window.removeEventListener("open-ai-chat", handleOpenChat);
+    window.addEventListener("roadmap-milestone-unlocked", handleMilestoneUnlocked);
+    return () => {
+      window.removeEventListener("open-ai-chat", handleOpenChat);
+      window.removeEventListener("roadmap-milestone-unlocked", handleMilestoneUnlocked);
+    };
   }, []);
 
   const unlockedNodesCount = Object.values(snapshot.progress).filter(Boolean).length;
@@ -72,6 +91,46 @@ export function ShellChrome({ children }: Readonly<ShellChromeProps>) {
 
   return (
     <div className="flex min-h-screen flex-col overflow-hidden bg-bg-void text-text-primary">
+      {/* Milestone Unlock Floating Banner */}
+      <AnimatePresence>
+        {milestoneToast && (
+          <motion.div
+            initial={{ opacity: 0, y: -40, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -40, scale: 0.95 }}
+            className="fixed top-6 right-6 z-50 max-w-sm"
+          >
+            <div className="bg-gradient-to-r from-[#121b14] to-[#0c1824] border border-green-500/40 rounded-2xl p-4 shadow-[0_0_30px_rgba(34,197,94,0.3)] backdrop-blur-xl flex items-start gap-3">
+              <div className="p-2 rounded-xl bg-green-500/20 text-green-300 border border-green-500/30 shrink-0">
+                <Trophy className="w-5 h-5" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5 text-xs uppercase tracking-wider font-bold text-green-400 font-mono">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>Milestone Unlocked!</span>
+                </div>
+                <h4 className="font-display text-sm font-bold text-white truncate mt-0.5">
+                  {milestoneToast.title}
+                </h4>
+                <p className="text-[11px] text-zinc-300 mt-1 leading-snug">
+                  {milestoneToast.reason}
+                </p>
+                <div className="mt-2 inline-flex items-center gap-1 text-[10px] font-mono font-bold text-amber-400 bg-amber-400/10 border border-amber-400/20 px-2 py-0.5 rounded-md">
+                  +{milestoneToast.xp} XP Bounty Awarded
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setMilestoneToast(null)}
+                className="text-zinc-500 hover:text-white transition p-1"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div className="flex min-h-screen overflow-hidden">
         <Sidebar />
         <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
@@ -90,4 +149,3 @@ export function ShellChrome({ children }: Readonly<ShellChromeProps>) {
     </div>
   );
 }
-
