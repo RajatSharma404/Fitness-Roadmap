@@ -6,6 +6,7 @@ import {
 } from "@/lib/planEnhancements";
 
 import { CustomRoutine } from "@/lib/workoutRoutines";
+import { DailyFoodLog } from "@/lib/indianFoodDatabase";
 
 interface PersistedPlanState {
   input: PlannerInput;
@@ -15,6 +16,8 @@ interface PersistedPlanState {
   experience: ExperienceLevel;
   customRoutines?: CustomRoutine[];
   activeRoutineId?: string | null;
+  foodLogs?: Record<string, DailyFoodLog>;
+  waterLogs?: Record<string, number>;
 }
 
 export const defaultPlannerInput: PlannerInput = {
@@ -36,6 +39,8 @@ export interface PlannerSnapshot {
   progress: Record<string, boolean>;
   customRoutines?: CustomRoutine[];
   activeRoutineId?: string | null;
+  foodLogs?: Record<string, DailyFoodLog>;
+  waterLogs?: Record<string, number>;
 }
 
 export const defaultPlannerSnapshot: PlannerSnapshot = {
@@ -46,6 +51,8 @@ export const defaultPlannerSnapshot: PlannerSnapshot = {
   progress: {},
   customRoutines: [],
   activeRoutineId: null,
+  foodLogs: {},
+  waterLogs: {},
 };
 
 function readPlanProgress(): Record<string, boolean> {
@@ -85,6 +92,8 @@ function writeSnapshotToLocalStorage(snapshot: PlannerSnapshot): void {
       experience: snapshot.experience,
       customRoutines: snapshot.customRoutines || [],
       activeRoutineId: snapshot.activeRoutineId || null,
+      foodLogs: snapshot.foodLogs || {},
+      waterLogs: snapshot.waterLogs || {},
     }),
   );
   writePlanProgress(snapshot.progress);
@@ -102,6 +111,8 @@ export function readPlannerSnapshot(): PlannerSnapshot {
   let progress: Record<string, boolean> = readPlanProgress();
   let customRoutines: CustomRoutine[] = [];
   let activeRoutineId: string | null = null;
+  let foodLogs: Record<string, DailyFoodLog> = {};
+  let waterLogs: Record<string, number> = {};
 
   try {
     const savedInput = localStorage.getItem("bodyPlanInput");
@@ -120,6 +131,8 @@ export function readPlannerSnapshot(): PlannerSnapshot {
         progress?: Record<string, boolean>;
         customRoutines?: CustomRoutine[];
         activeRoutineId?: string | null;
+        foodLogs?: Record<string, DailyFoodLog>;
+        waterLogs?: Record<string, number>;
       };
       checkins = parsed.checkins ?? [];
       equipment = parsed.equipment ?? "gym";
@@ -127,12 +140,24 @@ export function readPlannerSnapshot(): PlannerSnapshot {
       progress = parsed.progress ?? progress;
       customRoutines = parsed.customRoutines ?? [];
       activeRoutineId = parsed.activeRoutineId ?? null;
+      foodLogs = parsed.foodLogs ?? {};
+      waterLogs = parsed.waterLogs ?? {};
     }
   } catch {
     // ignore invalid local state
   }
 
-  return { input, checkins, equipment, experience, progress, customRoutines, activeRoutineId };
+  return {
+    input,
+    checkins,
+    equipment,
+    experience,
+    progress,
+    customRoutines,
+    activeRoutineId,
+    foodLogs,
+    waterLogs,
+  };
 }
 
 export function savePlannerSnapshot(snapshot: PlannerSnapshot): void {
@@ -174,6 +199,8 @@ export async function syncPlannerSnapshotFromServer(): Promise<PlannerSnapshot> 
       progress: payload.state.progress ?? {},
       customRoutines: payload.state.customRoutines ?? localSnapshot.customRoutines ?? [],
       activeRoutineId: payload.state.activeRoutineId ?? localSnapshot.activeRoutineId ?? null,
+      foodLogs: payload.state.foodLogs ?? localSnapshot.foodLogs ?? {},
+      waterLogs: payload.state.waterLogs ?? localSnapshot.waterLogs ?? {},
     };
 
     writeSnapshotToLocalStorage(serverSnapshot);

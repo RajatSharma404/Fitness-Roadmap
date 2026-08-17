@@ -146,17 +146,18 @@ It includes:
 
 ### Nutrition
 
-The nutrition page turns calorie and macro targets into practical Indian meal execution.
+The nutrition page turns calorie and macro targets into precision daily fueling and practical Indian meal execution.
 
 It includes:
 
-- an India-first meal planner with North, South, and quick-prep presets
-- veg, non-veg, Jain, and mixed diet filtering
-- balanced, high-protein, and budget priority modes
-- practical meal slots with local serving cues (roti, rice, dal, paneer, eggs, chicken, curd)
-- grouped weekly grocery guidance by protein/carb/produce/dairy
-- hydration and recovery checklist tailored to the selected plan
-- Indian snack and meal swaps with simple benefit notes
+- **Interactive Daily Food Diary (`DailyFoodDiary`)** with 4 meal slots (Breakfast, Lunch, Snack/Pre-Workout, Dinner) and date navigation
+- **India-First Food Database (`INDIAN_FOOD_DATABASE`)** containing 30+ staples (roti, dal, paneer, eggs, chicken, soya, whey, rice, curd, chana, fruits) with exact macros and serving units
+- **Real-Time Macro Gauges & Rings** tracking Calories consumed, remaining calorie deficit, Protein (g), Carbs (g), and Fats (g)
+- **MacroFactor-Style Adaptive TDEE Engine (`AdaptiveTDEECard`)** measuring true metabolic energy expenditure based on actual caloric intake paired with check-in weight trends
+- **Smart Grocery List & WhatsApp Export (`SmartGroceryList`)** consolidating weekly grocery items with 1-click formatted WhatsApp export
+- **Hydration Quick-Tracker** with +250ml (Glass), +500ml (Bottle), and +1.0L (Shaker) buttons
+- **1-Click "Log from Plan"** allowing users to instantly transfer regional meal plans into today's diary
+- **Regional Meal Plans & Swaps** with North, South, Jain-friendly, high-protein, and student budget presets
 
 ### Guides and Trust Pages
 

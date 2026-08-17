@@ -34,6 +34,8 @@ const persistedPlanStateSchema = z.object({
   experience: z.enum(["beginner", "intermediate", "advanced"]),
   customRoutines: z.array(z.any()).optional().default([]),
   activeRoutineId: z.string().nullable().optional(),
+  foodLogs: z.record(z.string(), z.any()).optional().default({}),
+  waterLogs: z.record(z.string(), z.number()).optional().default({}),
 });
 
 export async function GET() {
