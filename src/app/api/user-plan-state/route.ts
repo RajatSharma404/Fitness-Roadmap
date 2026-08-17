@@ -32,6 +32,8 @@ const persistedPlanStateSchema = z.object({
   checkins: z.array(weeklyCheckinSchema).max(104),
   equipment: z.enum(["gym", "home"]),
   experience: z.enum(["beginner", "intermediate", "advanced"]),
+  customRoutines: z.array(z.any()).optional().default([]),
+  activeRoutineId: z.string().nullable().optional(),
 });
 
 export async function GET() {

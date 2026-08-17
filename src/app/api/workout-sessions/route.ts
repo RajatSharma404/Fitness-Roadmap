@@ -5,8 +5,8 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 const workoutSessionSchema = z.object({
-  day: z.string().trim().min(1).max(32),
-  tier: z.enum(["beginner", "intermediate", "advanced"]),
+  day: z.string().trim().min(1).max(64),
+  tier: z.string().trim().min(1).max(32),
   phase: z.string().trim().max(64).nullable().optional(),
   focus: z.string().trim().min(1).max(200),
   setsReps: z.string().trim().min(1).max(80),
@@ -30,7 +30,7 @@ export async function GET() {
   const sessions = await prisma.workoutSession.findMany({
     where: { userId },
     orderBy: { completedAt: "desc" },
-    take: 25,
+    take: 100,
   });
 
   return NextResponse.json({ ok: true, sessions });

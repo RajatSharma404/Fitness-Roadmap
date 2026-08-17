@@ -13,10 +13,14 @@ import {
   Trash2,
   ChevronDown,
   ChevronUp,
+  Flame,
+  RefreshCw,
 } from "lucide-react";
 import { getExerciseDetail } from "@/lib/planEnhancements";
 import { RestTimer } from "./RestTimer";
 import { VisualBarbell } from "@/components/tools/VisualBarbell";
+import { WarmupCalculatorModal } from "./WarmupCalculatorModal";
+import { ExerciseSwapModal } from "./ExerciseSwapModal";
 import { calculatePlates } from "@/lib/plateCalculator";
 import { calculateEpley1RM } from "@/lib/formulas";
 import { cn } from "@/lib/cn";
@@ -36,6 +40,15 @@ export interface ExerciseSessionState {
   sets: LoggedSet[];
 }
 
+export interface WorkoutFinishSummary {
+  durationSeconds: number;
+  totalVolumeKg: number;
+  totalSets: number;
+  completedExercises: string[];
+  prsAchieved: Array<{ name: string; weight: number; reps: number; oneRM: number }>;
+  sessionExercises?: ExerciseSessionState[];
+}
+
 interface LiveWorkoutModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -43,13 +56,7 @@ interface LiveWorkoutModalProps {
   focus: string;
   exercises: string[];
   userWeightKg?: number;
-  onFinishWorkout: (summary: {
-    durationSeconds: number;
-    totalVolumeKg: number;
-    totalSets: number;
-    completedExercises: string[];
-    prsAchieved: Array<{ name: string; weight: number; reps: number; oneRM: number }>;
-  }) => void;
+  onFinishWorkout: (summary: WorkoutFinishSummary) => void;
 }
 
 export function LiveWorkoutModal({
@@ -75,6 +82,20 @@ export function LiveWorkoutModal({
     })),
   );
 
+  // Synchronize initial exercises if props change
+  useEffect(() => {
+    setSessionExercises(
+      exercises.map((ex) => ({
+        name: ex,
+        sets: [
+          { id: `${ex}-1`, setNumber: 1, type: "WORKING", weight: 60, reps: 8, rpe: 8, completed: false },
+          { id: `${ex}-2`, setNumber: 2, type: "WORKING", weight: 60, reps: 8, rpe: 8, completed: false },
+          { id: `${ex}-3`, setNumber: 3, type: "WORKING", weight: 60, reps: 8, rpe: 8.5, completed: false },
+        ],
+      })),
+    );
+  }, [exercises]);
+
   // Rest timer state
   const [restTimerActive, setRestTimerActive] = useState(false);
   const [restTimerExercise, setRestTimerExercise] = useState<string>("");
@@ -83,6 +104,12 @@ export function LiveWorkoutModal({
   // Plate loader popup state
   const [plateLoaderWeight, setPlateLoaderWeight] = useState<number | null>(null);
   const [plateLoaderExercise, setPlateLoaderExercise] = useState<string>("");
+
+  // Warmup calculator modal state
+  const [warmupModalExerciseIndex, setWarmupModalExerciseIndex] = useState<number | null>(null);
+
+  // Exercise swap modal state
+  const [swapModalExerciseIndex, setSwapModalExerciseIndex] = useState<number | null>(null);
 
   // In-session PR celebrations
   const [sessionPRs, setSessionPRs] = useState<
@@ -147,8 +174,8 @@ export function LiveWorkoutModal({
       setRestTimerSetNum(setIdx + 2 <= updated[exIdx].sets.length ? setIdx + 2 : 1);
       setRestTimerActive(true);
 
-      // PR detection: calculate 1RM
-      if (targetSet.weight > 0 && targetSet.reps > 0) {
+      // PR detection: calculate 1RM (only for working sets or max effort)
+      if (targetSet.type !== "WARMUP" && targetSet.weight > 0 && targetSet.reps > 0) {
         const epley1RM = Math.round(calculateEpley1RM(targetSet.weight, targetSet.reps) * 10) / 10;
         const prItem = {
           name: updated[exIdx].name,
@@ -184,17 +211,17 @@ export function LiveWorkoutModal({
     setSessionExercises(updated);
   };
 
-  const handleAddSet = (exIdx: number) => {
+  const handleAddSet = (exIdx: number, setType: LoggedSet["type"] = "WORKING") => {
     const updated = [...sessionExercises];
     const lastSet = updated[exIdx].sets[updated[exIdx].sets.length - 1];
     const nextSetNumber = updated[exIdx].sets.length + 1;
     const newSet: LoggedSet = {
-      id: `${updated[exIdx].name}-set-${nextSetNumber}`,
+      id: `${updated[exIdx].name}-set-${nextSetNumber}-${Date.now()}`,
       setNumber: nextSetNumber,
-      type: "WORKING",
+      type: setType,
       weight: lastSet?.weight || 60,
-      reps: lastSet?.reps || 8,
-      rpe: 8,
+      reps: setType === "WARMUP" ? 10 : (lastSet?.reps || 8),
+      rpe: setType === "WARMUP" ? 5 : 8,
       completed: false,
     };
     updated[exIdx].sets.push(newSet);
@@ -210,6 +237,51 @@ export function LiveWorkoutModal({
     setSessionExercises(updated);
   };
 
+  // Warmup Ladder Integration
+  const handleApplyWarmupSets = (
+    exIdx: number,
+    warmupSets: Array<{ weight: number; reps: number; label: string; rpe: number }>,
+  ) => {
+    const updated = [...sessionExercises];
+    const existingWorkingSets = updated[exIdx].sets.filter((s) => s.type !== "WARMUP");
+
+    const newWarmupSetObjects: LoggedSet[] = warmupSets.map((ws, i) => ({
+      id: `${updated[exIdx].name}-warmup-${i + 1}-${Date.now()}`,
+      setNumber: i + 1,
+      type: "WARMUP",
+      weight: ws.weight,
+      reps: ws.reps,
+      rpe: ws.rpe,
+      completed: false,
+    }));
+
+    const combinedSets = [...newWarmupSetObjects, ...existingWorkingSets];
+    combinedSets.forEach((s, idx) => {
+      s.setNumber = idx + 1;
+    });
+
+    updated[exIdx].sets = combinedSets;
+    setSessionExercises(updated);
+  };
+
+  // Exercise Substitution Integration
+  const handleSwapExercise = (exIdx: number, newName: string) => {
+    const updated = [...sessionExercises];
+    const oldName = updated[exIdx].name;
+    updated[exIdx].name = newName;
+
+    // Reset set IDs
+    updated[exIdx].sets = updated[exIdx].sets.map((s, idx) => ({
+      ...s,
+      id: `${newName}-set-${idx + 1}-${Date.now()}`,
+    }));
+
+    setSessionExercises(updated);
+    if (expandedExercise === oldName) {
+      setExpandedExercise(newName);
+    }
+  };
+
   const handleFinishSession = () => {
     setIsFinished(true);
     const completedExList = sessionExercises
@@ -222,6 +294,7 @@ export function LiveWorkoutModal({
       totalSets: completedSetsCount,
       completedExercises: completedExList,
       prsAchieved: sessionPRs,
+      sessionExercises,
     });
   };
 
@@ -235,6 +308,13 @@ export function LiveWorkoutModal({
   const popupPlates = plateLoaderWeight
     ? calculatePlates({ targetWeight: plateLoaderWeight, barWeight: 20, unit: "kg" })
     : null;
+
+  const getSetBadgeLabel = (set: LoggedSet, idx: number) => {
+    if (set.type === "WARMUP") return `W`;
+    if (set.type === "DROP") return `D`;
+    if (set.type === "FAILURE") return `F`;
+    return `${set.setNumber}`;
+  };
 
   return (
     <div className="fixed inset-0 z-50 bg-black/80 p-2 sm:p-4 backdrop-blur-md overflow-y-auto flex items-center justify-center">
@@ -315,10 +395,13 @@ export function LiveWorkoutModal({
             const detail = getExerciseDetail(exerciseState.name);
             const isExpanded = expandedExercise === exerciseState.name;
             const completedCount = exerciseState.sets.filter((s) => s.completed).length;
+            const isBarbellMove = ["squat", "bench", "deadlift", "press", "row", "thrust"].some((kw) =>
+              exerciseState.name.toLowerCase().includes(kw),
+            );
 
             return (
               <div
-                key={exerciseState.name}
+                key={`${exerciseState.name}-${exIdx}`}
                 className={cn(
                   "rounded-2xl border transition-all overflow-hidden",
                   isExpanded
@@ -353,10 +436,36 @@ export function LiveWorkoutModal({
                   </div>
 
                   <div className="flex items-center gap-2 shrink-0">
+                    {/* Warmup Generator Button */}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setWarmupModalExerciseIndex(exIdx);
+                      }}
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-mono font-semibold transition"
+                      title="Generate Warmup Ladder"
+                    >
+                      <Flame className="w-3.5 h-3.5" />
+                      <span className="hidden sm:inline">Warmup</span>
+                    </button>
+
+                    {/* Swap / Replace Button */}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSwapModalExerciseIndex(exIdx);
+                      }}
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-zinc-300 border border-white/10 text-xs font-mono font-semibold transition"
+                      title="Swap with Alternative Exercise"
+                    >
+                      <RefreshCw className="w-3.5 h-3.5" />
+                      <span className="hidden sm:inline">Swap</span>
+                    </button>
+
                     {/* Quick Barbell Plate Loader Link */}
-                    {["squat", "bench", "deadlift", "press", "row"].some((kw) =>
-                      exerciseState.name.toLowerCase().includes(kw),
-                    ) && (
+                    {isBarbellMove && (
                       <button
                         type="button"
                         onClick={(e) => {
@@ -365,10 +474,10 @@ export function LiveWorkoutModal({
                           setPlateLoaderWeight(activeSet.weight);
                           setPlateLoaderExercise(exerciseState.name);
                         }}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 text-xs font-mono font-semibold transition"
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 text-xs font-mono font-semibold transition"
                       >
                         <Dumbbell className="w-3.5 h-3.5" />
-                        <span>Plates</span>
+                        <span className="hidden sm:inline">Plates</span>
                       </button>
                     )}
 
@@ -381,8 +490,8 @@ export function LiveWorkoutModal({
                 {/* Set-by-Set Logging Table */}
                 {isExpanded && (
                   <div className="p-4 pt-0 space-y-3 border-t border-white/5">
-                    <div className="grid grid-cols-[36px_1fr_1fr_1fr_40px] gap-2 text-[10px] uppercase font-mono text-zinc-400 px-2 pt-3">
-                      <span>Set</span>
+                    <div className="grid grid-cols-[50px_1fr_1fr_1fr_40px] gap-2 text-[10px] uppercase font-mono text-zinc-400 px-2 pt-3">
+                      <span>Type</span>
                       <span>Weight (kg)</span>
                       <span>Reps</span>
                       <span>RPE</span>
@@ -394,23 +503,44 @@ export function LiveWorkoutModal({
                         <div
                           key={set.id}
                           className={cn(
-                            "grid grid-cols-[36px_1fr_1fr_1fr_40px] gap-2 items-center p-2 rounded-xl border transition",
+                            "grid grid-cols-[50px_1fr_1fr_1fr_40px] gap-2 items-center p-2 rounded-xl border transition",
                             set.completed
                               ? "bg-green-500/[0.06] border-green-500/30"
-                              : "bg-white/[0.02] border-white/5",
+                              : set.type === "WARMUP"
+                                ? "bg-amber-500/[0.04] border-amber-500/20"
+                                : "bg-white/[0.02] border-white/5",
                           )}
                         >
-                          {/* Set Badge */}
-                          <span
+                          {/* Set Type Dropdown / Badge */}
+                          <select
+                            value={set.type}
+                            onChange={(e) =>
+                              handleUpdateSetValue(exIdx, setIdx, "type", e.target.value)
+                            }
                             className={cn(
-                              "flex items-center justify-center w-7 h-7 rounded-lg text-xs font-mono font-bold border",
-                              set.completed
-                                ? "bg-green-500/20 text-green-300 border-green-500/40"
-                                : "bg-white/5 text-zinc-400 border-white/10",
+                              "h-9 w-full rounded-lg border font-mono text-xs font-bold text-center appearance-none cursor-pointer focus:outline-none",
+                              set.type === "WARMUP"
+                                ? "bg-amber-500/20 text-amber-300 border-amber-500/40"
+                                : set.type === "DROP"
+                                  ? "bg-purple-500/20 text-purple-300 border-purple-500/40"
+                                  : set.type === "FAILURE"
+                                    ? "bg-red-500/20 text-red-300 border-red-500/40"
+                                    : "bg-white/5 text-cyan-300 border-white/10",
                             )}
                           >
-                            {set.setNumber}
-                          </span>
+                            <option value="WORKING" className="bg-[#0b0b14] text-white">
+                              {getSetBadgeLabel(set, setIdx)}
+                            </option>
+                            <option value="WARMUP" className="bg-[#0b0b14] text-amber-300">
+                              W
+                            </option>
+                            <option value="DROP" className="bg-[#0b0b14] text-purple-300">
+                              D
+                            </option>
+                            <option value="FAILURE" className="bg-[#0b0b14] text-red-400">
+                              F
+                            </option>
+                          </select>
 
                           {/* Weight Input */}
                           <input
@@ -444,6 +574,7 @@ export function LiveWorkoutModal({
                             }
                             className="h-9 w-full rounded-lg border border-white/10 bg-white/[0.04] px-1 font-mono text-xs font-semibold text-center text-zinc-200 focus:border-cyan-400 focus:outline-none"
                           >
+                            <option value="5">RPE 5 (Warm)</option>
                             <option value="6">RPE 6 (4 RIR)</option>
                             <option value="7">RPE 7 (3 RIR)</option>
                             <option value="8">RPE 8 (2 RIR)</option>
@@ -472,13 +603,22 @@ export function LiveWorkoutModal({
 
                     {/* Set Modification Controls */}
                     <div className="flex items-center justify-between pt-1">
-                      <button
-                        type="button"
-                        onClick={() => handleAddSet(exIdx)}
-                        className="inline-flex items-center gap-1.5 text-xs text-cyan-400 hover:text-cyan-300 font-mono transition"
-                      >
-                        <Plus className="w-3.5 h-3.5" /> Add Set
-                      </button>
+                      <div className="flex items-center gap-3">
+                        <button
+                          type="button"
+                          onClick={() => handleAddSet(exIdx, "WORKING")}
+                          className="inline-flex items-center gap-1.5 text-xs text-cyan-400 hover:text-cyan-300 font-mono transition"
+                        >
+                          <Plus className="w-3.5 h-3.5" /> Working Set
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleAddSet(exIdx, "DROP")}
+                          className="inline-flex items-center gap-1.5 text-xs text-purple-400 hover:text-purple-300 font-mono transition"
+                        >
+                          <Plus className="w-3.5 h-3.5" /> Drop Set
+                        </button>
+                      </div>
 
                       {exerciseState.sets.length > 1 && (
                         <button
@@ -486,7 +626,7 @@ export function LiveWorkoutModal({
                           onClick={() => handleRemoveSet(exIdx, exerciseState.sets.length - 1)}
                           className="inline-flex items-center gap-1 text-xs text-zinc-500 hover:text-red-400 font-mono transition"
                         >
-                          <Trash2 className="w-3.5 h-3.5" /> Remove Last Set
+                          <Trash2 className="w-3.5 h-3.5" /> Remove Set
                         </button>
                       )}
                     </div>
@@ -564,6 +704,34 @@ export function LiveWorkoutModal({
             </div>
           </div>
         </div>
+      )}
+
+      {/* Warmup Calculator Modal */}
+      {warmupModalExerciseIndex !== null && sessionExercises[warmupModalExerciseIndex] && (
+        <WarmupCalculatorModal
+          isOpen={true}
+          onClose={() => setWarmupModalExerciseIndex(null)}
+          exerciseName={sessionExercises[warmupModalExerciseIndex].name}
+          initialWeight={
+            sessionExercises[warmupModalExerciseIndex].sets.find((s) => s.type === "WORKING")?.weight || 60
+          }
+          unit="kg"
+          onApplyWarmupSets={(warmupSets) =>
+            handleApplyWarmupSets(warmupModalExerciseIndex, warmupSets)
+          }
+        />
+      )}
+
+      {/* Exercise Swap Modal */}
+      {swapModalExerciseIndex !== null && sessionExercises[swapModalExerciseIndex] && (
+        <ExerciseSwapModal
+          isOpen={true}
+          onClose={() => setSwapModalExerciseIndex(null)}
+          currentExerciseName={sessionExercises[swapModalExerciseIndex].name}
+          onSelectReplacement={(newName) =>
+            handleSwapExercise(swapModalExerciseIndex, newName)
+          }
+        />
       )}
 
       {/* Floating Audio / Vibrational Rest Timer */}

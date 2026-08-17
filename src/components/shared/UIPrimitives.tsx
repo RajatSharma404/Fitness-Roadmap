@@ -16,6 +16,7 @@ interface CardProps {
   children: ReactNode;
   level?: SurfaceLevel;
   className?: string;
+  onClick?: () => void;
 }
 
 const levelClasses: Record<SurfaceLevel, string> = {
@@ -24,9 +25,12 @@ const levelClasses: Record<SurfaceLevel, string> = {
   highlight: "lab-surface-highlight",
 };
 
-export function Card({ children, level = "base", className }: CardProps) {
+export function Card({ children, level = "base", className, onClick }: CardProps) {
   return (
-    <section className={cn("card p-4", levelClasses[level], className)}>
+    <section
+      onClick={onClick}
+      className={cn("card p-4", levelClasses[level], className)}
+    >
       {children}
     </section>
   );

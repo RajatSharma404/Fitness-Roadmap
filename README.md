@@ -83,13 +83,19 @@ It includes:
 
 - experience-tier toggles for beginner, intermediate, and advanced sessions
 - goal filters for all goals, fat loss, muscle gain, and recomposition
+- **Custom Routine Builder (`/workouts/builder`)** with 1-click template cloners (Push/Pull/Legs, Upper/Lower, Full Body), day management, and exercise catalog browser
+- **Active Routine Switcher** to seamlessly toggle between standard tier progressions and custom workout splits
+- **Dynamic Warm-Up Ladder Generator** calculating science-based warmup sets with Olympic barbell plate breakdowns
+- **In-Session Exercise Substitution (`ExerciseSwapModal`)** with recommended biomechanical equivalents and same-muscle group alternatives
+- **Enhanced Set Tagging** supporting Warmup (`W`), Working (`1..N`), Drop Set (`D`), and Failure (`F`) sets
+- **Workout History & Logbook Calendar (`/workouts/history`)** with monthly completion heatmap, volume metrics, session breakdowns, and CSV data export
 - day-by-day workout cards with exercise details
 - generated visual previews for each exercise card
 - per-muscle art styles so chest, back, legs, glutes, core, and arms all render with distinct themes
 - deeplink sharing for workout plans with copy feedback
 - a workout mode overlay for in-session logging
 - completion toggles for each exercise inside workout mode
-- **workout session persistence to Prisma** via authenticated API (`/api/workout-sessions`)
+- **workout session persistence to Prisma** via authenticated API (`/api/workout-sessions`) and guest local storage
 - **PR logging hooks** with an integrated modal to record sets, reps, weight, and track estimated 1RM
 
 ### Check-ins

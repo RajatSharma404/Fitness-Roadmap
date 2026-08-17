@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import Image from "next/image";
 import {
   Play,
@@ -8,6 +9,11 @@ import {
   ChevronUp,
   Share2,
   Check,
+  Layers,
+  Calendar,
+  Sparkles,
+  Dumbbell,
+  ArrowRight,
 } from "lucide-react";
 import {
   ActionButton,
@@ -34,6 +40,7 @@ const tiers = ["beginner", "intermediate", "advanced"] as const;
 
 export default function WorkoutsPage() {
   const [snapshot, setSnapshot] = useState(defaultPlannerSnapshot);
+  const [planSource, setPlanSource] = useState<"standard" | "custom">("standard");
   const [selectedTier, setSelectedTier] = useState<(typeof tiers)[number]>(() => {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
@@ -118,6 +125,9 @@ export default function WorkoutsPage() {
       if (!params.get("tier")) {
         setSelectedTier(next.experience);
       }
+      if (next.activeRoutineId && next.customRoutines?.some((r) => r.id === next.activeRoutineId)) {
+        setPlanSource("custom");
+      }
     };
 
     sync();
@@ -126,6 +136,12 @@ export default function WorkoutsPage() {
       const params = new URLSearchParams(window.location.search);
       if (!params.get("tier")) {
         setSelectedTier(serverSnapshot.experience);
+      }
+      if (
+        serverSnapshot.activeRoutineId &&
+        serverSnapshot.customRoutines?.some((r) => r.id === serverSnapshot.activeRoutineId)
+      ) {
+        setPlanSource("custom");
       }
     });
 
@@ -144,6 +160,7 @@ export default function WorkoutsPage() {
       }),
     [snapshot, selectedGoal],
   );
+
   const adaptiveGym = useMemo(
     () =>
       getAdaptiveGymProgression(
@@ -156,10 +173,36 @@ export default function WorkoutsPage() {
   );
 
   const activePhase = adaptiveGym[0] ?? adaptiveGym.at(-1) ?? null;
-  const activeDay =
-    activePhase?.days.find((day) => day.day === selectedDay) ??
-    activePhase?.days[0] ??
-    null;
+
+  // Active custom routine resolution
+  const activeCustomRoutine = useMemo(() => {
+    if (!snapshot.customRoutines || snapshot.customRoutines.length === 0) return null;
+    return (
+      snapshot.customRoutines.find((r) => r.id === snapshot.activeRoutineId) ||
+      snapshot.customRoutines[0]
+    );
+  }, [snapshot.customRoutines, snapshot.activeRoutineId]);
+
+  // Standard or Custom active day resolution
+  const activeDay = useMemo(() => {
+    if (planSource === "custom" && activeCustomRoutine) {
+      const matched = activeCustomRoutine.days.find((d) => d.dayName === selectedDay);
+      const chosen = matched || activeCustomRoutine.days[0];
+      return {
+        day: chosen.dayName,
+        bodyParts: chosen.bodyParts.length >= 2 ? [chosen.bodyParts[0], chosen.bodyParts[1]] : [chosen.bodyParts[0] || "Full Body", "All"],
+        focus: chosen.focus,
+        exercises: chosen.exercises.map((e) => e.name),
+        setsReps: `${chosen.exercises[0]?.targetSets || 3} sets × ${chosen.exercises[0]?.targetReps || "8-12"}`,
+      };
+    }
+
+    return (
+      activePhase?.days.find((day) => day.day === selectedDay) ??
+      activePhase?.days[0] ??
+      null
+    );
+  }, [planSource, activeCustomRoutine, selectedDay, activePhase]);
 
   function openWorkoutMode() {
     setSaveFeedback(null);
@@ -174,90 +217,190 @@ export default function WorkoutsPage() {
     setTimeout(() => setCopyFeedback(null), 2000);
   }
 
+  const customDaysList = activeCustomRoutine ? activeCustomRoutine.days : [];
+
   return (
     <div className="space-y-6 pb-8">
+      {/* Sub-Hub Tabs Bar */}
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-3">
+        <div className="flex items-center gap-2 overflow-x-auto">
+          <button
+            type="button"
+            className="px-4 py-2 rounded-xl bg-cyan-500/10 text-cyan-300 border border-cyan-500/30 text-xs font-mono font-bold uppercase tracking-wider shadow-sm"
+          >
+            Workout Execution
+          </button>
+
+          <Link
+            href="/workouts/builder"
+            className="px-4 py-2 rounded-xl bg-white/[0.02] hover:bg-white/[0.06] text-zinc-400 hover:text-white border border-white/10 text-xs font-mono font-semibold uppercase tracking-wider transition flex items-center gap-2"
+          >
+            <Layers className="w-3.5 h-3.5 text-cyan-400" />
+            <span>Routine Builder</span>
+            {snapshot.customRoutines && snapshot.customRoutines.length > 0 && (
+              <span className="px-1.5 py-0.2 rounded-full bg-cyan-500/20 text-cyan-300 text-[10px]">
+                {snapshot.customRoutines.length}
+              </span>
+            )}
+          </Link>
+
+          <Link
+            href="/workouts/history"
+            className="px-4 py-2 rounded-xl bg-white/[0.02] hover:bg-white/[0.06] text-zinc-400 hover:text-white border border-white/10 text-xs font-mono font-semibold uppercase tracking-wider transition flex items-center gap-2"
+          >
+            <Calendar className="w-3.5 h-3.5 text-green-400" />
+            <span>History & Logbook</span>
+          </Link>
+        </div>
+
+        {/* Custom Split Indicator Link */}
+        {activeCustomRoutine && (
+          <div className="flex items-center gap-2 text-xs font-mono text-zinc-400">
+            <span>Split:</span>
+            <button
+              type="button"
+              onClick={() => setPlanSource((prev) => (prev === "custom" ? "standard" : "custom"))}
+              className={cn(
+                "px-2.5 py-1 rounded-lg border font-bold text-xs transition",
+                planSource === "custom"
+                  ? "bg-purple-500/20 text-purple-300 border-purple-500/40"
+                  : "bg-white/[0.02] text-zinc-400 border-white/10",
+              )}
+            >
+              {planSource === "custom" ? `✨ ${activeCustomRoutine.name}` : "Standard Tier"}
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Main Header Card */}
       <Card
         level="elevated"
         className="flex flex-wrap items-center justify-between gap-4"
       >
         <div>
-          <p className="lab-kicker text-[#60a5fa]">Workouts</p>
+          <p className="lab-kicker text-[#60a5fa]">
+            {planSource === "custom" && activeCustomRoutine
+              ? `Custom Routine · ${activeCustomRoutine.name}`
+              : "Adaptive Training Matrix"}
+          </p>
           <h2 className="font-display text-[28px] font-bold text-[#eeeef2]">
-            Your adaptive training plan
+            {planSource === "custom" && activeCustomRoutine
+              ? activeCustomRoutine.name
+              : "Your adaptive training plan"}
           </h2>
           <p className="mt-1 text-sm text-[#636380]">
-            Choose one tier, select a day, and keep the next workout in focus.
+            {planSource === "custom"
+              ? "Executing your custom split. Edit anytime in the Routine Builder."
+              : "Choose one tier, select a day, and keep the next workout in focus."}
           </p>
         </div>
-        <div className="flex flex-wrap gap-3">
-          <div className="inline-flex rounded-full border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] p-1">
-            {tiers.map((tier) => (
-              <button
-                key={tier}
-                type="button"
-                onClick={() => setSelectedTier(tier)}
-                className={cn(
-                  "rounded-full px-4 py-2 text-sm capitalize transition",
-                  selectedTier === tier
-                    ? "bg-cyan-400/10 text-cyan-300"
-                    : "text-[#636380] hover:text-[#eeeef2]",
-                )}
-              >
-                {tier}
-              </button>
-            ))}
+
+        {planSource === "standard" ? (
+          <div className="flex flex-wrap gap-3">
+            <div className="inline-flex rounded-full border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] p-1">
+              {tiers.map((tier) => (
+                <button
+                  key={tier}
+                  type="button"
+                  onClick={() => setSelectedTier(tier)}
+                  className={cn(
+                    "rounded-full px-4 py-2 text-sm capitalize transition",
+                    selectedTier === tier
+                      ? "bg-cyan-400/10 text-cyan-300"
+                      : "text-[#636380] hover:text-[#eeeef2]",
+                  )}
+                >
+                  {tier}
+                </button>
+              ))}
+            </div>
+            <select
+              value={selectedGoal}
+              onChange={(e) => setSelectedGoal(e.target.value)}
+              className="rounded-full border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] px-4 py-2 text-sm text-[#eeeef2] hover:border-cyan-400/40"
+            >
+              <option value="all">All Goals</option>
+              <option value="fat_loss">Fat Loss</option>
+              <option value="muscle_gain">Muscle Gain</option>
+              <option value="recomposition">Recomposition</option>
+            </select>
           </div>
-          <select
-            value={selectedGoal}
-            onChange={(e) => setSelectedGoal(e.target.value)}
-            className="rounded-full border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] px-4 py-2 text-sm text-[#eeeef2] hover:border-cyan-400/40"
+        ) : (
+          <Link
+            href="/workouts/builder"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 border border-purple-500/30 text-xs font-mono font-semibold transition"
           >
-            <option value="all">All Goals</option>
-            <option value="fat_loss">Fat Loss</option>
-            <option value="muscle_gain">Muscle Gain</option>
-            <option value="recomposition">Recomposition</option>
-          </select>
-        </div>
+            <Layers className="w-3.5 h-3.5" /> Edit in Builder
+          </Link>
+        )}
       </Card>
 
+      {/* Week / Days Selector */}
       <Card level="base" className="space-y-4">
         <SectionHeader
-          kicker="Week View"
-          title="Tap a day to reveal the session"
+          kicker="Split Days"
+          title={
+            planSource === "custom"
+              ? "Select Day to Execute"
+              : "Tap a day to reveal the session"
+          }
           description="Active days glow cyan, completed days show green, and rest days stay muted."
         />
         <div className="flex gap-3 overflow-x-auto pb-1">
-          {activePhase?.days.map((day, index) => {
-            const isActive = selectedDay === day.day;
-            const isToday = index === 0;
-            return (
-              <button
-                key={day.day}
-                type="button"
-                onClick={() => setSelectedDay(day.day)}
-                className={cn(
-                  "grid h-11 w-11 shrink-0 place-items-center rounded-full border text-xs font-semibold transition",
-                  isActive
-                    ? "border-cyan-400 bg-cyan-400/10 text-cyan-300"
-                    : isToday
-                      ? "border-green-400/40 bg-green-400/10 text-green-300"
-                      : "border-[rgba(255,255,255,0.06)] text-[#636380]",
-                )}
-              >
-                {day.day.slice(0, 3)}
-              </button>
-            );
-          })}
+          {planSource === "custom" && activeCustomRoutine ? (
+            customDaysList.map((d, index) => {
+              const isActive = selectedDay === d.dayName;
+              return (
+                <button
+                  key={d.id}
+                  type="button"
+                  onClick={() => setSelectedDay(d.dayName)}
+                  className={cn(
+                    "px-4 py-2 shrink-0 rounded-xl border text-xs font-mono font-semibold transition",
+                    isActive
+                      ? "border-cyan-400 bg-cyan-400/10 text-cyan-300 shadow-md"
+                      : "border-[rgba(255,255,255,0.06)] text-[#636380] hover:text-[#eeeef2]",
+                  )}
+                >
+                  {d.dayName}
+                </button>
+              );
+            })
+          ) : (
+            activePhase?.days.map((day, index) => {
+              const isActive = selectedDay === day.day;
+              const isToday = index === 0;
+              return (
+                <button
+                  key={day.day}
+                  type="button"
+                  onClick={() => setSelectedDay(day.day)}
+                  className={cn(
+                    "grid h-11 w-11 shrink-0 place-items-center rounded-full border text-xs font-semibold transition",
+                    isActive
+                      ? "border-cyan-400 bg-cyan-400/10 text-cyan-300"
+                      : isToday
+                        ? "border-green-400/40 bg-green-400/10 text-green-300"
+                        : "border-[rgba(255,255,255,0.06)] text-[#636380]",
+                  )}
+                >
+                  {day.day.slice(0, 3)}
+                </button>
+              );
+            })
+          )}
         </div>
       </Card>
 
+      {/* Active Day Detail Card */}
       {activeDay ? (
         <Card level="elevated" className="space-y-4">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <p className="lab-kicker text-[#60a5fa]">{selectedDay}</p>
+              <p className="lab-kicker text-[#60a5fa]">{activeDay.day}</p>
               <h3 className="font-display text-2xl font-bold text-[#eeeef2]">
-                {activeDay.bodyParts[0]} + {activeDay.bodyParts[1]}
+                {activeDay.bodyParts[0]} {activeDay.bodyParts[1] ? `+ ${activeDay.bodyParts[1]}` : ""}
               </h3>
               <p className="mt-1 text-sm text-[#636380]">{activeDay.focus}</p>
             </div>
@@ -304,7 +447,7 @@ export default function WorkoutsPage() {
                           {exercise}
                         </p>
                         <p className="text-xs uppercase tracking-[0.2em] text-[#636380]">
-                          {detail.bodyPart}
+                          {detail.bodyPart} · {detail.equipment}
                         </p>
                       </div>
                     </div>
@@ -359,16 +502,16 @@ export default function WorkoutsPage() {
           </div>
 
           <ActionButton
-            className="btn-primary flex h-13 w-full items-center justify-center gap-2"
+            className="btn-primary flex h-13 w-full items-center justify-center gap-2 text-base font-bold shadow-lg"
             onClick={openWorkoutMode}
           >
-            <Play className="h-4 w-4" /> Start Workout Mode
+            <Play className="h-5 w-5 fill-current" /> Start Live Workout Mode ({activeDay.exercises.length} Exercises)
           </ActionButton>
           {saveFeedback ? (
-            <p className="text-sm text-cyan-300">{saveFeedback}</p>
+            <p className="text-sm text-cyan-300 font-mono">{saveFeedback}</p>
           ) : null}
           {copyFeedback ? (
-            <p className="text-sm text-green-300">{copyFeedback}</p>
+            <p className="text-sm text-green-300 font-mono">{copyFeedback}</p>
           ) : null}
         </Card>
       ) : null}
@@ -377,7 +520,7 @@ export default function WorkoutsPage() {
         <LiveWorkoutModal
           isOpen={workoutModeOpen}
           onClose={() => setWorkoutModeOpen(false)}
-          dayName={selectedDay}
+          dayName={activeDay.day}
           focus={activeDay.focus}
           exercises={activeDay.exercises}
           userWeightKg={snapshot.input.weightKg}
@@ -385,8 +528,8 @@ export default function WorkoutsPage() {
             const durationMinutes = Math.max(1, Math.round(summary.durationSeconds / 60));
 
             const payload = {
-              day: selectedDay,
-              tier: selectedTier,
+              day: activeDay.day,
+              tier: planSource === "custom" ? "custom" : selectedTier,
               phase: activePhase?.level || "foundation",
               focus: activeDay.focus,
               setsReps: activeDay.setsReps,
@@ -408,6 +551,12 @@ export default function WorkoutsPage() {
                 const history = JSON.parse(localStorage.getItem("guestWorkoutSessions") || "[]");
                 localStorage.setItem("guestWorkoutSessions", JSON.stringify([payload, ...history]));
               });
+
+              // Save locally as well for offline logbook
+              try {
+                const history = JSON.parse(localStorage.getItem("guestWorkoutSessions") || "[]");
+                localStorage.setItem("guestWorkoutSessions", JSON.stringify([payload, ...history]));
+              } catch {}
 
               // Evaluate any PRs logged during this live session against roadmap milestones
               if (summary.prsAchieved.length > 0) {

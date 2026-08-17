@@ -5,12 +5,16 @@ import {
   WeeklyCheckIn,
 } from "@/lib/planEnhancements";
 
+import { CustomRoutine } from "@/lib/workoutRoutines";
+
 interface PersistedPlanState {
   input: PlannerInput;
   progress: Record<string, boolean>;
   checkins: WeeklyCheckIn[];
   equipment: EquipmentType;
   experience: ExperienceLevel;
+  customRoutines?: CustomRoutine[];
+  activeRoutineId?: string | null;
 }
 
 export const defaultPlannerInput: PlannerInput = {
@@ -30,6 +34,8 @@ export interface PlannerSnapshot {
   equipment: EquipmentType;
   experience: ExperienceLevel;
   progress: Record<string, boolean>;
+  customRoutines?: CustomRoutine[];
+  activeRoutineId?: string | null;
 }
 
 export const defaultPlannerSnapshot: PlannerSnapshot = {
@@ -38,6 +44,8 @@ export const defaultPlannerSnapshot: PlannerSnapshot = {
   equipment: "gym",
   experience: "beginner",
   progress: {},
+  customRoutines: [],
+  activeRoutineId: null,
 };
 
 function readPlanProgress(): Record<string, boolean> {
@@ -75,6 +83,8 @@ function writeSnapshotToLocalStorage(snapshot: PlannerSnapshot): void {
       checkins: snapshot.checkins,
       equipment: snapshot.equipment,
       experience: snapshot.experience,
+      customRoutines: snapshot.customRoutines || [],
+      activeRoutineId: snapshot.activeRoutineId || null,
     }),
   );
   writePlanProgress(snapshot.progress);
@@ -90,6 +100,8 @@ export function readPlannerSnapshot(): PlannerSnapshot {
   let equipment: EquipmentType = "gym";
   let experience: ExperienceLevel = "beginner";
   let progress: Record<string, boolean> = readPlanProgress();
+  let customRoutines: CustomRoutine[] = [];
+  let activeRoutineId: string | null = null;
 
   try {
     const savedInput = localStorage.getItem("bodyPlanInput");
@@ -106,17 +118,21 @@ export function readPlannerSnapshot(): PlannerSnapshot {
         equipment?: EquipmentType;
         experience?: ExperienceLevel;
         progress?: Record<string, boolean>;
+        customRoutines?: CustomRoutine[];
+        activeRoutineId?: string | null;
       };
       checkins = parsed.checkins ?? [];
       equipment = parsed.equipment ?? "gym";
       experience = parsed.experience ?? "beginner";
       progress = parsed.progress ?? progress;
+      customRoutines = parsed.customRoutines ?? [];
+      activeRoutineId = parsed.activeRoutineId ?? null;
     }
   } catch {
     // ignore invalid local state
   }
 
-  return { input, checkins, equipment, experience, progress };
+  return { input, checkins, equipment, experience, progress, customRoutines, activeRoutineId };
 }
 
 export function savePlannerSnapshot(snapshot: PlannerSnapshot): void {
@@ -156,6 +172,8 @@ export async function syncPlannerSnapshotFromServer(): Promise<PlannerSnapshot> 
       equipment: payload.state.equipment,
       experience: payload.state.experience,
       progress: payload.state.progress ?? {},
+      customRoutines: payload.state.customRoutines ?? localSnapshot.customRoutines ?? [],
+      activeRoutineId: payload.state.activeRoutineId ?? localSnapshot.activeRoutineId ?? null,
     };
 
     writeSnapshotToLocalStorage(serverSnapshot);
