@@ -1,691 +1,372 @@
-# FitFlow Planner
-
-FitFlow Planner is a full-stack fitness roadmap app that turns body transformation into a guided execution system.
-
-The product now uses a persistent App Shell with a fixed sidebar, route-aware top bar, and dedicated surfaces for dashboard execution, roadmap planning, workouts, check-ins, exercise library browsing, nutrition planning, and educational discovery content. The interface is built around a dark void theme so the next action stays obvious without visual noise.
-
-## Product Goal
-
-The app is designed to answer three questions as quickly as possible:
-
-1. What should I do now?
-2. Why am I doing it?
-3. How should the plan change if progress slows down?
-
-That principle drives the route layout, the shared shell, and the visual system.
-
-## App Shell
-
-The app is organized around a route-first shell rather than one oversized scroll page.
-
-The shell includes:
-
-- a persistent sidebar with route navigation and readiness status
-- a dynamic NextAuth user profile card with login/logout actions and Google avatars
-- a globally mounted AI Coach floating action widget that can be triggered from anywhere
-- a branded FitFlow logo in the sidebar header
-- a matching FitFlow logo mark used for browser tab icon metadata
-- a route-aware top bar that changes title and context by page
-- a shared dark design system with reusable cards, metrics, and action buttons
-- a central content area that loads only the route the user needs
-- mobile navigation that collapses into a drawer on small screens
-- shared layout state across the dashboard, roadmap, workouts, check-ins, library, and nutrition pages
-
-## Key Experiences
-
-### Fitness Hub Expansion
-
-The app now includes a broader discovery layer around the core planning flow:
-
-- a guided 6-step roadmap stepper that replaces the old all-in-one planning modal
-- workout goal filtering for fat loss, muscle gain, recomposition, and all goals
-- workout deeplink sharing so a saved session can be copied and reused quickly
-- a visual muscle-map filter in the library for faster exercise discovery
-- dedicated guide detail pages for the educational content hub
-- trust pages and footer links for About, Privacy, and Terms
-
-### Dashboard
-
-The dashboard is the command center for daily execution. It focuses on the current mission instead of showing equal-weight cards everywhere.
-
-It includes:
-
-- a sticky top mission strip that highlights the next best action
-- a persistent Today Stack with four ordered steps: Warmup, Main Lifts, Accessories, and Recovery
-- a left rail for section navigation and weekly status
-- a central execution area for the active section
-- a right-side analytics rail for readiness, nutrition targets, trends, and recent check-ins
-- a quick check-in slide-over with progressive disclosure
-- immediate coaching feedback after a check-in is prepared
-- compact mission cards for readiness, progress, and the day’s stack
-- quick links into workouts, roadmap, check-ins, library, and nutrition
-
-### Analytics & Progression Science
-
-The analytics hub (`/analytics`) turns logged workout history and PRs into actionable hypertrophy and strength science.
-
-It includes:
-
-- **Hypertrophy Volume Landmarks (MEV / MAV / MRV)** tracking weekly direct and indirect working sets per muscle group based on Dr. Mike Israetel's Renaissance Periodization frameworks
-- **Interactive 2D Muscle Volume Heatmap** that dynamically highlights muscle regions by their current volume status (Optimal, Maintenance, Overreaching, Overtraining)
-- **Automatic Plateau Detection Engine** analyzing 1RM trajectories over consecutive sessions to diagnose stalls on primary compound lifts
-- **1-Week Active Deload Protocol Generator** calculating customized 70% load and 50% volume reductions with weak-point technical assistance variations
-- **Strength Standards & DOTS Radar** classifying an athlete across Novice to Elite percentiles with international powerlifting DOTS & Wilks scoring
-
-### Community, Gym Squads & Cooperative Raids
-
-The community hub (`/leaderboard`) turns fitness into an engaging multiplayer RPG experience with clan milestones and shared challenges.
-
-It includes:
-
-- **Private Gym Squads & Clans (`SquadsView`)** with custom squad creation, unique invite codes (e.g. `IRON01`), and shared weekly tonnage goals (e.g. 50,000 kg milestone)
-- **Live Squad Activity Feed (`SquadActivityFeed`)** with real-time PRs, workout completions, and interactive **Fistbumps (👊)**
-- **Weekly Cooperative Raid Boss (`CommunityRaidCard`)** where all community workouts deal damage against a collective boss (e.g. Gorgon the Iron Colossus, 500,000 kg HP) with personal contribution ranks and combat archetypes (Vanguard Tank 🛡️, Damage Dealer 🗡️, Berserker ⚡)
-- **Shareable Instagram & WhatsApp PR Story Cards (`PRStoryCardModal`)** with 9:16 vertical glassmorphic cards, customizable themes (Cyberpunk, Solar Flare, Emerald, Onyx), and 1-click WhatsApp and image sharing
-- **Global Athlete Rankings** with normalized Wilks & SBD total leaderboards in table and card formats
-
-### Roadmap
-
-The roadmap is the planning and progression workspace. It pairs a visual node graph with a detailed selection panel so users can understand both structure and reason.
-
-It includes:
-
-- a React Flow roadmap that shows progression phases and node dependencies
-- a guided planner stepper for body model, age, goal, activity, equipment, and summary inputs
-- node focus dimming so irrelevant items fade when a node is selected
-- phase progress rings for faster scanning
-- an interactive Node Drawer with unlock criteria, phase rationale, and dynamic lift progression charts fetching history from `/api/lifts`
-- inline triggers within the Node Drawer to "Log PR" and "Ask AI Coach"
-- phase progression controls that can be updated from the roadmap view
-- route links into workouts, check-ins, library, and nutrition without leaving the shell
-
-### Workouts
-
-The workouts page turns the plan into an execution surface.
-
-It includes:
-
-- experience-tier toggles for beginner, intermediate, and advanced sessions
-- goal filters for all goals, fat loss, muscle gain, and recomposition
-- **Custom Routine Builder (`/workouts/builder`)** with 1-click template cloners (Push/Pull/Legs, Upper/Lower, Full Body), day management, and exercise catalog browser
-- **Active Routine Switcher** to seamlessly toggle between standard tier progressions and custom workout splits
-- **Dynamic Warm-Up Ladder Generator** calculating science-based warmup sets with Olympic barbell plate breakdowns
-- **In-Session Exercise Substitution (`ExerciseSwapModal`)** with recommended biomechanical equivalents and same-muscle group alternatives
-- **Enhanced Set Tagging** supporting Warmup (`W`), Working (`1..N`), Drop Set (`D`), and Failure (`F`) sets
-- **Workout History & Logbook Calendar (`/workouts/history`)** with monthly completion heatmap, volume metrics, session breakdowns, and CSV data export
-- day-by-day workout cards with exercise details
-- generated visual previews for each exercise card
-- per-muscle art styles so chest, back, legs, glutes, core, and arms all render with distinct themes
-- deeplink sharing for workout plans with copy feedback
-- a workout mode overlay for in-session logging
-- completion toggles for each exercise inside workout mode
-- **workout session persistence to Prisma** via authenticated API (`/api/workout-sessions`) and guest local storage
-- **PR logging hooks** with an integrated modal to record sets, reps, weight, and track estimated 1RM
-
-### Check-ins
-
-The check-ins page captures recovery signals and pushes them back into the planner.
-
-It includes:
-
-- weekly check-in inputs for weight, waist, sleep, steps, stress, energy, and workout completion
-- readiness scoring and coaching feedback
-- line and area charts for trend visibility
-- saved check-in history with deduping by date
-
-### Library
-
-The library page is a searchable exercise catalog with performance optimizations.
-
-It includes:
-
-- body-part and modality filters
-- a visual muscle-group BodyMap for targeted browsing
-- **compound vs isolation exercise classification** for movement type filtering
-- **exercise alias search** so synonyms resolve naturally (for example `pull-ups` -> `pullup`, `bench press` -> `barbell bench press`)
-- **virtualized rendering window** so only visible exercise cards stay mounted for large catalogs
-- **skeleton loading states** while filters change and cards render
-- **IntersectionObserver lazy loading** — exercise cards only render when scrolled into view
-- **image skeleton placeholders** that fade to the full SVG/photo when loaded
-- exercise cards with generated movement previews
-- a slide-over detail view with exercise image, instructions, and alternatives
-- keyboard navigation in the detail panel (arrow keys to navigate exercises, Esc to close)
-- photo mode with automatic SVG fallback for exercise images
-- outside-click dismissal so the detail panel closes when clicking the backdrop
-- **related exercises section** that shows exercises targeting the same muscles
-- "Add to Workout" persistence so selected exercises are remembered across sessions
-- exercise type badge (💪 compound or 🎯 isolation) in the detail panel
-
-### Nutrition
-
-The nutrition page turns calorie and macro targets into precision daily fueling and practical Indian meal execution.
-
-It includes:
-
-- **Interactive Daily Food Diary (`DailyFoodDiary`)** with 4 meal slots (Breakfast, Lunch, Snack/Pre-Workout, Dinner) and date navigation
-- **India-First Food Database (`INDIAN_FOOD_DATABASE`)** containing 30+ staples (roti, dal, paneer, eggs, chicken, soya, whey, rice, curd, chana, fruits) with exact macros and serving units
-- **Real-Time Macro Gauges & Rings** tracking Calories consumed, remaining calorie deficit, Protein (g), Carbs (g), and Fats (g)
-- **MacroFactor-Style Adaptive TDEE Engine (`AdaptiveTDEECard`)** measuring true metabolic energy expenditure based on actual caloric intake paired with check-in weight trends
-- **Smart Grocery List & WhatsApp Export (`SmartGroceryList`)** consolidating weekly grocery items with 1-click formatted WhatsApp export
-- **Hydration Quick-Tracker** with +250ml (Glass), +500ml (Bottle), and +1.0L (Shaker) buttons
-- **1-Click "Log from Plan"** allowing users to instantly transfer regional meal plans into today's diary
-- **Regional Meal Plans & Swaps** with North, South, Jain-friendly, high-protein, and student budget presets
-
-### Guides and Trust Pages
-
-The app also includes a lightweight content hub for education and credibility.
-
-It includes:
-
-- a guides landing page that links to six topic-specific articles
-- individual guide pages for progressive overload, form cues, sleep, protein, plateau breaks, and home workouts
-- trust pages for About, Privacy, and Terms
-- a shared footer that surfaces those links across the app
-
-## Core Features
-
-### Global AI Coaching Widget & Form Advisor
-
-A universally accessible, floating AI Coach chat widget built with Server-Sent Events (SSE).
-
-It features:
-
-- A globally mounted component in the `ShellChrome` layout, making it accessible across the entire application without breaking user flows.
-- **Biomechanical Form & Technique Advisor (`FormCheckAnalyzer`)** offering instant Dr. Stuart McGill & Mark Rippetoe diagnostic breakdowns for common lift faults (Knee Valgus, Butt Wink, Flared Elbows, Stripper Pulls, Lumbar Flexion).
-- **Smart Daily Readiness & Energy Adjuster (`readinessEngine`)** auto-regulating daily working volume and intensity based on sleep, soreness, stress, and 48-hour rolling tonnage.
-- **Quick-Action Prompt Chips** (Form Check Cues, Daily Readiness, Deload Generator, Indian Meal Swap, Hypertrophy Volume).
-- Dynamic context building that injects the user's specific training data—such as bodyweight, goal, PR history, and unlocked roadmap nodes—directly into the system prompt for hyper-personalized responses.
-- Event-driven dispatch (`window.dispatchEvent(new CustomEvent("open-ai-chat"))`) to seamlessly integrate the coach with specific page components like Roadmap nodes.
-- Direct integration with Google Gemini for fast, fitness-optimized responses.
-
-### Modern Mobile Hamburger Navigation
-
-- **Sleek Glassmorphic Mobile Drawer (`Sidebar.tsx`)** featuring smooth slide-over transitions, category grouping (Command, Execution, Knowledge), glowing active route indicators, live Readiness progress ring, and user account status.
-- **Responsive TopBar Clearance** ensuring zero visual overlap across mobile and desktop viewport widths.
-
-### Adaptive planning engine
-
-The planning engine generates fitness guidance from the current profile.
-
-It calculates:
-
-- BMI and BMI category
-- BMR and calorie targets
-- protein, carbs, fats, and fiber targets
-- beginner-friendly protein guidance at `1.5 g/kg` bodyweight (instead of advanced-level `2.0+ g/kg` defaults)
-- hydration targets
-- weekly workout structure
-- gym progression phases
-- meal templates
-- roadmap dependencies and unlock rules
-
-Supported goals include:
-
-- fat loss
-- weight loss
-- muscle gain
-- recomposition
-
-Supported activity levels include:
-
-- sedentary
-- light
-- moderate
-- active
-- very active
-
-Supported equipment modes include:
-
-- gym
-- home plus bands/dumbbells
-
-### Workout execution
-
-Workout planning is not just static content. The app exposes exercise and workout details that make it usable during training.
-
-Capabilities include:
-
-- weekly workout prescriptions with duration and focus
-- expandable training-day details
-- per-day exercise lists
-- a workout session timer
-- per-exercise set counting in the execution mode
-- persisted workout completion history stored in Prisma for signed-in users
-- lazy-loaded exercise thumbnails and detail drawers
-- movement instructions, common mistakes, alternatives, target muscles, and rep guidance
-
-### Exercise classification
-
-Exercises are automatically classified as compound or isolation movements.
-
-This enables:
-
-- filtering workouts by movement type (compound lifts for strength, isolation for hypertrophy)
-- discovery of related exercises that target the same muscle groups
-- exercise alternatives based on target muscle overlap
-- adaptability for different training goals and equipment availability
-
-### Performance optimizations
-
-The app implements several techniques to keep the experience smooth at scale:
-
-- **Skeleton loading states** — brief placeholders when filters change, reducing perceived latency
-- **IntersectionObserver lazy loading** — exercise cards only render when scrolled into view, reducing DOM size and memory
-- **Image skeleton fading** — placeholder skeletons fade out as SVG/photo images load, improving perceived performance
-- **Memoized calculations** — exercise filtering and catalog building use `useMemo` to avoid unnecessary re-renders
-- **Dynamic imports** — Monaco editor for PR logging is dynamically imported to reduce initial bundle size
-- **Route-level code splitting** — heavy chart and roadmap graph surfaces are loaded as lazy chunks instead of inflating route bundles
-- **Shell chrome split** — sidebar and top bar are lazy-mounted via a client shell wrapper to keep the root layout lean
-- **Virtualized exercise list rendering** — library cards are windowed so only visible rows stay mounted in the DOM
-- **Deferred State Updates** — complex component mounts (like PR loggers) utilize microtasks and timeouts to prevent cascading renders within effects.
-
-### Nutrition planning
-
-The nutrition system generates practical meal guidance instead of abstract macro numbers.
-
-It includes:
-
-- meal templates tuned to the current calorie target
-- grocery list suggestions
-- meal swaps with calorie and protein deltas
-- diet filtering for veg, non-veg, and mixed eating patterns
-
-### Weekly check-ins and readiness
-
-Check-ins track trend data and feed it back into the plan.
-
-Tracked values include:
-
-- date
-- body weight
-- waist measurement
-- sleep hours
-- average steps
-- stress score
-- energy score
-- workout completion percentage
-
-The app converts these inputs into readiness-aware guidance so calories, steps, and cardio can be adjusted over time.
-
-### Persistence and sync
-
-The app uses layered persistence:
-
-- localStorage for offline-first state recovery
-- authenticated user-plan-state API sync when signed in
-- authenticated workout-session persistence API for completed workout logs
-- Prisma/PostgreSQL for long-term storage
-- the route pages initialize from a deterministic snapshot so server and client renders stay aligned before hydration
-
-### State consistency (May 2026 upgrade)
-
-State persistence has been unified so the app no longer mixes unrelated per-page storage behavior.
-
-What changed:
-
-- a shared planner snapshot utility now handles read, local save, server sync, and server persist flows
-- route pages (`/`, `/generator`, `/roadmap`, `/checkins`, `/workouts`, `/nutrition`) now hydrate from the same snapshot contract
-- when signed in, snapshot changes are posted to `POST /api/user-plan-state`; when signed out or offline, data still persists locally
-- roadmap progress is now part of the same persisted snapshot instead of a separate `bodyPlanProgress` state silo
-
-Result:
-
-- consistent cross-route behavior
-- better cross-device continuity for authenticated users
-- safer fallback behavior when API sync is unavailable
-
-### Security and progression hardening (May 2026 upgrade)
-
-Several critical backend safeguards were implemented:
-
-- **session-sync hardening**: the legacy Express `POST /api/auth/session-sync` token minting endpoint is intentionally disabled to prevent bearer-token issuance without strong server-verified session proof
-- **roadmap semantics fix**: unlock checks now move nodes to `ACTIVE` (not `COMPLETED`)
-- **explicit completion path**: node completion now uses a dedicated endpoint (`POST /api/roadmap/complete-node`) so unlock and completion remain separate lifecycle states
-- **broader route protection**: middleware now protects additional personalized routes (`/generator`, `/workouts`, `/checkins`, `/nutrition`, `/library`) in addition to existing protected pages
-- **AI prompt-surface reduction**: AI context payloads are now shape-limited and truncated before prompt composition to reduce token bloat and injection risk
-
-### UX behavior updates
-
-- `/dashboard` now renders the dashboard experience directly (no redirect bounce)
-- workout goal selector now affects generated workout programming instead of being a visual-only control
-- shared design tokens were corrected (missing `text-secondary` variable fixed)
-
-### MuscleWiki Upgrade (June 2026)
-
-A suite of interactive features matching professional-tier muscle atlas services was integrated:
-
-- **Interactive 2D Photographic Body Map:** Replaced the legacy blocky WebGL model with realistic, high-fidelity anatomical photographs. Includes quick toggles for gender (Male vs. Female) and orientation (Front vs. Back) with high-precision percentage-based SVG coordinate hitboxes.
-- **Granular Equipment Categorization:** Exercises are dynamically classified into 7 equipment modalities: Barbell, Dumbbell, Kettlebell, Cable, Machine, Band, and Bodyweight, exposing a full filter menu in the Library.
-- **Connected Fitness Calculators:**
-  - **Calorie & Macro Calculators:** Fully integrated with the user's active session and local/server profile snapshots to dynamically pre-fill target metrics.
-  - **One Rep Max (1RM) PR Integration:** Embedded a "Quick-fill from PRs" dashboard that queries `/api/lifts`, allowing users to auto-populate weight/rep metrics directly from their recorded training history.
-- **Mini Muscle Map Highlights:** Embedded side-by-side front/back mini silhouettes in the exercise detail side-drawer to highlight target and stabilizing muscles instantly.
-
-## Visual System
-
-The current UI is built around a dark fitness console direction.
-
-Design principles:
-
-- three elevation levels only: base, elevated, and highlighted actionable
-- cyan for action and focus
-- lime for progress and success
-- amber for caution or readiness dips
-- red only for destructive or error states
-- strict spacing rhythm to keep pages from feeling noisy
-- condensed hierarchy for key numbers and metrics
-- readable body typography for long-form planning content
-- display font: Syne
-- body font: DM Sans
-- mono font: JetBrains Mono
-
-Shared UI primitives live in the shared component layer and are used to keep dashboard and roadmap consistent.
-
-The shared shell lives in `src/components/layout/` and is responsible for the sidebar, route-aware header, and readiness ring.
-
-Exercise visuals are generated as SVG images from exercise metadata so every workout item has a consistent thumbnail.
-The generator applies body-part-specific palettes, motifs, and pose highlights for better visual differentiation across muscle groups.
-
-## Tech Stack
-
-- Next.js 15.5.14 with the App Router
-- React 19
-- NextAuth.js (Session & Provider Management)
-- Tailwind CSS 4
-- Framer Motion
-- React Flow
-- Recharts
-- PostgreSQL with Prisma (seeded via TSX)
-- Google Gemini (Streaming Server-Sent Events)
-- Monaco Editor and monaco-vim
-- Vitest
-- TypeScript
-- Docker, Docker Compose, and PM2
-
-## Project Structure
-
-```text
-.
-├── prisma/
-│   ├── schema.prisma
-│   └── seed.ts
-├── public/
-├── src/
-│   ├── app/
-│   │   ├── api/
-│   │   ├── checkins/
-│   │   ├── dashboard/
-│   │   ├── library/
-│   │   ├── leaderboard/
-│   │   ├── nutrition/
-│   │   ├── profile/[id]/
-│   │   ├── roadmap/
-│   │   ├── workouts/
-│   │   ├── globals.css
-│   │   ├── layout.tsx
-│   │   └── page.tsx
-│   ├── components/
-│   │   ├── layout/
-│   │   ├── dashboard/
-│   │   ├── landing/
-│   │   ├── roadmap/
-│   │   └── shared/
-│   ├── lib/
-│   ├── prisma/
-│   ├── server/
-│   └── types/
-├── docker-compose.yml
-├── Dockerfile
-├── pm2.config.js
-├── README.md
-└── package.json
+# FitFlow — The Evidence-Based RPG Fitness & Progression Platform
+
+[![Next.js](https://img.shields.io/badge/Next.js-16-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
+[![React](https://img.shields.io/badge/React-19-blue?style=for-the-badge&logo=react)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind-CSS-38B2AC?style=for-the-badge&logo=tailwind-css)](https://tailwindcss.com/)
+[![Prisma](https://img.shields.io/badge/Prisma-ORM-2D3748?style=for-the-badge&logo=prisma)](https://www.prisma.io/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791?style=for-the-badge&logo=postgresql)](https://www.postgresql.org/)
+[![Vitest](https://img.shields.io/badge/Vitest-3.2-6E9F18?style=for-the-badge&logo=vitest)](https://vitest.dev/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
+
+**FitFlow** is an open-source, evidence-based fitness operating system and multiplayer RPG progression console. It seamlessly fuses **Dr. Mike Israetel's Hypertrophy Volume Science (MEV/MAV/MRV)**, **MacroFactor-style Adaptive TDEE energy balance physics**, **Dr. Stuart McGill biomechanical technique analysis**, and **multiplayer Clan/Raid mechanics** into an ultra-premium, dark glassmorphic web application.
+
+---
+
+## 📑 Table of Contents
+
+- [Architectural Overview](#architectural-overview)
+- [Key Feature Suites](#key-feature-suites)
+  - [1. Workout Execution & Custom Routine Builder](#1-workout-execution--custom-routine-builder)
+  - [2. Deep Analytics & Progression Science](#2-deep-analytics--progression-science)
+  - [3. Daily Nutrition & Adaptive Food Diary](#3-daily-nutrition--adaptive-food-diary)
+  - [4. RPG Gamification, Gym Squads & Cooperative Raids](#4-rpg-gamification-gym-squads--cooperative-raids)
+  - [5. AI Coach Intelligence & Biomechanics Advisor](#5-ai-coach-intelligence--biomechanics-advisor)
+  - [6. Interactive RPG Roadmap & Skill Tree](#6-interactive-rpg-roadmap--skill-tree)
+  - [7. Interactive Calculators & Tools Hub](#7-interactive-calculators--tools-hub)
+  - [8. Modern Navigation & Responsive Drawer](#8-modern-navigation--responsive-drawer)
+- [Tech Stack](#tech-stack)
+- [Directory Structure](#directory-structure)
+- [Getting Started & Local Setup Guide](#getting-started--local-setup-guide)
+  - [Prerequisites](#prerequisites)
+  - [Installation Steps](#installation-steps)
+  - [Environment Configuration](#environment-configuration)
+  - [Database Setup & Migration](#database-setup--migration)
+  - [Running the Development Server](#running-the-development-server)
+  - [Running Automated Unit Tests](#running-automated-unit-tests)
+- [Contributing](#contributing)
+- [License](#license)
+
+---
+
+## 🏛️ Architectural Overview
+
+FitFlow is built with a **local-first, cloud-synchronized** architecture:
+- **Instant Offline & Guest Mode:** All workout routines, food logs, PR histories, and clan activities function offline via structured `localStorage` caches (`PlannerSnapshot`).
+- **Seamless Cloud Sync:** When an athlete signs in (via NextAuth with Google), the application seamlessly synchronizes client state with PostgreSQL via Prisma ORM (`/api/user-plan-state`).
+- **Zero Layout Shifts:** High-performance responsive layouts powered by Tailwind CSS and Framer Motion with hardware-accelerated animations.
+
+```mermaid
+graph TD
+    A[Client User Interface] --> B[PlannerSnapshot State Manager]
+    B -->|Offline Local Storage| C[(Browser LocalStorage)]
+    B -->|Authenticated Sync| D[Next.js API Routes]
+    D --> E[Prisma ORM Layer]
+    E --> F[(PostgreSQL Database)]
+
+    B --> G[Workout Powerhouse Engine]
+    B --> H[Volume Landmarks MEV/MAV Engine]
+    B --> I[Adaptive TDEE & Food Diary Engine]
+    B --> J[Gym Squads & Community Raid Engine]
+    B --> K[AI Biomechanics & Readiness Engine]
 ```
 
-## Main Routes
+---
 
-- `/` - dashboard home and daily command center
-- `/dashboard` - dashboard route alias that renders the dashboard experience
-- `/roadmap` - adaptive planning workspace with graph navigation and phase controls
-- `/workouts` - workout execution and set logging
-- `/checkins` - weekly recovery and readiness tracking
-- `/library` - exercise catalog and detail drawer
-- `/nutrition` - macro planning, meal templates, and grocery list generation
-- `/guides` - educational guide hub with dedicated article pages
-- `/tools` - fitness calculators and utility pages
-- `/about` - app overview and product context
-- `/privacy` - privacy policy
-- `/terms` - terms of use
-- `/leaderboard` - ranking view
-- `/profile/[id]` - public profile page
+## 🚀 Key Feature Suites
 
-## API Surface
+### 1. Workout Execution & Custom Routine Builder
 
-### Next.js API routes
+Turns periodization theory into seamless gym execution.
 
-- `GET /api/og` - Open Graph image generation
-- `GET /api/user-plan-state` - fetch the current saved plan state
-- `POST /api/user-plan-state` - save the current plan state
-- `GET /api/workout-sessions` - fetch recent saved workout sessions for the signed-in user
-- `POST /api/workout-sessions` - save a completed workout session to Prisma
-- `GET /api/lifts` - fetch signed-in user lift logs (supports `lift` and `limit` query params)
-- `POST /api/lifts` - create a lift log and compute Epley 1RM
-- `GET /api/lifts/stats` - fetch aggregate lift stats for the signed-in user
-- `GET /api/roadmap` - fetch roadmap nodes with user status and criteria checks
-- `POST /api/roadmap/check-unlocks` - evaluate and unlock eligible nodes to `ACTIVE`
-- `POST /api/roadmap/complete-node` - explicitly mark an active node as `COMPLETED`
-- `GET /api/leaderboard` - public leaderboard payload
-- `PATCH /api/profile` - authenticated self profile update
-- `GET /api/profile/[id]` - public profile details with best lifts and achievement summary
-- `POST /api/ai/chat` - authenticated AI coach SSE streaming endpoint
-- `GET /api/auth/[...nextauth]` - NextAuth handler
-- `POST /api/auth/[...nextauth]` - NextAuth handler
+- **Custom Routine Builder (`/workouts/builder`):**
+  - Interactive multi-day split builder supporting custom naming, focus targets, and day-by-day exercise sequences.
+  - **1-Click Built-in Templates:** Instant cloning for **Push / Pull / Legs (6-Day)**, **Upper / Lower (4-Day)**, and **Full Body (3-Day)** splits.
+  - **Active Routine Switcher:** Seamlessly toggles between standard roadmap tier plans and personalized custom routines.
+- **Dynamic Warm-Up Ladder Engine (`src/lib/warmupCalculator.ts`):**
+  - Calculates science-based warm-up sets based on the target working load (Empty Bar $\rightarrow$ 50% $\rightarrow$ 70% $\rightarrow$ 85% $\rightarrow$ 92%).
+  - **Barbell Plate Visualizer:** Shows the exact 20kg, 15kg, 10kg, 5kg, 2.5kg, and 1.25kg Olympic plate loading per side.
+  - **1-Click Set Insertion:** Inserts calculated warm-up sets directly into the active workout session.
+- **In-Session Exercise Swapper (`ExerciseSwapModal.tsx`):**
+  - Replace any exercise mid-workout with direct biomechanical alternatives or same-muscle group variations from the library.
+- **Set Tagging & Intensity Management:**
+  - Tag individual sets as **Warmup (`W`)**, **Working Set (`1..N`)**, **Drop Set (`D`)**, or **Failure (`F`)**.
+- **Workout History & Logbook Calendar (`/workouts/history`):**
+  - Monthly completion calendar heatmap with cumulative volume tonnage and time metrics.
+  - Drill-down session breakdown modal and **1-Click CSV data export**.
 
-Implementation note for Open Graph route:
+---
 
-- keep the App Router entry at `src/app/api/og/route.ts`
-- keep OG JSX/template logic in `src/app/api/og/og-image.tsx`
-- export `runtime` directly from `route.ts` so Next.js can statically analyze route config during build
+### 2. Deep Analytics & Progression Science
 
-Boundary note:
+Transforms raw workout logs and PR records into actionable hypertrophy and powerlifting science.
 
-- The web app operates fully on the Next.js App Router API boundary for all `/api/*` frontend calls.
-- The legacy Express API layer was formally deprecated and removed to simplify deployment and fully embrace server actions and App Router endpoints.
+- **Renaissance Periodization (RP) Hypertrophy Landmarks (`src/lib/volumeLandmarks.ts`):**
+  - Tracks weekly direct sets (1.0 credit) and compound secondary synergy sets (0.5 credit) across 10 major muscle groups over a rolling 7-day window.
+  - Compares volume against **MEV** (Minimum Effective Volume), **MAV** (Maximum Adaptive Volume), and **MRV** (Maximum Recoverable Volume).
+  - Status classification: `Under-stimulated`, `Maintenance`, `Optimal (MAV)`, `Overreaching`, and `Overtraining`.
+- **Interactive 2D Muscle Volume Heatmap (`MuscleVolumeHeatmap.tsx`):**
+  - Anatomical front and back body maps dynamically color-coded by real-time volume status (Optimal Growth = Cyan/Green, Overreaching = Amber, Overtraining = Red).
+  - Detailed diagnostic inspector showing sets completed, landmark progress bars, and recovery windows.
+- **Automated Lift Plateau Detection & Deload Engine (`src/lib/plateauDetector.ts`):**
+  - Evaluates 1RM trajectories over consecutive sessions to automatically diagnose stalls on primary compound lifts (Squat, Bench, Deadlift, Overhead Press, Rows).
+  - **1-Week Active Deload Protocol:** Prescribes a 70% load reduction, 50% set volume reduction, and RPE 6 target.
+  - **Weak-Point Technical Variations:** Suggests targeted movement variations (Pause Squats for out-of-the-hole stalls, Spoto Press for mid-range sticking points, Deficit Deadlifts for off-the-floor speed).
+- **Strength Standards & DOTS Radar (`src/lib/strengthStandards.ts`):**
+  - Classifies lifters across **Untrained**, **Novice**, **Intermediate**, **Advanced**, and **Elite** percentiles adjusted for bodyweight and gender.
+  - Computes real-time **DOTS Score**, **Wilks Score**, and **SBD Total** with an interactive multi-axis symmetry radar chart.
 
-## Local Setup
+---
+
+### 3. Daily Nutrition & Adaptive Food Diary
+
+Precision daily fueling tailored for home cooking, local Indian markets, and international staples.
+
+- **Interactive Daily Food Diary (`DailyFoodDiary.tsx`):**
+  - Date navigator with 4 dedicated meal slots: **Breakfast 🍳**, **Lunch 🍛**, **Snack / Pre-Workout 🥜**, and **Dinner 🍲**.
+  - Dynamic top macro status rings tracking **Calories Consumed & Remaining Deficit**, **Protein (g)**, **Carbohydrates (g)**, **Fats (g)**, and **Fiber (g)**.
+  - Searchable food item picker with quantity adjusters and custom food quick-entry form.
+- **Curated Indian & Global Food Database (`src/lib/indianFoodDatabase.ts`):**
+  - Over 30+ staple foods with realistic portion sizes (Roti/Chapati, Rice, Moong Dal, Toor Dal, Rajma, Chole, Paneer, Soya Chunks, Eggs, Chicken Breast, Dahi/Curd, Greek Yogurt, Whey Protein, Roasted Chana, Fruits).
+  - Filterable by diet: **Vegetarian**, **Vegan**, **Non-Vegetarian**, and **Jain-Friendly**.
+- **MacroFactor-Style Adaptive TDEE Engine (`src/lib/adaptiveTDEE.ts`):**
+  - Calculates true metabolic expenditure by comparing daily caloric intake against scale weight trends ($1\text{ kg body weight} \approx 7,700\text{ kcal}$).
+  - Detects metabolic adaptation and offers **1-Click Auto-Calibration** of daily calorie targets.
+- **Smart Grocery List with WhatsApp Export (`SmartGroceryList.tsx`):**
+  - Categorizes ingredients into High-Protein Sources, Dairy & Eggs, Complex Carbs, Produce, and Healthy Fats.
+  - **1-Click Share to WhatsApp:** Formats a clean, emoji-styled grocery checklist for instant messaging.
+- **Hydration Quick-Tracker:**
+  - Quick-add water logging with `+250ml (Glass)`, `+500ml (Bottle)`, and `+1.0L (Shaker)` buttons.
+
+---
+
+### 4. RPG Gamification, Gym Squads & Cooperative Raids
+
+Multiplayer fitness mechanics that build accountability and community camaraderie.
+
+- **Private Gym Squads & Clans (`src/lib/squadEngine.ts`):**
+  - Create custom private squads with custom tags and 6-character invite codes (e.g. `[IRON] IRON01`, `[BLR] BLR99`).
+  - **Weekly Shared Tonnage Milestone:** Clan members pool weekly lifted volume towards collective milestones (e.g. 50,000 kg/week) to unlock Clan XP bonuses.
+  - Member leaderboard tracking weekly tonnage, completed workouts, and top PRs.
+- **Live Squad Activity Feed with Fistbumps (`SquadActivityFeed.tsx`):**
+  - Real-time social stream displaying teammates' PRs broken 🔥, workouts finished 💪, and roadmap nodes unlocked ⚡.
+  - Interactive **Fistbump (👊)** cheering button with live counter updates.
+- **Cooperative Weekly Raid Boss (`src/lib/raidBossEngine.ts`):**
+  - Community-wide boss battle featuring **"Gorgon the Iron Colossus"** (500,000 kg HP). Every workout logged by any athlete deals real-time damage to the boss.
+  - Assigns combat archetypes: 🛡️ **Vanguard Tank** (Heavy PRs), 🗡️ **Damage Dealer** (High Volume), and ⚡ **Berserker** (Workout Consistency).
+  - Rewards community with exclusive badges and +1,500 XP upon victory.
+- **Shareable Instagram & WhatsApp PR Story Cards (`PRStoryCardModal.tsx`):**
+  - Generates 9:16 vertical glassmorphic cards optimized for Instagram Stories and WhatsApp Statuses.
+  - 4 customizable themes: **Cyberpunk Neon**, **Solar Flare**, **Emerald Apex**, and **Onyx Stealth**.
+  - 1-Click download and instant WhatsApp share.
+
+---
+
+### 5. AI Coach Intelligence & Biomechanics Advisor
+
+An expert strength coach and biomechanist accessible anywhere across the app.
+
+- **Biomechanical Technique & Fault Advisor (`src/lib/formAdvisor.ts`):**
+  - Implements Dr. Stuart McGill & Mark Rippetoe principles covering common movement faults on Squat, Bench Press, Deadlift, Overhead Press, and Rows.
+  - Diagnoses faults such as **Knee Valgus**, **Butt Wink**, **Flared Elbows**, **Stripper Pulls**, and **Lumbar Flexion**.
+  - Provides instant platform verbal cues (e.g., *"Screw your feet into the floor"*, *"Bend the bar like a horseshoe"*) and corrective warm-up drills (e.g., Banded Goblet Squats, Spoto Press, Paused Deadlifts).
+- **Interactive Form Check Analyzer (`FormCheckAnalyzer.tsx`):**
+  - Visual lift and fault selector embedded in the Tools hub for zero-paywall biomechanical analysis.
+- **Smart Daily Readiness & Energy Adjuster (`src/lib/readinessEngine.ts`):**
+  - Computes CNS readiness (0-100) based on sleep duration, sleep quality, soreness ratings, stress, and 48-hour volume.
+  - Auto-regulates daily volume and intensity (prescribes full progressive overload on Optimal days, drops accessory volume on Fatigued days).
+- **Global AI Coaching Widget (`AIChat.tsx`):**
+  - Floating SSE chat widget integrated with Google Gemini.
+  - Features 1-tap quick action prompt chips for Form Cues, Daily Readiness, Deload Protocols, Indian Meal Swaps, and Hypertrophy Volume.
+
+---
+
+### 6. Interactive RPG Roadmap & Skill Tree
+
+- **React Flow Visual Skill Tree (`/roadmap`):** Visual node graph organizing fitness progression into Foundation, Strength, Hypertrophy, Calisthenics, and Apex tiers.
+- **Interactive Node Drawer:** View unlock criteria, phase rationales, dynamic lift charts, and 1-click PR logging.
+- **Automated Milestone Unlocks (`src/lib/roadmapUnlockEngine.ts`):** Logging a PR automatically evaluates unlock criteria across all skill tree nodes and rewards XP with milestone celebration banners.
+
+---
+
+### 7. Interactive Calculators & Tools Hub (`/tools`)
+
+- **Interactive Barbell Plate Loader (`/tools/plate-calculator`):** 2D Olympic barbell preview with plate breakdown.
+- **One-Rep Max (1RM) Calculator (`/tools/one-rep-max`):** Epley & Brzycki formulas with percentage load breakdown tables.
+- **Calorie & Macro Calculators (`/tools/calorie`, `/tools/macros`):** Mifflin-St Jeor metabolic calculations.
+
+---
+
+### 8. Modern Navigation & Responsive Drawer
+
+- **Sleek Glassmorphic Mobile Drawer (`Sidebar.tsx`):** Smooth slide-over navigation with category headers (**Command**, **Execution**, **Knowledge**), glowing Cyan active indicators, live Readiness progress ring, and authenticated account controls.
+- **Responsive TopBar (`TopBar.tsx`):** Mobile clearance ensuring clean visibility on all mobile and desktop viewports.
+
+---
+
+## 🛠️ Tech Stack
+
+| Layer | Technology | Description |
+| :--- | :--- | :--- |
+| **Framework** | [Next.js 16 (App Router)](https://nextjs.org/) | Server Components, Server-Sent Events, Streaming |
+| **Language** | [TypeScript 5.9](https://www.typescriptlang.org/) | Strict type safety across all calculation engines |
+| **UI & Styling** | [Tailwind CSS](https://tailwindcss.com/) & Vanilla CSS | Curated HSL dark palette, glassmorphism |
+| **Animations** | [Framer Motion](https://www.framer.com/motion/) | Spring transitions, slide-over modals, and toasts |
+| **Visual Node Graph** | [React Flow (@xyflow/react)](https://reactflow.dev/) | Interactive RPG roadmap skill tree graph |
+| **Charts** | [Recharts](https://recharts.org/) | Radar charts, area trends, and volume progress bars |
+| **Database & ORM** | [Prisma](https://www.prisma.io/) & [PostgreSQL](https://www.postgresql.org/) | Relational database modeling with automated migrations |
+| **Authentication** | [NextAuth.js](https://next-auth.js.org/) | Google OAuth and session management |
+| **Validation** | [Zod](https://zod.dev/) | Schema validation on all API payloads |
+| **Testing** | [Vitest 3.2](https://vitest.dev/) | Ultra-fast unit testing across all scientific engines |
+
+---
+
+## 📁 Directory Structure
+
+```
+Fitness-Roadmap/
+├── prisma/
+│   └── schema.prisma           # Prisma PostgreSQL data models
+├── public/
+│   ├── images/                 # Anatomical body illustrations (male/female front/back)
+│   └── logo-fitflow.svg        # Brand logo
+├── src/
+│   ├── app/                    # Next.js App Router pages and API routes
+│   │   ├── analytics/          # Deep Analytics Hub (Volume Landmarks, Plateaus, DOTS)
+│   │   ├── checkins/           # Weekly Check-in recovery trends
+│   │   ├── generator/          # Guided workout plan generator stepper
+│   │   ├── guides/             # Topic-specific fitness education articles
+│   │   ├── leaderboard/        # Community & Squads, Raid Boss, Global Leaderboards
+│   │   ├── library/            # Searchable exercise database with BodyMap
+│   │   ├── nutrition/          # Daily Food Diary, TDEE, Grocery list, Meal plans
+│   │   ├── roadmap/            # React Flow interactive RPG skill tree
+│   │   ├── tools/              # Plate calculator, 1RM, Calorie/Macro calculators
+│   │   ├── workouts/           # Workout execution, Routine Builder, History Calendar
+│   │   └── api/                # REST endpoints (lifts, sessions, user-plan-state, ai)
+│   ├── components/
+│   │   ├── analytics/          # MuscleVolumeHeatmap, PlateauDiagnosisCard, StrengthStandardsRadar
+│   │   ├── coach/              # FormCheckAnalyzer
+│   │   ├── dashboard/          # StrengthRadar, TodayStack, MissionStrip
+│   │   ├── layout/             # Sidebar (hamburger drawer), TopBar, ShellChrome, Footer
+│   │   ├── library/            # BodyMap, ExerciseCard, ExerciseDetailModal
+│   │   ├── nutrition/          # DailyFoodDiary, AdaptiveTDEECard, SmartGroceryList
+│   │   ├── roadmap/            # FlowRoadmap, NodeDetailDrawer, PhaseProgressRing
+│   │   ├── shared/             # AIChat, UIPrimitives, Modal
+│   │   ├── social/             # SquadsView, SquadActivityFeed, CommunityRaidCard, PRStoryCardModal
+│   │   └── workouts/           # LiveWorkoutModal, WarmupCalculatorModal, ExerciseSwapModal
+│   └── lib/                    # Core calculation engines & unit tests
+│       ├── adaptiveTDEE.ts     # MacroFactor-style energy balance engine
+│       ├── bodyPlanner.ts      # Core profile, BMR, TDEE, macro split engine
+│       ├── formAdvisor.ts      # Dr. McGill & Rippetoe biomechanical technique engine
+│       ├── formulas.ts         # Epley 1RM, DOTS, Wilks, Brzycki formulas
+│       ├── indianFoodDatabase.ts # Curated Indian & global food database
+│       ├── plateCalculator.ts  # Barbell plate loading optimizer
+│       ├── plateauDetector.ts  # Lift stall detection & 70% deload protocol engine
+│       ├── readinessEngine.ts  # Daily systemic recovery & auto-regulation engine
+│       ├── roadmapUnlockEngine.ts # RPG node unlock and milestone evaluator
+│       ├── squadEngine.ts      # Private gym clans, tonnage milestones & activity feeds
+│       ├── strengthStandards.ts # IPF/USAPL powerlifting standards & classification
+│       ├── volumeLandmarks.ts  # RP hypertrophy volume landmarks (MEV/MAV/MRV)
+│       └── workoutRoutines.ts  # Custom workout splits & PPL templates
+├── README.md                   # Comprehensive documentation
+├── LICENSE                     # MIT License
+├── package.json                # Project dependencies and scripts
+└── tsconfig.json               # TypeScript compiler configuration
+```
+
+---
+
+## ⚡ Getting Started & Local Setup Guide
+
+Follow these steps to run FitFlow locally on your development machine.
 
 ### Prerequisites
 
-- Node.js 20 or newer
-- npm
-- PostgreSQL
-- Google OAuth credentials
-- Google Gemini API key
+Ensure you have the following installed:
+- **Node.js:** `v18.18.0` or higher (Node 20+ recommended)
+- **Package Manager:** `npm` (comes with Node.js) or `pnpm` / `yarn`
+- **PostgreSQL Database:** A local PostgreSQL instance or a free cloud instance (such as [Neon.tech](https://neon.tech), [Supabase](https://supabase.com), or [Railway](https://railway.app)).
 
-### 1. Install dependencies
+---
 
-```bash
-npm install
-```
+### Installation Steps
 
-### 2. Create environment files
+1. **Clone the Repository:**
+   ```bash
+   git clone https://github.com/RajatSharma404/Fitness-Roadmap.git
+   cd Fitness-Roadmap
+   ```
 
-Create a local `.env` file from your existing template if one is available, then fill in the values for your machine.
+2. **Install Dependencies:**
+   ```bash
+   npm install
+   ```
 
-### 3. Configure environment variables
+3. **Configure Environment Variables:**
+   Create a `.env` file in the root directory:
+   ```env
+   # PostgreSQL Connection URL
+   DATABASE_URL="postgresql://username:password@localhost:5432/fitness_roadmap?schema=public"
 
-Use the following as a baseline:
+   # NextAuth Configuration
+   NEXTAUTH_URL="http://localhost:3000"
+   NEXTAUTH_SECRET="generate-a-secure-random-secret-key"
 
-```env
-DATABASE_URL="postgresql://postgres:postgres@localhost:5432/fitness_roadmap"
-NEXTAUTH_URL="http://localhost:3001"
-NEXTAUTH_SECRET="your-secret-key-here-min-32-chars"
-GOOGLE_CLIENT_ID="your-google-client-id"
-GOOGLE_CLIENT_SECRET="your-google-client-secret"
-JWT_SECRET="your-jwt-secret-key-here-min-32-chars"
-GEMINI_API_KEY="your-gemini-api-key"
-FRONTEND_URL="http://localhost:3001"
-FRONTEND_URLS="http://localhost:3001"
-```
+   # Google OAuth (Optional for local guest mode; required for Google Sign-In)
+   GOOGLE_CLIENT_ID="your-google-client-id"
+   GOOGLE_CLIENT_SECRET="your-google-client-secret"
 
-Notes:
+   # Google Gemini API Key (For AI Coach streaming responses)
+   GEMINI_API_KEY="your-gemini-api-key"
+   ```
 
-- the frontend runs on port `3001`
-- `DATABASE_URL` should point to your PostgreSQL instance
-- `NEXTAUTH_URL` should match the local or deployed app URL
-- `JWT_SECRET` should be at least 32 characters
+4. **Initialize Database Schema with Prisma:**
+   ```bash
+   npx prisma db push
+   # or run migrations:
+   npx prisma migrate dev --name init
+   ```
 
-### 4. Prepare the database
+5. **Generate Prisma Client:**
+   ```bash
+   npx prisma generate
+   ```
 
-Generate the Prisma client and sync the schema:
+6. **Start the Development Server:**
+   ```bash
+   npm run dev
+   ```
 
-```bash
-npm run db:generate
-npm run db:push
-npm run db:seed
-```
+   Open [http://localhost:3000](http://localhost:3000) in your browser to explore FitFlow.
 
-If you prefer migrations instead of push:
+---
 
-```bash
-npm run db:migrate
-```
+### Running Automated Unit Tests
 
-### 5. Start the app in development
-
-Start the frontend in a terminal:
-
-```bash
-npm run dev
-```
-
-Then open:
-
-```text
-http://localhost:3001
-```
-
-## Production Build
-
-Build the frontend:
+FitFlow includes extensive automated unit test suites covering all scientific calculation engines:
 
 ```bash
-npm run build
+npm run test:run
 ```
 
-Start the production server:
-
+To run tests in watch mode during development:
 ```bash
-npm run start
+npm run test
 ```
 
-### Build troubleshooting
-
-If build fails with `Failed to collect page data for /api/og` or a `PageNotFoundError` for `/api/og`:
-
-- ensure the handler file is `src/app/api/og/route.ts` (not `route.tsx`)
-- keep route metadata exports (for example `runtime`) inside `route.ts`
-- if rendering logic uses JSX, move it into a separate module such as `src/app/api/og/og-image.tsx` and re-export only the handler from `route.ts`
-
-## Docker
-
-The repository includes Docker support for local containerized development and deployment.
-
-Start all services:
-
+To verify TypeScript type safety across the entire codebase:
 ```bash
-docker-compose up -d
+npx tsc --noEmit
 ```
 
-The Docker setup starts:
+---
 
-- Next.js frontend on `3001`
-- PostgreSQL in the compose network
+## 🤝 Contributing
 
-## PM2 Deployment
+Contributions, issues, and feature requests are welcome! Feel free to check the [issues page](https://github.com/RajatSharma404/Fitness-Roadmap/issues).
 
-PM2 is available for long-running production processes.
+1. Fork the project
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
-Start processes:
+---
 
-```bash
-npm run pm2:start
-```
+## 📄 License
 
-View logs:
+Distributed under the **MIT License**. See [`LICENSE`](LICENSE) for more information.
 
-```bash
-npm run pm2:logs
-```
+---
 
-Restart:
-
-```bash
-npm run pm2:restart
-```
-
-Stop:
-
-```bash
-npm run pm2:stop
-```
-
-Delete PM2 config:
-
-```bash
-npm run pm2:delete
-```
-
-## Available npm Scripts
-
-| Script                 | Description                                      |
-| ---------------------- | ------------------------------------------------ |
-| `npm run dev`          | Start the Next.js dev server on port 3001        |
-| `npm run build`        | Build the Next.js app for production             |
-| `npm run start`        | Start the Next.js production server on port 3001 |
-| `npm run lint`         | Run ESLint across the codebase                   |
-| `npm run test`         | Run Vitest in watch mode                         |
-| `npm run test:run`     | Run Vitest once                                  |
-| `npm run db:generate`  | Generate Prisma client                           |
-| `npm run db:push`      | Push Prisma schema to the database               |
-| `npm run db:migrate`   | Run Prisma migration flow                        |
-| `npm run db:seed`      | Seed the database with modern `tsx`              |
-| `npm run db:studio`    | Open Prisma Studio                               |
-| `npm run pm2:start`    | Start PM2 processes                              |
-| `npm run pm2:stop`     | Stop PM2 processes                               |
-| `npm run pm2:restart`  | Restart PM2 processes                            |
-| `npm run pm2:delete`   | Delete PM2 processes                             |
-| `npm run pm2:logs`     | Stream PM2 logs                                  |
-
-## Data Model Overview
-
-The Prisma schema centers around these entities:
-
-- `User` - profile data, goal, bodyweight, units, accounts, sessions
-- `Lift` - logged lifts, one-rep max, notes, videos, timestamps
-- `Node` - roadmap nodes and unlock criteria
-- `UserNode` - per-user roadmap status
-- `Achievement` - achievements earned by users
-- `UserPlanState` - persisted planner state for synced roadmap settings and check-ins
-
-Enums used in the schema include:
-
-- `Goal`
-- `Unit`
-- `SetType`
-- `Track`
-- `NodeStatus`
-
-## Development Notes
-
-- The app is intentionally dark themed and data dense, but the routed shell keeps each page focused on one task at a time.
-- The shared `lab-*` classes and the newer `card`, `btn-primary`, `step-*`, and `metric-number` utilities in `src/app/globals.css` define the current surface language.
-- The dashboard is now the root route, while `/dashboard` remains as a redirect for older links.
-- Route pages that read persisted planner state use a shared deterministic snapshot helper in `src/lib/plannerView.ts` to avoid hydration drift.
-
-## Verification
-
-The current build completes successfully with `npm run build`. Tests run automatically via `npm run test:run`.
-
-## License
-
-This project is licensed under the MIT License. See [LICENSE](LICENSE) for the full text.
+**Built with passion for evidence-based lifting, hypertrophy science, and strength progression.** 💪
