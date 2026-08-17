@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { Card, SectionHeader } from "@/components/shared/UIPrimitives";
 import {
@@ -60,35 +61,49 @@ export default function OneRepMaxToolPage() {
   );
   const average = useMemo(() => (epley + brzycki) / 2, [epley, brzycki]);
 
-  const display = (valueKg: number) =>
-    unit === "kg"
-      ? `${valueKg.toFixed(1)} kg`
-      : `${kgToLbs(valueKg).toFixed(1)} lbs`;
+  const display = (valKg: number) => {
+    const val = unit === "kg" ? valKg : kgToLbs(valKg);
+    return `${Math.round(val * 10) / 10} ${unit}`;
+  };
 
   return (
     <div className="space-y-6 pb-8">
       <Card level="elevated">
         <SectionHeader
-          kicker="Tool"
-          title="One Rep Max Calculator"
-          description="Estimate your 1RM from a working set using Epley and Brzycki formulas."
+          kicker="Calculators"
+          title="One Rep Max (1RM)"
+          description="Estimate maximal strength output across various rep ranges based on validated clinical formulas."
         />
       </Card>
 
-      <div className="grid gap-6 xl:grid-cols-[360px_minmax(0,1fr)]">
-        <div className="space-y-4">
-          <Card level="base" className="space-y-3">
-            <label className="block text-sm text-[#636380]">
-              Unit
-              <select
-                className="mt-1 w-full rounded-md border border-[rgba(255,255,255,0.06)] bg-bg-surface px-3 py-2 text-[#eeeef2]"
-                value={unit}
-                onChange={(event) => setUnit(event.target.value as "kg" | "lbs")}
+      <div className="grid gap-6 lg:grid-cols-[340px_minmax(0,1fr)]">
+        <div className="space-y-6">
+          <Card level="base" className="space-y-4">
+            <SectionHeader title="Inputs" />
+            <div className="flex gap-2">
+              <button
+                type="button"
+                className={`flex-1 rounded-lg py-1.5 text-xs font-semibold uppercase tracking-wider transition ${
+                  unit === "kg"
+                    ? "bg-cyan-400/10 text-cyan-300 border border-cyan-400/30"
+                    : "bg-white/5 text-[#636380]"
+                }`}
+                onClick={() => setUnit("kg")}
               >
-                <option value="kg">KG</option>
-                <option value="lbs">LBS</option>
-              </select>
-            </label>
+                Metric (KG)
+              </button>
+              <button
+                type="button"
+                className={`flex-1 rounded-lg py-1.5 text-xs font-semibold uppercase tracking-wider transition ${
+                  unit === "lbs"
+                    ? "bg-cyan-400/10 text-cyan-300 border border-cyan-400/30"
+                    : "bg-white/5 text-[#636380]"
+                }`}
+                onClick={() => setUnit("lbs")}
+              >
+                Imperial (LBS)
+              </button>
+            </div>
             <label className="block text-sm text-[#636380]">
               Weight lifted ({unit})
               <input
@@ -170,6 +185,18 @@ export default function OneRepMaxToolPage() {
                 {display(average)}
               </p>
             </div>
+          </div>
+
+          <div className="pt-4 border-t border-white/5 flex items-center justify-between">
+            <p className="text-xs text-[#8e8ea6]">
+              Ready to load your working sets onto the bar?
+            </p>
+            <Link
+              href="/tools/plate-calculator"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 text-xs font-semibold uppercase tracking-wider transition"
+            >
+              🏋️‍♂️ Barbell Plate Calculator →
+            </Link>
           </div>
         </Card>
       </div>
