@@ -23,7 +23,9 @@ export const GlowingEdge = memo(function GlowingEdge({
     targetPosition,
   });
 
-  const isUnlocked = animated || style.stroke === "#00d4ff" || style.stroke === "#10b981";
+  const isUnlocked = animated || style.stroke === "#00d4ff" || style.stroke === "#10b981" || style.stroke === "#f59e0b" || style.stroke === "#a855f7" || style.stroke === "#facc15" || style.stroke === "#38bdf8";
+
+  const strokeColor = style.stroke || "#00d4ff";
 
   return (
     <>
@@ -32,23 +34,47 @@ export const GlowingEdge = memo(function GlowingEdge({
         <path
           d={edgePath}
           fill="none"
-          stroke={style.stroke || "#00d4ff"}
-          strokeWidth={6}
+          stroke={strokeColor}
+          strokeWidth={7}
           strokeOpacity={0.25}
-          className="blur-[2px]"
+          className="blur-[3px]"
         />
       )}
 
-      {/* Main Conduit Edge */}
+      {/* Main Conduit Wire */}
       <BaseEdge
         path={edgePath}
         markerEnd={markerEnd}
         style={{
           ...style,
           strokeWidth: isUnlocked ? 2.5 : 1.5,
-          stroke: isUnlocked ? style.stroke || "#00d4ff" : "rgba(255, 255, 255, 0.12)",
+          stroke: isUnlocked ? strokeColor : "rgba(255, 255, 255, 0.12)",
         }}
       />
+
+      {/* Animated Flowing Energy Photons */}
+      {isUnlocked && (
+        <>
+          {/* Primary Lead Photon */}
+          <circle r="4" fill="#ffffff" filter="drop-shadow(0 0 6px #ffffff)">
+            <animateMotion
+              dur="2.4s"
+              repeatCount="indefinite"
+              path={edgePath}
+            />
+          </circle>
+
+          {/* Secondary Pulse Photon */}
+          <circle r="3" fill={strokeColor} opacity={0.85} filter={`drop-shadow(0 0 5px ${strokeColor})`}>
+            <animateMotion
+              dur="2.4s"
+              repeatCount="indefinite"
+              begin="1.2s"
+              path={edgePath}
+            />
+          </circle>
+        </>
+      )}
     </>
   );
 });

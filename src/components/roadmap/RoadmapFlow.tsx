@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useEffect, useCallback } from "react";
 import {
   Background,
   Controls,
@@ -8,8 +8,11 @@ import {
   MiniMap,
   Node,
   ReactFlow,
+  ReactFlowProvider,
+  useReactFlow,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
+import { Target, Maximize2 } from "lucide-react";
 import { SkillTreeNode, SkillTreeNodeData } from "./SkillTreeNode";
 import { GlowingEdge } from "./GlowingEdge";
 import { PlanNode, TrackCategory } from "@/lib/bodyPlanner";
@@ -40,13 +43,15 @@ const TRACK_STROKES: Record<string, string> = {
   APEX: "#facc15",
 };
 
-export default function RoadmapFlow({
+function FlowCanvas({
   roadmapNodes,
   progress,
   selectedNodeId,
   onNodeSelect,
   trackFilter = "ALL",
 }: RoadmapFlowProps) {
+  const { setCenter, fitView } = useReactFlow();
+
   // Check if prerequisites are satisfied for each node
   const flowNodes: Node<SkillTreeNodeData>[] = useMemo(() => {
     return roadmapNodes.map((node) => {
@@ -110,6 +115,27 @@ export default function RoadmapFlow({
     );
   }, [roadmapNodes, progress]);
 
+  // Smooth camera panning when a node is selected
+  const handleFocusNode = useCallback(
+    (nodeId: string) => {
+      const target = roadmapNodes.find((n) => n.id === nodeId);
+      if (target) {
+        setCenter(target.position.x + 128, target.position.y + 80, {
+          duration: 700,
+          zoom: 0.9,
+        });
+      }
+    },
+    [roadmapNodes, setCenter],
+  );
+
+  // Focus active frontier node on initial mount / filter change
+  useEffect(() => {
+    if (selectedNodeId) {
+      handleFocusNode(selectedNodeId);
+    }
+  }, [selectedNodeId, handleFocusNode]);
+
   return (
     <div className="h-[calc(100vh-220px)] min-h-[580px] w-full relative bg-[#07070d]">
       <ReactFlow
@@ -121,7 +147,10 @@ export default function RoadmapFlow({
         fitViewOptions={{ padding: 0.2 }}
         minZoom={0.3}
         maxZoom={1.3}
-        onNodeClick={(_, node) => onNodeSelect(node.id)}
+        onNodeClick={(_, node) => {
+          onNodeSelect(node.id);
+          handleFocusNode(node.id);
+        }}
       >
         <Background color="rgba(255,255,255,0.04)" gap={24} size={1.5} />
         <Controls
@@ -142,6 +171,37 @@ export default function RoadmapFlow({
           className="!bg-[#0e0e17] !border !border-white/10 !rounded-xl !shadow-2xl"
         />
       </ReactFlow>
+
+      {/* Floating Canvas Camera Controls */}
+      <div className="absolute top-4 left-4 z-10 flex items-center gap-2 bg-[#12121e]/90 border border-white/10 p-1.5 rounded-xl shadow-2xl backdrop-blur-md">
+        <button
+          type="button"
+          onClick={() => handleFocusNode(selectedNodeId)}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-cyan-300 hover:bg-white/10 transition"
+          title="Smooth pan to currently focused milestone"
+        >
+          <Target className="w-3.5 h-3.5" />
+          <span>Focus Active</span>
+        </button>
+        <div className="h-4 w-px bg-white/10" />
+        <button
+          type="button"
+          onClick={() => fitView({ padding: 0.2, duration: 600 })}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-zinc-300 hover:bg-white/10 transition"
+          title="Reset camera and fit all branches"
+        >
+          <Maximize2 className="w-3.5 h-3.5" />
+          <span>Fit Tree</span>
+        </button>
+      </div>
     </div>
+  );
+}
+
+export default function RoadmapFlow(props: RoadmapFlowProps) {
+  return (
+    <ReactFlowProvider>
+      <FlowCanvas {...props} />
+    </ReactFlowProvider>
   );
 }

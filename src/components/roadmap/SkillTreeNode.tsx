@@ -2,6 +2,7 @@
 
 import { memo } from "react";
 import { Handle, Position, NodeProps, Node } from "@xyflow/react";
+import { motion } from "framer-motion";
 import {
   Shield,
   Flame,
@@ -46,7 +47,7 @@ const TRACK_THEMES: Record<
 > = {
   FOUNDATION: {
     border: "border-cyan-500/30",
-    activeBorder: "border-cyan-400 ring-2 ring-cyan-400/40 shadow-[0_0_25px_rgba(6,182,212,0.35)]",
+    activeBorder: "border-cyan-400 shadow-[0_0_25px_rgba(6,182,212,0.4)]",
     bg: "bg-[#0b131e]/90",
     badge: "bg-cyan-500/10 text-cyan-300 border-cyan-500/30",
     accent: "text-cyan-400",
@@ -54,7 +55,7 @@ const TRACK_THEMES: Record<
   },
   STRENGTH: {
     border: "border-amber-500/30",
-    activeBorder: "border-amber-400 ring-2 ring-amber-400/40 shadow-[0_0_25px_rgba(245,158,11,0.35)]",
+    activeBorder: "border-amber-400 shadow-[0_0_25px_rgba(245,158,11,0.4)]",
     bg: "bg-[#1a1209]/90",
     badge: "bg-amber-500/10 text-amber-300 border-amber-500/30",
     accent: "text-amber-400",
@@ -62,7 +63,7 @@ const TRACK_THEMES: Record<
   },
   HYPERTROPHY: {
     border: "border-purple-500/30",
-    activeBorder: "border-purple-400 ring-2 ring-purple-400/40 shadow-[0_0_25px_rgba(168,85,247,0.35)]",
+    activeBorder: "border-purple-400 shadow-[0_0_25px_rgba(168,85,247,0.4)]",
     bg: "bg-[#150a21]/90",
     badge: "bg-purple-500/10 text-purple-300 border-purple-500/30",
     accent: "text-purple-400",
@@ -70,7 +71,7 @@ const TRACK_THEMES: Record<
   },
   CALISTHENICS: {
     border: "border-emerald-500/30",
-    activeBorder: "border-emerald-400 ring-2 ring-emerald-400/40 shadow-[0_0_25px_rgba(16,185,129,0.35)]",
+    activeBorder: "border-emerald-400 shadow-[0_0_25px_rgba(16,185,129,0.4)]",
     bg: "bg-[#071912]/90",
     badge: "bg-emerald-500/10 text-emerald-300 border-emerald-500/30",
     accent: "text-emerald-400",
@@ -78,7 +79,7 @@ const TRACK_THEMES: Record<
   },
   METABOLIC: {
     border: "border-sky-500/30",
-    activeBorder: "border-sky-400 ring-2 ring-sky-400/40 shadow-[0_0_25px_rgba(56,189,248,0.35)]",
+    activeBorder: "border-sky-400 shadow-[0_0_25px_rgba(56,189,248,0.4)]",
     bg: "bg-[#081524]/90",
     badge: "bg-sky-500/10 text-sky-300 border-sky-500/30",
     accent: "text-sky-400",
@@ -86,7 +87,7 @@ const TRACK_THEMES: Record<
   },
   APEX: {
     border: "border-yellow-400/40",
-    activeBorder: "border-yellow-300 ring-2 ring-yellow-400/50 shadow-[0_0_35px_rgba(250,204,21,0.5)]",
+    activeBorder: "border-yellow-300 shadow-[0_0_35px_rgba(250,204,21,0.55)]",
     bg: "bg-gradient-to-b from-[#1f1704] to-[#12081c]",
     badge: "bg-yellow-400/15 text-yellow-300 border-yellow-400/40",
     accent: "text-yellow-400",
@@ -144,17 +145,35 @@ export const SkillTreeNode = memo(function SkillTreeNode({
     : (data.completedTasks ?? (isActive ? 1 : 0));
 
   return (
-    <div
+    <motion.div
+      animate={
+        isActive
+          ? {
+              y: [0, -7, 0],
+              transition: {
+                duration: 3.8,
+                repeat: Infinity,
+                ease: "easeInOut",
+              },
+            }
+          : { y: 0 }
+      }
+      whileHover={{
+        scale: 1.04,
+        y: -5,
+        transition: { duration: 0.2 },
+      }}
+      whileTap={{ scale: 0.97 }}
       className={cn(
-        "relative group w-64 rounded-2xl border p-4 transition-all duration-300 backdrop-blur-xl",
+        "relative group w-64 rounded-2xl border p-4 backdrop-blur-xl transition-all duration-300 cursor-pointer select-none",
         theme.bg,
         isCompleted
-          ? "border-green-500/40 shadow-[0_0_20px_rgba(34,197,94,0.15)]"
+          ? "border-green-500/40 shadow-[0_0_20px_rgba(34,197,94,0.2)]"
           : isActive
             ? theme.activeBorder
             : cn(theme.border, "hover:border-zinc-500"),
         data.isDimmed && "opacity-25 filter grayscale hover:opacity-80 transition",
-        selected && "ring-2 ring-white/50",
+        selected && "ring-2 ring-white/60",
       )}
     >
       {/* ReactFlow Connection Anchors */}
@@ -205,7 +224,7 @@ export const SkillTreeNode = memo(function SkillTreeNode({
       {totalTasks > 0 ? (
         <div className="mt-3 space-y-1">
           <div className="flex items-center justify-between text-[10px] text-zinc-400 font-mono">
-            <span>Tasks</span>
+            <span>Checkpoints</span>
             <span>
               {completedTasks}/{totalTasks}
             </span>
@@ -248,6 +267,6 @@ export const SkillTreeNode = memo(function SkillTreeNode({
           Details →
         </span>
       </div>
-    </div>
+    </motion.div>
   );
 });
