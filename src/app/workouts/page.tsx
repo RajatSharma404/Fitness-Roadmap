@@ -6,7 +6,6 @@ import {
   Play,
   ChevronDown,
   ChevronUp,
-  CircleCheckBig,
   Share2,
   Check,
 } from "lucide-react";
@@ -23,10 +22,13 @@ import {
 import {
   defaultPlannerSnapshot,
   readPlannerSnapshot,
+  persistPlannerSnapshot,
   syncPlannerSnapshotFromServer,
 } from "@/lib/plannerView";
 import { cn } from "@/lib/cn";
 import { PRLogger } from "@/components/shared/PRLogger";
+import { LiveWorkoutModal } from "@/components/workouts/LiveWorkoutModal";
+import { evaluateMilestoneUnlocks } from "@/lib/roadmapUnlockEngine";
 
 const tiers = ["beginner", "intermediate", "advanced"] as const;
 
@@ -58,11 +60,6 @@ export default function WorkoutsPage() {
   });
   const [expandedExercise, setExpandedExercise] = useState<string | null>(null);
   const [workoutModeOpen, setWorkoutModeOpen] = useState(false);
-  const [completedExercises, setCompletedExercises] = useState<Set<string>>(
-    () => new Set(),
-  );
-  const [workoutStartedAt, setWorkoutStartedAt] = useState<number | null>(null);
-  const [isSavingWorkout, setIsSavingWorkout] = useState(false);
   const [saveFeedback, setSaveFeedback] = useState<string | null>(null);
   const [copyFeedback, setCopyFeedback] = useState<string | null>(null);
   const [prLoggerOpen, setPrLoggerOpen] = useState(false);
@@ -165,8 +162,6 @@ export default function WorkoutsPage() {
     null;
 
   function openWorkoutMode() {
-    setCompletedExercises(new Set());
-    setWorkoutStartedAt(Date.now());
     setSaveFeedback(null);
     setWorkoutModeOpen(true);
   }
@@ -177,68 +172,6 @@ export default function WorkoutsPage() {
     navigator.clipboard.writeText(deeplink);
     setCopyFeedback("Deeplink copied!");
     setTimeout(() => setCopyFeedback(null), 2000);
-  }
-
-  function toggleCompletedExercise(exercise: string) {
-    setCompletedExercises((current) => {
-      const next = new Set(current);
-      if (next.has(exercise)) {
-        next.delete(exercise);
-      } else {
-        next.add(exercise);
-      }
-      return next;
-    });
-  }
-
-  async function saveWorkoutSession() {
-    if (!activeDay || !activePhase || isSavingWorkout) return;
-
-    setIsSavingWorkout(true);
-    setSaveFeedback(null);
-
-    const durationMinutes = workoutStartedAt
-      ? Math.max(1, Math.round((Date.now() - workoutStartedAt) / 60000))
-      : 30;
-
-    const payload = {
-      day: selectedDay,
-      tier: selectedTier,
-      phase: activePhase.level,
-      focus: activeDay.focus,
-      setsReps: activeDay.setsReps,
-      exercises: activeDay.exercises,
-      completedExercises: Array.from(completedExercises),
-      durationMinutes,
-      completedAt: new Date().toISOString(),
-    };
-
-    try {
-      const response = await fetch("/api/workout-sessions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify(payload),
-      });
-
-      if (response.ok) {
-        setSaveFeedback("Workout saved to your profile!");
-        setWorkoutModeOpen(false);
-      } else {
-        // Fallback: local storage for guest session
-        const history = JSON.parse(localStorage.getItem("guestWorkoutSessions") || "[]");
-        localStorage.setItem("guestWorkoutSessions", JSON.stringify([payload, ...history]));
-        setSaveFeedback("Workout completed! (Saved locally)");
-        setWorkoutModeOpen(false);
-      }
-    } catch {
-      const history = JSON.parse(localStorage.getItem("guestWorkoutSessions") || "[]");
-      localStorage.setItem("guestWorkoutSessions", JSON.stringify([payload, ...history]));
-      setSaveFeedback("Workout completed! (Saved locally)");
-      setWorkoutModeOpen(false);
-    }
-
-    setIsSavingWorkout(false);
   }
 
   return (
@@ -441,91 +374,79 @@ export default function WorkoutsPage() {
       ) : null}
 
       {workoutModeOpen && activeDay ? (
-        <div className="fixed inset-0 z-50 bg-black/70 p-4 backdrop-blur-sm">
-          <div className="mx-auto flex h-full max-w-4xl flex-col overflow-hidden rounded-3xl border border-[rgba(255,255,255,0.08)] bg-bg-elevated">
-            <div className="flex items-center justify-between border-b border-[rgba(255,255,255,0.06)] p-5">
-              <div>
-                <p className="lab-kicker text-[#60a5fa]">Workout Mode</p>
-                <h3 className="font-display text-2xl font-bold text-[#eeeef2]">
-                  {selectedDay}
-                </h3>
-              </div>
-              <button
-                type="button"
-                className="text-sm text-[#636380]"
-                onClick={() => setWorkoutModeOpen(false)}
-              >
-                Close
-              </button>
-            </div>
-            <div className="flex-1 overflow-y-auto p-5 space-y-4">
-              {activeDay.exercises.map((exercise) => {
-                const detail = getExerciseDetail(exercise);
-                const isCompleted = completedExercises.has(exercise);
+        <LiveWorkoutModal
+          isOpen={workoutModeOpen}
+          onClose={() => setWorkoutModeOpen(false)}
+          dayName={selectedDay}
+          focus={activeDay.focus}
+          exercises={activeDay.exercises}
+          userWeightKg={snapshot.input.weightKg}
+          onFinishWorkout={async (summary) => {
+            const durationMinutes = Math.max(1, Math.round(summary.durationSeconds / 60));
 
-                return (
-                  <div
-                    key={exercise}
-                    className="rounded-2xl border border-[rgba(255,255,255,0.06)] bg-bg-surface p-4"
-                  >
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-3">
-                        <Image
-                          src={detail.imageUrl}
-                          alt={detail.imageAlt}
-                          width={72}
-                          height={52}
-                          unoptimized
-                          className="h-13 w-18 rounded-md border border-[rgba(255,255,255,0.08)] object-cover"
-                        />
-                        <div>
-                          <p className="font-display text-xl font-semibold text-[#eeeef2]">
-                            {exercise}
-                          </p>
-                          <p className="text-sm text-[#636380]">
-                            {activeDay.setsReps}
-                          </p>
-                        </div>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => toggleCompletedExercise(exercise)}
-                        className="rounded-full p-1"
-                        aria-label={
-                          isCompleted
-                            ? "Mark as not completed"
-                            : "Mark as completed"
-                        }
-                      >
-                        <CircleCheckBig
-                          className={`h-5 w-5 ${isCompleted ? "text-green-300" : "text-[#636380]"}`}
-                        />
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-            <div className="border-t border-[rgba(255,255,255,0.06)] p-5">
-              <div className="mb-3 flex items-center justify-between text-sm text-[#636380]">
-                <span>
-                  Completed: {completedExercises.size}/
-                  {activeDay.exercises.length}
-                </span>
-                <span>{activeDay.setsReps}</span>
-              </div>
-              <ActionButton
-                className="btn-primary flex h-11 w-full items-center justify-center"
-                onClick={saveWorkoutSession}
-                disabled={isSavingWorkout}
-              >
-                {isSavingWorkout
-                  ? "Saving workout..."
-                  : "Complete and Save Workout"}
-              </ActionButton>
-            </div>
-          </div>
-        </div>
+            const payload = {
+              day: selectedDay,
+              tier: selectedTier,
+              phase: activePhase?.level || "foundation",
+              focus: activeDay.focus,
+              setsReps: activeDay.setsReps,
+              exercises: activeDay.exercises,
+              completedExercises: summary.completedExercises,
+              durationMinutes,
+              totalVolumeKg: summary.totalVolumeKg,
+              totalSets: summary.totalSets,
+              completedAt: new Date().toISOString(),
+            };
+
+            try {
+              await fetch("/api/workout-sessions", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                body: JSON.stringify(payload),
+              }).catch(() => {
+                const history = JSON.parse(localStorage.getItem("guestWorkoutSessions") || "[]");
+                localStorage.setItem("guestWorkoutSessions", JSON.stringify([payload, ...history]));
+              });
+
+              // Evaluate any PRs logged during this live session against roadmap milestones
+              if (summary.prsAchieved.length > 0) {
+                const unlockResult = evaluateMilestoneUnlocks({
+                  lifts: summary.prsAchieved,
+                  checkins: snapshot.checkins,
+                  currentProgress: snapshot.progress,
+                  userWeightKg: snapshot.input.weightKg,
+                  userGender: snapshot.input.sex,
+                  roadmapNodes: plan.roadmapNodes,
+                });
+
+                if (unlockResult.newlyUnlockedNodeIds.length > 0) {
+                  await persistPlannerSnapshot({
+                    ...snapshot,
+                    progress: unlockResult.updatedProgress,
+                  });
+
+                  unlockResult.unlockEvents.forEach((ev) => {
+                    window.dispatchEvent(
+                      new CustomEvent("roadmap-milestone-unlocked", {
+                        detail: ev,
+                      }),
+                    );
+                  });
+                }
+              }
+
+              setSaveFeedback(
+                `🎉 Session Complete! Logged ${summary.totalVolumeKg.toLocaleString()}kg total volume across ${summary.totalSets} sets (+200 Workout XP)!`,
+              );
+              setWorkoutModeOpen(false);
+              setTimeout(() => setSaveFeedback(null), 7000);
+            } catch (err) {
+              console.error("Failed to save workout session:", err);
+              setWorkoutModeOpen(false);
+            }
+          }}
+        />
       ) : null}
       <PRLogger
         isOpen={prLoggerOpen}
