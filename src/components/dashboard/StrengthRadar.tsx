@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useSyncExternalStore } from 'react';
 import {
   RadarChart,
   PolarGrid,
@@ -9,6 +9,10 @@ import {
   Tooltip,
 } from 'recharts';
 import { getStrengthLevel } from '@/lib/formulas';
+
+const emptySubscribe = () => () => {};
+const getClientSnapshot = () => true;
+const getServerSnapshot = () => false;
 
 interface StrengthRadarProps {
   lifts: Record<string, number>;
@@ -36,11 +40,11 @@ function getLiftValue(lifts: Record<string, number>, key: string): number {
 }
 
 export function StrengthRadar({ lifts, bodyweight }: StrengthRadarProps) {
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const mounted = useSyncExternalStore(
+    emptySubscribe,
+    getClientSnapshot,
+    getServerSnapshot,
+  );
 
   // Calculate normalized levels for each lift
   const data = Object.entries(liftLabels).map(([lift, label]) => {

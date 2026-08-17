@@ -1,8 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { motion } from "framer-motion";
-import { X, Dumbbell, Target, TrendingUp, MessageSquare } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  X,
+  Target,
+  TrendingUp,
+  MessageSquare,
+  CheckCircle2,
+  Circle,
+} from "lucide-react";
 import {
   LineChart,
   Line,
@@ -13,23 +20,39 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { cn } from "@/lib/cn";
+import { PlanNodeTask, TrackCategory } from "@/lib/bodyPlanner";
 
 interface NodeDrawerProps {
   node: {
     id: string;
     name: string;
-    track: string;
+    track: TrackCategory | string;
     description?: string;
     muscles?: string[];
-    unlockCriteria: Record<string, unknown>;
+    unlockCriteria?: Record<string, unknown>;
     status: string;
+    xpReward?: number;
+    tasks?: PlanNodeTask[];
+    completedTaskIds?: string[];
   } | null;
   liftHistory: Array<{ date: string; oneRM: number }>;
   isOpen: boolean;
   onClose: () => void;
   onLogPR: () => void;
   onAskAI: () => void;
+  onToggleTask?: (taskId: string) => void;
+  onToggleComplete?: () => void;
+  isCompleted?: boolean;
 }
+
+const TRACK_BADGES: Record<string, { label: string; style: string }> = {
+  FOUNDATION: { label: "Core Foundation", style: "bg-cyan-500/10 text-cyan-300 border-cyan-500/30" },
+  STRENGTH: { label: "Iron Strength", style: "bg-amber-500/10 text-amber-300 border-amber-500/30" },
+  HYPERTROPHY: { label: "Aesthetic Hypertrophy", style: "bg-purple-500/10 text-purple-300 border-purple-500/30" },
+  CALISTHENICS: { label: "Kinetic Calisthenics", style: "bg-emerald-500/10 text-emerald-300 border-emerald-500/30" },
+  METABOLIC: { label: "Metabolic Bioenergetics", style: "bg-sky-500/10 text-sky-300 border-sky-500/30" },
+  APEX: { label: "Apex Capstone", style: "bg-yellow-400/15 text-yellow-300 border-yellow-400/40" },
+};
 
 export function NodeDrawer({
   node,
@@ -38,21 +61,23 @@ export function NodeDrawer({
   onClose,
   onLogPR,
   onAskAI,
+  onToggleTask,
+  onToggleComplete,
+  isCompleted = false,
 }: NodeDrawerProps) {
-  const [activeTab, setActiveTab] = useState<"overview" | "history">(
-    "overview",
+  const [activeTab, setActiveTab] = useState<"tasks" | "criteria" | "history">(
+    "tasks",
   );
 
   if (!isOpen || !node) return null;
 
-  const trackColors: Record<string, string> = {
-    BEGINNER: "text-emerald-400",
-    INTERMEDIATE: "text-blue-400",
-    ADVANCED: "text-violet-400",
-    ELITE: "text-amber-400",
-  };
+  const trackInfo =
+    TRACK_BADGES[node.track] || {
+      label: String(node.track),
+      style: "bg-zinc-800 text-zinc-300 border-zinc-700",
+    };
 
-  const criteria = node.unlockCriteria as {
+  const criteria = (node.unlockCriteria || {}) as {
     lift?: string;
     metric?: string;
     value?: number;
@@ -60,91 +85,194 @@ export function NodeDrawer({
     unit?: string;
   };
 
+  const tasks = node.tasks || [];
+  const completedTaskIds = new Set(node.completedTaskIds || []);
+  const taskProgressPct =
+    tasks.length > 0
+      ? Math.round(
+          (tasks.filter((t) => completedTaskIds.has(t.id)).length /
+            tasks.length) *
+            100,
+        )
+      : isCompleted
+        ? 100
+        : 0;
+
   return (
-    <>
+    <AnimatePresence>
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         onClick={onClose}
-        className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50"
+        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50"
       />
 
       <motion.div
-        initial={{ opacity: 0, x: 400 }}
+        initial={{ opacity: 0, x: 450 }}
         animate={{ opacity: 1, x: 0 }}
-        exit={{ opacity: 0, x: 400 }}
+        exit={{ opacity: 0, x: 450 }}
+        transition={{ type: "spring", damping: 25, stiffness: 200 }}
         className="fixed right-0 top-0 bottom-0 w-full max-w-lg z-50"
       >
-        <div className="h-full bg-zinc-900 border-l border-zinc-800 flex flex-col">
+        <div className="h-full bg-[#0d0d15] border-l border-white/10 flex flex-col shadow-2xl">
           {/* Header */}
-          <div className="p-6 border-b border-zinc-800">
-            <div className="flex items-start justify-between">
+          <div className="p-6 border-b border-white/10 bg-white/[0.02]">
+            <div className="flex items-start justify-between gap-4">
               <div>
-                <div
-                  className={cn(
-                    "text-sm font-medium uppercase tracking-wider mb-2",
-                    trackColors[node.track],
-                  )}
-                >
-                  {node.track.toLowerCase()}
+                <div className="flex items-center gap-2 mb-2">
+                  <span
+                    className={cn(
+                      "text-xs font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full border",
+                      trackInfo.style,
+                    )}
+                  >
+                    {trackInfo.label}
+                  </span>
+                  {node.xpReward ? (
+                    <span className="font-mono text-xs font-bold text-amber-400 bg-amber-400/10 border border-amber-400/20 px-2 py-0.5 rounded-md">
+                      +{node.xpReward} XP
+                    </span>
+                  ) : null}
                 </div>
-                <h2 className="text-2xl font-bold text-white">{node.name}</h2>
+                <h2 className="text-2xl font-bold font-display text-white">
+                  {node.name}
+                </h2>
               </div>
               <button
                 onClick={onClose}
-                className="p-2 hover:bg-zinc-800 rounded-lg transition-colors"
+                className="p-2 hover:bg-white/10 rounded-xl transition text-zinc-400 hover:text-white"
               >
-                <X className="w-5 h-5 text-zinc-400" />
+                <X className="w-5 h-5" />
               </button>
             </div>
+
+            {/* Description */}
+            {node.description && (
+              <p className="mt-3 text-sm text-[#8e8ea6] leading-relaxed">
+                {node.description}
+              </p>
+            )}
+
+            {/* Progress Bar Header */}
+            {tasks.length > 0 && (
+              <div className="mt-4 pt-4 border-t border-white/5 space-y-1.5">
+                <div className="flex items-center justify-between text-xs font-mono text-zinc-400">
+                  <span>Phase Completion</span>
+                  <span className="text-cyan-300 font-bold">{taskProgressPct}%</span>
+                </div>
+                <div className="h-2 w-full bg-zinc-800 rounded-full overflow-hidden border border-white/5">
+                  <div
+                    className={cn(
+                      "h-full rounded-full transition-all duration-500",
+                      isCompleted || taskProgressPct === 100
+                        ? "bg-green-400"
+                        : "bg-cyan-400",
+                    )}
+                    style={{ width: `${taskProgressPct}%` }}
+                  />
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* Tabs */}
-          <div className="flex border-b border-zinc-800">
-            {(["overview", "history"] as const).map((tab) => (
+          {/* Navigation Tabs */}
+          <div className="flex border-b border-white/10 bg-white/[0.01]">
+            {[
+              { id: "tasks", label: `Tasks (${tasks.length})` },
+              { id: "criteria", label: "Prerequisites" },
+              { id: "history", label: "PR History" },
+            ].map((tab) => (
               <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as typeof activeTab)}
                 className={cn(
-                  "flex-1 py-3 text-sm font-medium transition-colors",
-                  activeTab === tab
-                    ? "text-white border-b-2 border-violet-500"
+                  "flex-1 py-3 text-xs font-semibold uppercase tracking-wider transition-colors",
+                  activeTab === tab.id
+                    ? "text-cyan-300 border-b-2 border-cyan-400 bg-cyan-400/5"
                     : "text-zinc-400 hover:text-white",
                 )}
               >
-                {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                {tab.label}
               </button>
             ))}
           </div>
 
-          {/* Content */}
-          <div className="flex-1 overflow-y-auto p-6">
-            {activeTab === "overview" && (
-              <div className="space-y-6">
-                {/* Description */}
-                {node.description && (
-                  <div>
-                    <div className="flex items-center gap-2 text-zinc-400 mb-2">
-                      <Dumbbell className="w-4 h-4" />
-                      <span className="text-sm font-medium">Description</span>
-                    </div>
-                    <p className="text-zinc-300">{node.description}</p>
+          {/* Tab Content */}
+          <div className="flex-1 overflow-y-auto p-6 space-y-6">
+            {activeTab === "tasks" && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs uppercase tracking-[0.2em] text-[#636380]">
+                    Actionable Checkpoints
+                  </span>
+                  <span className="text-xs text-zinc-400 font-mono">
+                    Check off as you train
+                  </span>
+                </div>
+
+                {tasks.length > 0 ? (
+                  <div className="space-y-2.5">
+                    {tasks.map((task) => {
+                      const isTaskDone =
+                        completedTaskIds.has(task.id) || isCompleted;
+
+                      return (
+                        <div
+                          key={task.id}
+                          onClick={() => onToggleTask?.(task.id)}
+                          className={cn(
+                            "flex items-start gap-3 p-3.5 rounded-xl border transition cursor-pointer select-none",
+                            isTaskDone
+                              ? "bg-green-500/[0.04] border-green-500/30 text-zinc-200"
+                              : "bg-white/[0.02] border-white/5 text-zinc-300 hover:border-white/15",
+                          )}
+                        >
+                          <button
+                            type="button"
+                            className="mt-0.5 shrink-0 transition"
+                          >
+                            {isTaskDone ? (
+                              <CheckCircle2 className="w-5 h-5 text-green-400" />
+                            ) : (
+                              <Circle className="w-5 h-5 text-zinc-500 hover:text-cyan-400" />
+                            )}
+                          </button>
+                          <div className="flex-1 min-w-0">
+                            <p
+                              className={cn(
+                                "text-sm font-medium leading-snug",
+                                isTaskDone && "line-through text-zinc-400",
+                              )}
+                            >
+                              {task.label}
+                            </p>
+                          </div>
+                          <span className="font-mono text-[10px] font-bold text-amber-400/80 shrink-0">
+                            +{task.xp} XP
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="rounded-xl border border-dashed border-white/10 p-6 text-center text-sm text-zinc-400">
+                    No individual micro-tasks for this phase. Complete the main workout objectives to advance.
                   </div>
                 )}
 
-                {/* Muscles */}
+                {/* Target Muscles */}
                 {node.muscles && node.muscles.length > 0 && (
-                  <div>
-                    <div className="flex items-center gap-2 text-zinc-400 mb-2">
-                      <Target className="w-4 h-4" />
-                      <span className="text-sm font-medium">Muscle Groups</span>
+                  <div className="pt-2">
+                    <div className="flex items-center gap-2 text-zinc-400 mb-2.5 text-xs uppercase tracking-wider">
+                      <Target className="w-4 h-4 text-cyan-400" />
+                      <span>Primary Muscle Groups</span>
                     </div>
                     <div className="flex flex-wrap gap-2">
                       {node.muscles.map((muscle) => (
                         <span
                           key={muscle}
-                          className="px-3 py-1 bg-violet-500/20 text-violet-300 rounded-full text-sm"
+                          className="px-3 py-1 bg-cyan-500/10 text-cyan-300 border border-cyan-500/20 rounded-lg text-xs font-medium"
                         >
                           {muscle}
                         </span>
@@ -152,48 +280,41 @@ export function NodeDrawer({
                     </div>
                   </div>
                 )}
+              </div>
+            )}
 
-                {/* Unlock Criteria */}
-                <div>
-                  <div className="flex items-center gap-2 text-zinc-400 mb-2">
-                    <TrendingUp className="w-4 h-4" />
-                    <span className="text-sm font-medium">Unlock Criteria</span>
-                  </div>
-                  <div className="p-4 bg-zinc-800/50 rounded-lg">
-                    {criteria.type === "total" ? (
-                      <div className="text-zinc-300">
-                        Achieve {criteria.value} {criteria.unit} total across
-                        Squat, Bench, and Deadlift
-                      </div>
-                    ) : criteria.type === "wilks" ||
-                      criteria.type === "dots" ? (
-                      <div className="text-zinc-300">
-                        Achieve a {criteria.metric?.replace("_", " ")} of{" "}
-                        {criteria.value}
-                      </div>
+            {activeTab === "criteria" && (
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 text-zinc-400 text-xs uppercase tracking-wider">
+                  <TrendingUp className="w-4 h-4 text-amber-400" />
+                  <span>Phase Unlock Requirement</span>
+                </div>
+
+                <div className="p-4 rounded-xl border border-white/10 bg-white/[0.02] space-y-2">
+                  <div className="text-sm text-white font-medium">
+                    {criteria.type === "wilks" ? (
+                      `Achieve a ${criteria.value}+ Wilks strength score across SBD.`
+                    ) : criteria.type === "lift" ? (
+                      `Record a ${criteria.lift} of ${criteria.value}${criteria.unit || "x BW"}.`
                     ) : (
-                      <div className="text-zinc-300">
-                        {criteria.metric === "1rm_bw_ratio"
-                          ? `${criteria.lift}: ${criteria.value}x bodyweight`
-                          : `${criteria.lift}: ${criteria.value}${criteria.unit || "kg"}`}
-                      </div>
+                      `Complete prior roadmap milestones and maintain consistent training.`
                     )}
                   </div>
+                  <p className="text-xs text-[#8e8ea6]">
+                    This milestone automatically unlocks as soon as matching personal records or check-in adherence criteria are met.
+                  </p>
                 </div>
               </div>
             )}
 
             {activeTab === "history" && (
-              <div>
+              <div className="space-y-4">
                 {liftHistory.length > 0 ? (
                   <div className="space-y-4">
-                    <div className="h-64">
+                    <div className="h-60 w-full">
                       <ResponsiveContainer width="100%" height="100%">
                         <LineChart data={liftHistory}>
-                          <CartesianGrid
-                            strokeDasharray="3 3"
-                            stroke="#3f3f46"
-                          />
+                          <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
                           <XAxis
                             dataKey="date"
                             tickFormatter={(date) =>
@@ -202,36 +323,37 @@ export function NodeDrawer({
                                 day: "numeric",
                               })
                             }
-                            stroke="#a1a1aa"
+                            stroke="#71717a"
+                            fontSize={11}
                           />
-                          <YAxis stroke="#a1a1aa" />
+                          <YAxis stroke="#71717a" fontSize={11} />
                           <Tooltip
                             contentStyle={{
-                              backgroundColor: "#18181b",
-                              border: "1px solid #3f3f46",
+                              backgroundColor: "#12121e",
+                              border: "1px solid rgba(255,255,255,0.1)",
                               borderRadius: "8px",
                             }}
                             labelStyle={{ color: "#ffffff" }}
-                            itemStyle={{ color: "#7c3aed" }}
+                            itemStyle={{ color: "#00d4ff" }}
                           />
                           <Line
                             type="monotone"
                             dataKey="oneRM"
-                            stroke="#7c3aed"
-                            strokeWidth={2}
-                            dot={{ fill: "#7c3aed", strokeWidth: 0 }}
+                            stroke="#00d4ff"
+                            strokeWidth={2.5}
+                            dot={{ fill: "#00d4ff", r: 4 }}
                           />
                         </LineChart>
                       </ResponsiveContainer>
                     </div>
 
-                    <div className="text-center text-zinc-400 text-sm">
-                      {liftHistory.length} entries
+                    <div className="text-center text-zinc-400 text-xs font-mono">
+                      {liftHistory.length} PR record(s) logged
                     </div>
                   </div>
                 ) : (
-                  <div className="text-center py-12 text-zinc-500">
-                    No history yet. Log your first PR to see progress!
+                  <div className="text-center py-12 text-zinc-500 rounded-xl border border-dashed border-white/10 p-6">
+                    No PR history for this phase yet. Log your first set to establish a baseline!
                   </div>
                 )}
               </div>
@@ -239,24 +361,44 @@ export function NodeDrawer({
           </div>
 
           {/* Footer Actions */}
-          <div className="p-6 border-t border-zinc-800 space-y-3">
-            <button
-              onClick={onLogPR}
-              className="w-full bg-violet-600 hover:bg-violet-500 text-white font-medium py-3 rounded-lg transition-colors flex items-center justify-center gap-2"
-            >
-              <TrendingUp className="w-4 h-4" />
-              Log PR
-            </button>
-            <button
-              onClick={onAskAI}
-              className="w-full bg-zinc-800 hover:bg-zinc-700 text-white font-medium py-3 rounded-lg transition-colors flex items-center justify-center gap-2"
-            >
-              <MessageSquare className="w-4 h-4" />
-              Ask AI Coach
-            </button>
+          <div className="p-6 border-t border-white/10 bg-white/[0.02] space-y-3">
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={onToggleComplete}
+                className={cn(
+                  "flex-1 font-semibold py-3 rounded-xl transition flex items-center justify-center gap-2 text-sm",
+                  isCompleted
+                    ? "bg-green-500/20 text-green-300 border border-green-500/40 hover:bg-green-500/30"
+                    : "bg-cyan-500 hover:bg-cyan-400 text-black shadow-[0_0_20px_rgba(6,182,212,0.3)]",
+                )}
+              >
+                <CheckCircle2 className="w-4 h-4" />
+                {isCompleted ? "Mark Incomplete" : "Mark Phase Completed"}
+              </button>
+            </div>
+
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={onLogPR}
+                className="flex-1 bg-white/5 hover:bg-white/10 text-white text-xs font-medium py-2.5 rounded-xl transition flex items-center justify-center gap-1.5 border border-white/10"
+              >
+                <TrendingUp className="w-3.5 h-3.5 text-amber-400" />
+                Log Lift PR
+              </button>
+              <button
+                type="button"
+                onClick={onAskAI}
+                className="flex-1 bg-white/5 hover:bg-white/10 text-white text-xs font-medium py-2.5 rounded-xl transition flex items-center justify-center gap-1.5 border border-white/10"
+              >
+                <MessageSquare className="w-3.5 h-3.5 text-cyan-400" />
+                Consult AI Coach
+              </button>
+            </div>
           </div>
         </div>
       </motion.div>
-    </>
+    </AnimatePresence>
   );
 }

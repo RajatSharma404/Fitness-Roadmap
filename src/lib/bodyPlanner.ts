@@ -60,12 +60,40 @@ export interface MealOption {
   serving: string;
 }
 
+export type TrackCategory =
+  | "FOUNDATION"
+  | "STRENGTH"
+  | "HYPERTROPHY"
+  | "CALISTHENICS"
+  | "METABOLIC"
+  | "APEX"
+  | "BEGINNER"
+  | "INTERMEDIATE"
+  | "ADVANCED"
+  | "ELITE";
+
+export interface PlanNodeTask {
+  id: string;
+  label: string;
+  xp: number;
+}
+
 export interface PlanNode {
   id: string;
   title: string;
   description: string;
   level: number;
-  track: "BEGINNER" | "INTERMEDIATE" | "ADVANCED" | "ELITE";
+  track: TrackCategory;
+  xpReward: number;
+  icon?: string;
+  tasks?: PlanNodeTask[];
+  unlockCriteria?: {
+    type?: string;
+    lift?: string;
+    value?: number;
+    unit?: string;
+    metric?: string;
+  };
   dependencies: string[];
   position: { x: number; y: number };
 }
@@ -528,85 +556,304 @@ function filterMealsByDiet(diet: DietType): MealOption[] {
 
 function buildRoadmapNodes(): PlanNode[] {
   return [
+    // --- FOUNDATION TRUNK ---
     {
       id: "assessment",
-      title: "Baseline Assessment",
+      title: "Baseline & Biometrics",
       description:
-        "Capture age, weight, height, BMI, lifestyle and current routine.",
+        "Capture baseline weight, waist circumference, BMI, and movement mobility.",
       level: 1,
-      track: "BEGINNER",
+      track: "FOUNDATION",
+      xpReward: 100,
+      icon: "Shield",
+      tasks: [
+        { id: "task_bw", label: "Log initial bodyweight & height", xp: 30 },
+        { id: "task_waist", label: "Measure waist circumference", xp: 30 },
+        { id: "task_mobility", label: "Perform full body mobility screen", xp: 40 },
+      ],
+      unlockCriteria: { type: "simple", lift: "Profile Setup", value: 1 },
       dependencies: [],
-      position: { x: 0, y: 40 },
+      position: { x: 450, y: 30 },
     },
     {
-      id: "calories",
-      title: "Calorie Strategy",
+      id: "energy_foundation",
+      title: "Energy & Macro Matrix",
       description:
-        "Use maintenance calories and set a safe deficit/surplus based on goal.",
-      level: 1,
-      track: "BEGINNER",
+        "Establish baseline maintenance calories, protein floor, and hydration cadence.",
+      level: 2,
+      track: "FOUNDATION",
+      xpReward: 150,
+      icon: "Flame",
+      tasks: [
+        { id: "task_tdee", label: "Calculate TDEE and calorie deficit/surplus", xp: 50 },
+        { id: "task_protein", label: "Set daily 1.6g-2.0g/kg protein target", xp: 50 },
+        { id: "task_water", label: "Hit 3L hydration target 3 days in a row", xp: 50 },
+      ],
+      unlockCriteria: { type: "simple", lift: "Diet Calibration", value: 1 },
       dependencies: ["assessment"],
-      position: { x: 280, y: 40 },
+      position: { x: 450, y: 190 },
     },
     {
-      id: "macros",
-      title: "Protein + Macro Targets",
+      id: "movement_literacy",
+      title: "Foundational Movement",
       description:
-        "Set daily protein, carbs, fats, and fiber targets per body weight.",
-      level: 2,
-      track: "INTERMEDIATE",
-      dependencies: ["calories"],
-      position: { x: 560, y: 40 },
-    },
-    {
-      id: "hydration",
-      title: "Hydration Protocol",
-      description:
-        "Daily water target and electrolyte strategy for recovery and satiety.",
-      level: 2,
-      track: "INTERMEDIATE",
-      dependencies: ["macros"],
-      position: { x: 840, y: 40 },
-    },
-    {
-      id: "training",
-      title: "Weekly Training Split",
-      description:
-        "Daily workouts with volume targets aligned to fat loss and muscle retention.",
+        "Master the primary movement patterns: squat, hinge, push, pull, and core brace.",
       level: 3,
-      track: "ADVANCED",
-      dependencies: ["macros"],
-      position: { x: 420, y: 240 },
+      track: "FOUNDATION",
+      xpReward: 200,
+      icon: "Zap",
+      tasks: [
+        { id: "task_brace", label: "Master diaphragmatic bracing on heavy sets", xp: 60 },
+        { id: "task_form", label: "Log form checks for Squat, Bench & Deadlift", xp: 70 },
+        { id: "task_split", label: "Complete 1 full week of your training split", xp: 70 },
+      ],
+      unlockCriteria: { type: "lift", lift: "Squat", value: 0.8, unit: "x BW" },
+      dependencies: ["energy_foundation"],
+      position: { x: 450, y: 350 },
     },
+
+    // --- BRANCH 1: IRON TRACK (STRENGTH & POWERLIFTING) ---
     {
-      id: "nutrition_execution",
-      title: "Meal Combinations",
+      id: "strength_t1",
+      title: "1x BW Squat & Bench",
       description:
-        "Build veg/non-veg meals that hit calories and protein consistently.",
-      level: 3,
-      track: "ADVANCED",
-      dependencies: ["macros"],
-      position: { x: 140, y: 240 },
-    },
-    {
-      id: "progress_tracking",
-      title: "Progress Tracking",
-      description:
-        "Track weight trend, waist, sleep, and weekly adherence score.",
+        "Build foundational powerlifting strength. Hit bodyweight squat and solid bench press.",
       level: 4,
-      track: "ELITE",
-      dependencies: ["training", "nutrition_execution", "hydration"],
-      position: { x: 700, y: 240 },
+      track: "STRENGTH",
+      xpReward: 250,
+      icon: "Dumbbell",
+      tasks: [
+        { id: "task_s1", label: "Log 1.0x Bodyweight Back Squat 1RM", xp: 100 },
+        { id: "task_b1", label: "Log 0.75x Bodyweight Bench Press 1RM", xp: 80 },
+        { id: "task_rpe", label: "Execute RPE 8 working sets for 3 weeks", xp: 70 },
+      ],
+      unlockCriteria: { type: "lift", lift: "Squat", value: 1.0, unit: "x BW" },
+      dependencies: ["movement_literacy"],
+      position: { x: 80, y: 520 },
     },
     {
-      id: "adjustments",
-      title: "Adaptive Adjustments",
+      id: "strength_t2",
+      title: "1.5x BW Squat & Peak",
       description:
-        "Adjust calories, steps, and cardio when progress stalls for 2+ weeks.",
+        "Heavy neural adaptations. Ascend to 1.5x BW squat, 1.2x bench, and 1.8x deadlift.",
+      level: 5,
+      track: "STRENGTH",
+      xpReward: 350,
+      icon: "Trophy",
+      tasks: [
+        { id: "task_s2", label: "Log 1.5x Bodyweight Squat 1RM", xp: 150 },
+        { id: "task_d2", label: "Log 1.8x Bodyweight Deadlift 1RM", xp: 120 },
+        { id: "task_peak", label: "Complete a 4-week strength peaking block", xp: 80 },
+      ],
+      unlockCriteria: { type: "lift", lift: "Deadlift", value: 1.8, unit: "x BW" },
+      dependencies: ["strength_t1"],
+      position: { x: 80, y: 700 },
+    },
+    {
+      id: "strength_t3",
+      title: "300+ Wilks Elite Club",
+      description:
+        "Enter competitive powerlifting territory. Achieve a 300+ Wilks strength total.",
+      level: 6,
+      track: "STRENGTH",
+      xpReward: 500,
+      icon: "Crown",
+      tasks: [
+        { id: "task_wilks", label: "Calculate and confirm 300+ Wilks score", xp: 250 },
+        { id: "task_sbd_total", label: "Log official competition SBD PRs", xp: 150 },
+        { id: "task_deload", label: "Execute scheduled deload & recovery wave", xp: 100 },
+      ],
+      unlockCriteria: { type: "wilks", metric: "wilks_score", value: 300 },
+      dependencies: ["strength_t2"],
+      position: { x: 80, y: 880 },
+    },
+
+    // --- BRANCH 2: AESTHETIC TRACK (HYPERTROPHY & MUSCLE DENSITY) ---
+    {
+      id: "hypertrophy_t1",
+      title: "Volume Accumulation",
+      description:
+        "Master effective reps (RIR 1-3), progressive overload, and pump mechanics.",
       level: 4,
-      track: "ELITE",
-      dependencies: ["progress_tracking"],
-      position: { x: 980, y: 240 },
+      track: "HYPERTROPHY",
+      xpReward: 250,
+      icon: "Sparkles",
+      tasks: [
+        { id: "task_vol1", label: "Hit 12-16 weekly sets per major muscle group", xp: 90 },
+        { id: "task_tempo", label: "Implement 3-second eccentric control", xp: 80 },
+        { id: "task_pump", label: "Log 4 hypertrophy workouts with 8-12 rep range", xp: 80 },
+      ],
+      unlockCriteria: { type: "simple", lift: "Hypertrophy Volume", value: 1 },
+      dependencies: ["movement_literacy"],
+      position: { x: 320, y: 520 },
+    },
+    {
+      id: "hypertrophy_t2",
+      title: "Metabolic Overload",
+      description:
+        "Incorporate mechanical drop sets, myo-reps, and lengthened-partial techniques.",
+      level: 5,
+      track: "HYPERTROPHY",
+      xpReward: 350,
+      icon: "Activity",
+      tasks: [
+        { id: "task_dropset", label: "Perform double drop-sets on isolation movements", xp: 120 },
+        { id: "task_stretch", label: "Perform loaded stretching for chest & lats", xp: 110 },
+        { id: "task_density", label: "Increase training density by 10% across 4 weeks", xp: 120 },
+      ],
+      unlockCriteria: { type: "simple", lift: "Density Block", value: 1 },
+      dependencies: ["hypertrophy_t1"],
+      position: { x: 320, y: 700 },
+    },
+    {
+      id: "hypertrophy_t3",
+      title: "Symmetry & Peak Density",
+      description:
+        "Sculpt weak points, maximize upper/lower balance, and achieve optimal vascularity.",
+      level: 6,
+      track: "HYPERTROPHY",
+      xpReward: 500,
+      icon: "Target",
+      tasks: [
+        { id: "task_symm", label: "Complete 6-week weak point specialization", xp: 200 },
+        { id: "task_photo", label: "Record standardized physique comparison photos", xp: 150 },
+        { id: "task_pump_max", label: "Hit personal 10RM records on compound presses", xp: 150 },
+      ],
+      unlockCriteria: { type: "simple", lift: "Physique Peak", value: 1 },
+      dependencies: ["hypertrophy_t2"],
+      position: { x: 320, y: 880 },
+    },
+
+    // --- BRANCH 3: KINETIC TRACK (CALISTHENICS & FUNCTIONAL POWER) ---
+    {
+      id: "calisthenics_t1",
+      title: "Weighted Pull-Up & Dips",
+      description:
+        "Own relative bodyweight strength. Achieve strict pull-ups, push-ups, and parallel bar dips.",
+      level: 4,
+      track: "CALISTHENICS",
+      xpReward: 250,
+      icon: "Activity",
+      tasks: [
+        { id: "task_pull1", label: "Log 10 strict dead-hang pull-ups", xp: 90 },
+        { id: "task_dip1", label: "Log 15 full-depth parallel bar dips", xp: 80 },
+        { id: "task_core1", label: "Hold 60s active hollow body plank", xp: 80 },
+      ],
+      unlockCriteria: { type: "simple", lift: "Bodyweight Mastery", value: 1 },
+      dependencies: ["movement_literacy"],
+      position: { x: 580, y: 520 },
+    },
+    {
+      id: "calisthenics_t2",
+      title: "Handstand & Ring Power",
+      description:
+        "Develop gymnastic ring stability, freestanding handstand balance, and L-sits.",
+      level: 5,
+      track: "CALISTHENICS",
+      xpReward: 350,
+      icon: "Zap",
+      tasks: [
+        { id: "task_hs", label: "Hold 30s wall-assisted handstand with PPT", xp: 130 },
+        { id: "task_ring", label: "Perform ring dips with external rotation lockout", xp: 110 },
+        { id: "task_lsit", label: "Hold 20s strict floor or bar L-sit", xp: 110 },
+      ],
+      unlockCriteria: { type: "simple", lift: "Ring Control", value: 1 },
+      dependencies: ["calisthenics_t1"],
+      position: { x: 580, y: 700 },
+    },
+    {
+      id: "calisthenics_t3",
+      title: "Muscle-Up & Lever",
+      description:
+        "Master elite calisthenics skills: strict bar/ring muscle-up and straddle front lever.",
+      level: 6,
+      track: "CALISTHENICS",
+      xpReward: 500,
+      icon: "Award",
+      tasks: [
+        { id: "task_mu", label: "Execute 3 consecutive clean bar muscle-ups", xp: 200 },
+        { id: "task_lever", label: "Hold 10s straddle front lever", xp: 150 },
+        { id: "task_wpull", label: "Log +0.5x Bodyweight weighted pull-up", xp: 150 },
+      ],
+      unlockCriteria: { type: "simple", lift: "Elite Skill", value: 1 },
+      dependencies: ["calisthenics_t2"],
+      position: { x: 580, y: 880 },
+    },
+
+    // --- BRANCH 4: METABOLIC TRACK (BIOENERGETICS & RECOMP) ---
+    {
+      id: "metabolic_t1",
+      title: "Deficit & Step Adherence",
+      description:
+        "Establish an unbroken 14-day calorie deficit and 9,000+ daily step baseline.",
+      level: 4,
+      track: "METABOLIC",
+      xpReward: 250,
+      icon: "Flame",
+      tasks: [
+        { id: "task_step1", label: "Average 9,000+ steps/day for 2 consecutive weeks", xp: 90 },
+        { id: "task_log1", label: "Log daily calories accurately for 14 days", xp: 80 },
+        { id: "task_sleep1", label: "Average 7.5+ hours sleep per night", xp: 80 },
+      ],
+      unlockCriteria: { type: "simple", lift: "Adherence Streak", value: 1 },
+      dependencies: ["energy_foundation"],
+      position: { x: 820, y: 520 },
+    },
+    {
+      id: "metabolic_t2",
+      title: "Refeed & Leptin Cycling",
+      description:
+        "Implement 48-hour carbohydrate refeeds and structured diet breaks to prevent metabolic slowdown.",
+      level: 5,
+      track: "METABOLIC",
+      xpReward: 350,
+      icon: "Shield",
+      tasks: [
+        { id: "task_refeed", label: "Execute structured 2-day high-carb maintenance refeed", xp: 120 },
+        { id: "task_hrv", label: "Track weekly morning resting HR and recovery trends", xp: 110 },
+        { id: "task_fiber", label: "Hit 35g+ daily fiber goal consistently", xp: 120 },
+      ],
+      unlockCriteria: { type: "simple", lift: "Metabolic Flexibility", value: 1 },
+      dependencies: ["metabolic_t1"],
+      position: { x: 820, y: 700 },
+    },
+    {
+      id: "metabolic_t3",
+      title: "Lean Maintenance Mastery",
+      description:
+        "Reverse diet back to maintenance and sustain peak leanness without metabolic drop.",
+      level: 6,
+      track: "METABOLIC",
+      xpReward: 500,
+      icon: "Trophy",
+      tasks: [
+        { id: "task_revdiet", label: "Increase daily intake by 250 kcal to maintenance", xp: 200 },
+        { id: "task_bodycomp", label: "Maintain stable trend weight (+/-0.5kg) for 3 weeks", xp: 150 },
+        { id: "task_readiness", label: "Achieve 85+ average weekly readiness score", xp: 150 },
+      ],
+      unlockCriteria: { type: "simple", lift: "Peak Recomp", value: 1 },
+      dependencies: ["metabolic_t2"],
+      position: { x: 820, y: 880 },
+    },
+
+    // --- CAPSTONE: APEX MASTERY ---
+    {
+      id: "apex_mastery",
+      title: "Apex Athletic Singularity",
+      description:
+        "The ultimate zenith. Unlocked when mastery across Strength, Hypertrophy, Calisthenics & Bioenergetics converges.",
+      level: 7,
+      track: "APEX",
+      xpReward: 1000,
+      icon: "Crown",
+      tasks: [
+        { id: "task_apex1", label: "Achieve Level 6 completion in at least 2 specialization tracks", xp: 400 },
+        { id: "task_apex2", label: "Maintain 90+ days unbroken fitness journey momentum", xp: 300 },
+        { id: "task_apex3", label: "Log lifetime PRs across all Big 3 compounds", xp: 300 },
+      ],
+      unlockCriteria: { type: "simple", lift: "Grandmaster", value: 1 },
+      dependencies: ["strength_t3", "hypertrophy_t3", "calisthenics_t3", "metabolic_t3"],
+      position: { x: 450, y: 1060 },
     },
   ];
 }

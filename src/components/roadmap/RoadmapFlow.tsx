@@ -1,152 +1,145 @@
 "use client";
 
+import { useMemo } from "react";
 import {
   Background,
   Controls,
   Edge,
   MiniMap,
   Node,
-  NodeProps,
   ReactFlow,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { CheckCircle2, Lock } from "lucide-react";
-
-interface RoadmapNodeData extends Record<string, unknown> {
-  title: string;
-  description: string;
-  level: number;
-  status: "locked" | "active" | "completed";
-}
-
-interface RoadmapNodeLike {
-  id: string;
-  position: { x: number; y: number };
-  title: string;
-  description: string;
-  level: number;
-  dependencies: string[];
-}
+import { SkillTreeNode, SkillTreeNodeData } from "./SkillTreeNode";
+import { GlowingEdge } from "./GlowingEdge";
+import { PlanNode, TrackCategory } from "@/lib/bodyPlanner";
 
 interface RoadmapFlowProps {
-  roadmapNodes: RoadmapNodeLike[];
+  roadmapNodes: PlanNode[];
   progress: Record<string, boolean>;
   selectedNodeId: string;
   onNodeSelect: (nodeId: string) => void;
+  trackFilter?: TrackCategory | "ALL";
 }
 
 const nodeTypes = {
-  phase: PhaseNode,
+  skillNode: SkillTreeNode,
+  phase: SkillTreeNode,
 };
 
-function PhaseNode({ data }: NodeProps<Node<RoadmapNodeData>>) {
-  const statusStyles = {
-    locked:
-      "border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.02)] text-[#636380]",
-    active: "border-cyan-400 bg-cyan-400/5 text-[#eeeef2]",
-    completed: "border-green-400 bg-green-400/5 text-[#eeeef2]",
-  };
+const edgeTypes = {
+  glowing: GlowingEdge,
+};
 
-  const badgeStyles = {
-    locked: "bg-white/5 text-[#636380]",
-    active: "bg-cyan-400/10 text-cyan-300",
-    completed: "bg-green-400/10 text-green-300",
-  };
-
-  return (
-    <div className={`w-50 rounded-xl border p-4 ${statusStyles[data.status]}`}>
-      <p className="text-[11px] uppercase tracking-[0.22em] text-[#636380]">
-        Phase {data.level}
-      </p>
-      <h3 className="mt-1 font-display text-lg font-semibold text-[#eeeef2]">
-        {data.title}
-      </h3>
-      <p className="mt-2 text-xs leading-5 text-[#636380]">
-        {data.description}
-      </p>
-      <div
-        className={`mt-4 inline-flex items-center gap-2 rounded-full px-2.5 py-1 text-xs font-medium ${badgeStyles[data.status]}`}
-      >
-        {data.status === "completed" ? (
-          <CheckCircle2 className="h-3.5 w-3.5" />
-        ) : null}
-        {data.status === "locked" ? <Lock className="h-3.5 w-3.5" /> : null}
-        {data.status.toUpperCase()}
-      </div>
-    </div>
-  );
-}
+const TRACK_STROKES: Record<string, string> = {
+  FOUNDATION: "#06b6d4",
+  STRENGTH: "#f59e0b",
+  HYPERTROPHY: "#a855f7",
+  CALISTHENICS: "#10b981",
+  METABOLIC: "#38bdf8",
+  APEX: "#facc15",
+};
 
 export default function RoadmapFlow({
   roadmapNodes,
   progress,
   selectedNodeId,
   onNodeSelect,
+  trackFilter = "ALL",
 }: RoadmapFlowProps) {
-  const flowNodes: Node<RoadmapNodeData>[] = roadmapNodes.map((node) => ({
-    id: node.id,
-    position: node.position,
-    type: "phase",
-    data: {
-      title: node.title,
-      description: node.description,
-      level: node.level,
-      status: progress[node.id]
-        ? "completed"
-        : node.id === selectedNodeId
-          ? "active"
-          : "locked",
-    },
-    style: {
-      opacity:
-        selectedNodeId &&
-        selectedNodeId !== node.id &&
-        !node.dependencies.includes(selectedNodeId)
-          ? 0.35
-          : 1,
-    },
-  }));
+  // Check if prerequisites are satisfied for each node
+  const flowNodes: Node<SkillTreeNodeData>[] = useMemo(() => {
+    return roadmapNodes.map((node) => {
+      const isCompleted = Boolean(progress[node.id]);
+      const prereqsMet =
+        node.dependencies.length === 0 ||
+        node.dependencies.every((depId) => Boolean(progress[depId]));
 
-  const flowEdges: Edge[] = roadmapNodes.flatMap((node) =>
-    node.dependencies.map((dependencyId) => ({
-      id: `${dependencyId}-${node.id}`,
-      source: dependencyId,
-      target: node.id,
-      animated: Boolean(progress[dependencyId]),
-      style: {
-        stroke: progress[dependencyId] ? "#00d4ff" : "rgba(255,255,255,0.14)",
-        strokeWidth: 2,
-        strokeDasharray: progress[dependencyId] ? "5 5" : undefined,
-      },
-    })),
-  );
+      let status: "locked" | "active" | "completed" = "locked";
+      if (isCompleted) {
+        status = "completed";
+      } else if (prereqsMet || node.id === selectedNodeId) {
+        status = "active";
+      }
+
+      const matchesFilter =
+        trackFilter === "ALL" ||
+        node.track === trackFilter ||
+        node.track === "FOUNDATION" ||
+        node.track === "APEX";
+
+      const isDimmed = !matchesFilter;
+
+      return {
+        id: node.id,
+        position: node.position,
+        type: "skillNode",
+        data: {
+          title: node.title,
+          description: node.description,
+          level: node.level,
+          track: node.track,
+          xpReward: node.xpReward || 100,
+          icon: node.icon,
+          tasks: node.tasks,
+          status,
+          isDimmed,
+        },
+      };
+    });
+  }, [roadmapNodes, progress, selectedNodeId, trackFilter]);
+
+  const flowEdges: Edge[] = useMemo(() => {
+    return roadmapNodes.flatMap((node) =>
+      node.dependencies.map((dependencyId) => {
+        const sourceNode = roadmapNodes.find((n) => n.id === dependencyId);
+        const sourceCompleted = Boolean(progress[dependencyId]);
+        const trackColor = sourceNode ? TRACK_STROKES[sourceNode.track] : "#00d4ff";
+
+        return {
+          id: `${dependencyId}->${node.id}`,
+          source: dependencyId,
+          target: node.id,
+          type: "glowing",
+          animated: sourceCompleted,
+          style: {
+            stroke: sourceCompleted ? trackColor : "rgba(255,255,255,0.12)",
+          },
+        };
+      }),
+    );
+  }, [roadmapNodes, progress]);
 
   return (
-    <div className="h-[calc(100vh-240px)] min-h-130 w-full">
+    <div className="h-[calc(100vh-220px)] min-h-[580px] w-full relative bg-[#07070d]">
       <ReactFlow
         nodes={flowNodes}
         edges={flowEdges}
         nodeTypes={nodeTypes}
+        edgeTypes={edgeTypes}
         fitView
-        minZoom={0.5}
-        maxZoom={1.2}
+        fitViewOptions={{ padding: 0.2 }}
+        minZoom={0.3}
+        maxZoom={1.3}
         onNodeClick={(_, node) => onNodeSelect(node.id)}
       >
-        <Background color="rgba(255,255,255,0.05)" gap={22} />
-        <Controls />
+        <Background color="rgba(255,255,255,0.04)" gap={24} size={1.5} />
+        <Controls
+          className="!bg-[#12121e] !border !border-white/10 !rounded-xl !overflow-hidden !shadow-2xl"
+          showInteractive={false}
+        />
         <MiniMap
           nodeColor={(node) => {
-            const status = flowNodes.find((item) => item.id === node.id)?.data
-              .status;
-            if (status === "completed") return "#00e676";
-            if (status === "active") return "#00d4ff";
-            return "#636380";
+            const data = flowNodes.find((item) => item.id === node.id)?.data;
+            if (!data) return "#636380";
+            if (data.status === "completed") return "#22c55e";
+            if (data.status === "active") {
+              return TRACK_STROKES[data.track] || "#06b6d4";
+            }
+            return "#3f3f46";
           }}
-          maskColor="rgba(7,7,13,0.72)"
-          style={{
-            backgroundColor: "#12121e",
-            border: "1px solid rgba(255,255,255,0.06)",
-          }}
+          maskColor="rgba(7,7,13,0.8)"
+          className="!bg-[#0e0e17] !border !border-white/10 !rounded-xl !shadow-2xl"
         />
       </ReactFlow>
     </div>
