@@ -6,6 +6,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useSession, signIn, signOut } from "next-auth/react";
 import {
+  Activity,
   BookOpen,
   ChartColumnIncreasing,
   Dumbbell,
@@ -36,6 +37,12 @@ const navItems: SidebarNavItem[] = [
     href: "/roadmap",
     label: "Roadmap",
     icon: LayoutDashboard,
+    section: "core",
+  },
+  {
+    href: "/analytics",
+    label: "Analytics",
+    icon: Activity,
     section: "core",
   },
   {

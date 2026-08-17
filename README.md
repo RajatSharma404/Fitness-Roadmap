@@ -60,6 +60,18 @@ It includes:
 - compact mission cards for readiness, progress, and the day’s stack
 - quick links into workouts, roadmap, check-ins, library, and nutrition
 
+### Analytics & Progression Science
+
+The analytics hub (`/analytics`) turns logged workout history and PRs into actionable hypertrophy and strength science.
+
+It includes:
+
+- **Hypertrophy Volume Landmarks (MEV / MAV / MRV)** tracking weekly direct and indirect working sets per muscle group based on Dr. Mike Israetel's Renaissance Periodization frameworks
+- **Interactive 2D Muscle Volume Heatmap** that dynamically highlights muscle regions by their current volume status (Optimal, Maintenance, Overreaching, Overtraining)
+- **Automatic Plateau Detection Engine** analyzing 1RM trajectories over consecutive sessions to diagnose stalls on primary compound lifts
+- **1-Week Active Deload Protocol Generator** calculating customized 70% load and 50% volume reductions with weak-point technical assistance variations
+- **Strength Standards & DOTS Radar** classifying an athlete across Novice to Elite percentiles with international powerlifting DOTS & Wilks scoring
+
 ### Roadmap
 
 The roadmap is the planning and progression workspace. It pairs a visual node graph with a detailed selection panel so users can understand both structure and reason.
