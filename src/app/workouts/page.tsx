@@ -32,11 +32,30 @@ const tiers = ["beginner", "intermediate", "advanced"] as const;
 
 export default function WorkoutsPage() {
   const [snapshot, setSnapshot] = useState(defaultPlannerSnapshot);
-  const [selectedTier, setSelectedTier] = useState<(typeof tiers)[number]>(
-    snapshot.experience,
-  );
+  const [selectedTier, setSelectedTier] = useState<(typeof tiers)[number]>(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const tierParam = params.get("tier");
+      if (
+        tierParam &&
+        ["beginner", "intermediate", "advanced"].includes(tierParam)
+      ) {
+        return tierParam as (typeof tiers)[number];
+      }
+    }
+    return "beginner";
+  });
   const [selectedGoal, setSelectedGoal] = useState<string>("all");
-  const [selectedDay, setSelectedDay] = useState<string>("Monday");
+  const [selectedDay, setSelectedDay] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const dayParam = params.get("day");
+      if (dayParam) {
+        return dayParam.replace("-", " ");
+      }
+    }
+    return "Monday";
+  });
   const [expandedExercise, setExpandedExercise] = useState<string | null>(null);
   const [workoutModeOpen, setWorkoutModeOpen] = useState(false);
   const [completedExercises, setCompletedExercises] = useState<Set<string>>(
@@ -98,13 +117,19 @@ export default function WorkoutsPage() {
     const sync = () => {
       const next = readPlannerSnapshot();
       setSnapshot(next);
-      setSelectedTier(next.experience);
+      const params = new URLSearchParams(window.location.search);
+      if (!params.get("tier")) {
+        setSelectedTier(next.experience);
+      }
     };
 
     sync();
     void syncPlannerSnapshotFromServer().then((serverSnapshot) => {
       setSnapshot(serverSnapshot);
-      setSelectedTier(serverSnapshot.experience);
+      const params = new URLSearchParams(window.location.search);
+      if (!params.get("tier")) {
+        setSelectedTier(serverSnapshot.experience);
+      }
     });
 
     window.addEventListener("storage", sync);

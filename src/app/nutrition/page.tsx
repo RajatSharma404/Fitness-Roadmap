@@ -228,6 +228,139 @@ const INDIA_MEAL_PLANS: IndiaMealPlan[] = [
     ],
   },
   {
+    id: "north-protein-veg",
+    name: "North High Protein Veg",
+    region: "north",
+    diets: ["veg", "mixed"],
+    priorities: ["high_protein", "balanced"],
+    calories: 2100,
+    proteinG: 138,
+    carbsG: 230,
+    fatsG: 62,
+    meals: [
+      {
+        slot: "Breakfast",
+        items: "Paneer stuffed besan chilla + curd",
+        portion: "2 chillas + 100 g paneer + 1 cup dahi",
+      },
+      {
+        slot: "Lunch",
+        items: "Soya chunk curry, 2 multigrain rotis, dal, cucumber salad",
+        portion: "50 g dry soya chunks + 2 rotis + 1 bowl dal",
+      },
+      {
+        slot: "Snack",
+        items: "Roasted chana + sattu buttermilk drink",
+        portion: "30 g sattu in chaas + 30 g chana",
+      },
+      {
+        slot: "Dinner",
+        items: "Dal makhani (light), brown/jeera rice, sauteed paneer",
+        portion: "1 cup rice + 1 bowl dal + 80 g paneer",
+      },
+    ],
+    groceries: [
+      { item: "Paneer", qty: "1 kg/week", bucket: "protein" },
+      { item: "Soya chunks", qty: "500 g/week", bucket: "protein" },
+      { item: "Sattu flour", qty: "500 g/week", bucket: "protein" },
+      { item: "Besan + Atta", qty: "2.5 kg/week", bucket: "carb" },
+      { item: "Curd / Chaas", qty: "3 kg/week", bucket: "dairy" },
+      { item: "Mixed Vegetables", qty: "4 kg/week", bucket: "produce" },
+    ],
+    hydration: [
+      "Keep 750 ml water bottle near desk and finish 4 times.",
+      "Add sattu drink post workout for natural electrolytes.",
+    ],
+  },
+  {
+    id: "south-budget-veg",
+    name: "South Budget Veg",
+    region: "south",
+    diets: ["veg", "mixed", "jain"],
+    priorities: ["budget", "balanced"],
+    calories: 1950,
+    proteinG: 105,
+    carbsG: 260,
+    fatsG: 48,
+    meals: [
+      {
+        slot: "Breakfast",
+        items: "Pesarattu (Moong dosa) + coconut ginger chutney",
+        portion: "2 pesarattu + 2 tbsp chutney",
+      },
+      {
+        slot: "Lunch",
+        items: "Rice, thick sambar, curd, sundal (boiled chickpeas)",
+        portion: "1.25 cup rice + 1 bowl sambar + 1 bowl sundal",
+      },
+      {
+        slot: "Snack",
+        items: "Sprouted moong chaat + lemon",
+        portion: "1 big bowl sprouts with tomato & onion",
+      },
+      {
+        slot: "Dinner",
+        items: "Idli / Dosa + toor dal kootu + buttermilk",
+        portion: "3 idlis + 1 bowl kootu + 1 glass chaas",
+      },
+    ],
+    groceries: [
+      { item: "Whole green moong", qty: "1 kg/week", bucket: "protein" },
+      { item: "Toor dal & Chana", qty: "1.5 kg/week", bucket: "protein" },
+      { item: "Idli Rice", qty: "2 kg/week", bucket: "carb" },
+      { item: "Curd", qty: "2.5 kg/week", bucket: "dairy" },
+      { item: "Seasonal Veg", qty: "4 kg/week", bucket: "produce" },
+    ],
+    hydration: [
+      "Drink warm jeera water in morning.",
+      "Target 3 liters with spiced buttermilk in afternoons.",
+    ],
+  },
+  {
+    id: "quick-high-protein",
+    name: "Quick Prep High Protein",
+    region: "quick",
+    diets: ["non_veg", "mixed"],
+    priorities: ["high_protein", "budget"],
+    calories: 2180,
+    proteinG: 155,
+    carbsG: 210,
+    fatsG: 66,
+    meals: [
+      {
+        slot: "Breakfast",
+        items: "4 Boiled eggs / Egg bhurji + whole wheat toast",
+        portion: "4 eggs + 2 brown bread slices",
+      },
+      {
+        slot: "Lunch",
+        items: "Quick chicken rice bowl (pressure cooked chicken + rice + veggies)",
+        portion: "180 g chicken + 1.25 cup cooked rice",
+      },
+      {
+        slot: "Snack",
+        items: "Peanut butter banana toast + chaas",
+        portion: "1 slice toast + 20 g PB + 1 banana + chaas",
+      },
+      {
+        slot: "Dinner",
+        items: "Air fried / pan tossed chicken tikka + roti + onion salad",
+        portion: "160 g chicken + 2 rotis",
+      },
+    ],
+    groceries: [
+      { item: "Chicken breast", qty: "2 kg/week", bucket: "protein" },
+      { item: "Eggs", qty: "30/week", bucket: "protein" },
+      { item: "Whole wheat bread & Atta", qty: "2 kg/week", bucket: "carb" },
+      { item: "Peanut butter", qty: "350 g/month", bucket: "other" },
+      { item: "Chaas", qty: "2 L/week", bucket: "dairy" },
+    ],
+    hydration: [
+      "Drink 500 ml water upon waking.",
+      "1 glass coconut water or electrolyte water post workout.",
+    ],
+  },
+  {
     id: "quick-jain-budget",
     name: "Quick Jain Budget",
     region: "quick",
@@ -364,18 +497,33 @@ export default function NutritionPage() {
   );
   const calorieTarget = Math.round(plan.targetCalories);
 
-  const visiblePlans = useMemo(
-    () =>
-      INDIA_MEAL_PLANS.filter((template) => {
-        const regionMatch = region === "all" || template.region === region;
-        return (
-          regionMatch &&
-          template.priorities.includes(priority) &&
-          template.diets.includes(diet)
-        );
-      }),
-    [region, priority, diet],
-  );
+  const visiblePlans = useMemo(() => {
+    const primary = INDIA_MEAL_PLANS.filter((template) => {
+      const regionMatch = region === "all" || template.region === region;
+      return (
+        regionMatch &&
+        template.priorities.includes(priority) &&
+        template.diets.includes(diet)
+      );
+    });
+
+    if (primary.length > 0) return primary;
+
+    // Fallback 1: match diet & priority across all regions
+    const byDietAndPriority = INDIA_MEAL_PLANS.filter(
+      (template) =>
+        template.diets.includes(diet) && template.priorities.includes(priority),
+    );
+    if (byDietAndPriority.length > 0) return byDietAndPriority;
+
+    // Fallback 2: match diet
+    const byDiet = INDIA_MEAL_PLANS.filter((template) =>
+      template.diets.includes(diet),
+    );
+    if (byDiet.length > 0) return byDiet;
+
+    return INDIA_MEAL_PLANS;
+  }, [region, priority, diet]);
 
   const selectedPlan =
     visiblePlans.find((template) => template.id === selectedPlanId) ??

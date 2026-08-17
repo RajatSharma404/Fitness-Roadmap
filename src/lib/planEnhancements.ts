@@ -926,7 +926,21 @@ function fallbackDetail(name: string): ExerciseDetail {
 }
 
 export function getExerciseDetail(name: string): ExerciseDetail {
-  const known = exerciseLibrary[name];
+  let known = exerciseLibrary[name];
+  if (!known && name) {
+    const targetNorm = name.toLowerCase().replace(/[\s\-_]/g, "");
+    for (const [key, val] of Object.entries(exerciseLibrary)) {
+      const keyNorm = key.toLowerCase().replace(/[\s\-_]/g, "");
+      if (
+        keyNorm === targetNorm ||
+        keyNorm.includes(targetNorm) ||
+        targetNorm.includes(keyNorm)
+      ) {
+        known = val;
+        break;
+      }
+    }
+  }
   const detail = known ? { name, ...known } : fallbackDetail(name);
 
   return {

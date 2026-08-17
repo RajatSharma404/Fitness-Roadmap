@@ -1,5 +1,4 @@
-'use client';
-
+import { useState, useEffect } from 'react';
 import {
   RadarChart,
   PolarGrid,
@@ -24,10 +23,28 @@ const liftLabels: Record<string, string> = {
   barbell_row: 'Row',
 };
 
+function getLiftValue(lifts: Record<string, number>, key: string): number {
+  if (lifts[key] !== undefined) return lifts[key];
+  const target = key.toLowerCase().replace(/[\s\-_]/g, "");
+  for (const [name, val] of Object.entries(lifts)) {
+    const norm = name.toLowerCase().replace(/[\s\-_]/g, "");
+    if (norm === target || norm.includes(target) || target.includes(norm)) {
+      return val;
+    }
+  }
+  return 0;
+}
+
 export function StrengthRadar({ lifts, bodyweight }: StrengthRadarProps) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   // Calculate normalized levels for each lift
   const data = Object.entries(liftLabels).map(([lift, label]) => {
-    const liftWeight = lifts[lift] || 0;
+    const liftWeight = getLiftValue(lifts, lift);
     const ratio = bodyweight ? liftWeight / bodyweight : 0;
     const level = getStrengthLevel(lift, ratio);
 
@@ -38,9 +55,13 @@ export function StrengthRadar({ lifts, bodyweight }: StrengthRadarProps) {
     };
   });
 
+  if (!mounted) {
+    return <div className="w-full h-full min-h-[220px]" />;
+  }
+
   return (
-    <div className="w-full h-full">
-      <ResponsiveContainer width="100%" height="100%">
+    <div className="w-full h-full min-h-[220px]">
+      <ResponsiveContainer width="100%" height="100%" minHeight={220} minWidth={0}>
         <RadarChart cx="50%" cy="50%" outerRadius="80%" data={data}>
           <PolarGrid stroke="#3f3f46" />
           <PolarAngleAxis

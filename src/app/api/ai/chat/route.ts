@@ -13,7 +13,7 @@ const chatPayloadSchema = z.object({
       goal: z.string().max(120).optional(),
       bodyweight: z.number().min(25).max(400).optional(),
       unit: z.enum(["kg", "lbs", "KG", "LBS"]).optional(),
-      unlockedNodes: z.array(z.unknown()).max(200).optional(),
+      unlockedNodes: z.union([z.number(), z.array(z.unknown())]).optional(),
       PRs: z.array(z.unknown()).max(200).optional(),
     })
     .optional(),
@@ -100,9 +100,12 @@ export async function POST(req: NextRequest) {
         };
       })
     : [];
-  const unlockedNodeCount = Array.isArray(context?.unlockedNodes)
-    ? context.unlockedNodes.length
-    : 0;
+  const unlockedNodeCount =
+    typeof context?.unlockedNodes === "number"
+      ? context.unlockedNodes
+      : Array.isArray(context?.unlockedNodes)
+        ? context.unlockedNodes.length
+        : 0;
 
   const systemPrompt = `You are an expert strength training coach. Be concise but thorough.
 

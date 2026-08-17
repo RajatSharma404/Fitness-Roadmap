@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { calculateWilksScore } from "@/lib/formulas";
 import { prisma } from "@/lib/prisma";
+import { findBestLiftScore } from "@/app/api/roadmap/shared";
 
 export async function GET() {
   try {
@@ -23,9 +24,9 @@ export async function GET() {
         }
       }
 
-      let squat = bestLifts["squat"] || 0;
-      let bench = bestLifts["bench"] || 0;
-      let deadlift = bestLifts["deadlift"] || 0;
+      let squat = findBestLiftScore(bestLifts, "squat");
+      let bench = findBestLiftScore(bestLifts, "bench");
+      let deadlift = findBestLiftScore(bestLifts, "deadlift");
 
       if (user.unit === "LBS") {
         squat /= 2.20462;

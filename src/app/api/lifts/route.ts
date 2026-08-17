@@ -37,7 +37,7 @@ export async function GET(req: NextRequest) {
     const lifts = await prisma.lift.findMany({
       where: {
         userId,
-        ...(lift ? { name: lift } : {}),
+        ...(lift ? { name: { equals: lift, mode: "insensitive" } } : {}),
       },
       orderBy: { date: "desc" },
       take,

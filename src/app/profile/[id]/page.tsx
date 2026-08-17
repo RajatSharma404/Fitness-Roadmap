@@ -1,20 +1,18 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { motion } from "framer-motion";
 import Image from "next/image";
 import { useParams } from "next/navigation";
 import {
   User,
   Trophy,
-  TrendingUp,
   Target,
   Share2,
-  Link as LinkIcon,
-  Award,
+  Check,
   Star,
 } from "lucide-react";
 import { AchievementBadge } from "@/components/shared/AchievementBadge";
+import { ActionButton, Card, SectionHeader } from "@/components/shared/UIPrimitives";
 
 interface ProfileData {
   id: string;
@@ -33,7 +31,7 @@ interface ProfileData {
   }>;
 }
 
-export default function ProfilePage() {
+export default function PublicProfilePage() {
   const params = useParams();
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -58,7 +56,7 @@ export default function ProfilePage() {
   }, [fetchProfile]);
 
   const copyShareLink = () => {
-    const url = `${window.location.origin}/api/og?userId=${params.id}`;
+    const url = `${window.location.origin}/profile/${params.id}`;
     navigator.clipboard.writeText(url);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -66,184 +64,170 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#08080f] flex items-center justify-center">
-        <div className="text-violet-400">Loading profile...</div>
+      <div className="flex h-64 items-center justify-center">
+        <div className="text-cyan-400 font-medium">Loading athlete profile...</div>
       </div>
     );
   }
 
   if (!profile) {
     return (
-      <div className="min-h-screen bg-[#08080f] flex items-center justify-center">
-        <div className="text-zinc-400">Profile not found</div>
+      <div className="flex h-64 items-center justify-center">
+        <div className="text-[#636380]">Athlete profile not found</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#08080f]">
-      {/* Header */}
-      <header className="glass border-b-0 sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="w-10 h-10 rounded-xl bg-violet-600 flex items-center justify-center">
-              <User className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-white">Profile</h1>
-            </div>
-          </div>
-
-          <button
-            onClick={copyShareLink}
-            className="flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg transition-colors"
-          >
-            {copied ? (
-              <>
-                <LinkIcon className="w-4 h-4" />
-                Copied!
-              </>
-            ) : (
-              <>
-                <Share2 className="w-4 h-4" />
-                Share
-              </>
-            )}
-          </button>
+    <div className="space-y-6 pb-8">
+      {/* Header Banner */}
+      <Card
+        level="elevated"
+        className="flex flex-wrap items-center justify-between gap-4"
+      >
+        <div>
+          <p className="lab-kicker text-[#60a5fa]">Public Athlete Showcase</p>
+          <h2 className="font-display text-[28px] font-bold text-[#eeeef2]">
+            {profile.name || "Anonymous Athlete"}
+          </h2>
+          <p className="mt-1 text-sm text-[#636380]">
+            Goal: {profile.goal || "Strength"} · Joined{" "}
+            {new Date(profile.createdAt).toLocaleDateString()}
+          </p>
         </div>
-      </header>
 
-      {/* Main Content */}
-      <main className="max-w-4xl mx-auto px-6 py-8">
-        {/* Profile Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="glass rounded-2xl p-8 mb-8"
+        <ActionButton
+          onClick={copyShareLink}
+          variant="secondary"
+          className="inline-flex items-center gap-2"
         >
-          <div className="flex items-start gap-6">
-            <div className="w-24 h-24 rounded-2xl bg-zinc-700 flex items-center justify-center overflow-hidden">
-              {profile.image ? (
-                <Image
-                  src={profile.image}
-                  alt={profile.name || ""}
-                  width={96}
-                  height={96}
-                  className="object-cover"
-                />
-              ) : (
-                <User className="w-12 h-12 text-zinc-500" />
-              )}
-            </div>
-
-            <div className="flex-1">
-              <div className="flex items-center gap-3 mb-2">
-                <h2 className="text-2xl font-bold text-white">
-                  {profile.name || "Anonymous"}
-                </h2>
-                {profile.goal && (
-                  <span className="px-3 py-1 bg-violet-500/20 text-violet-300 rounded-full text-sm">
-                    {profile.goal}
-                  </span>
-                )}
-              </div>
-
-              {profile.bio && (
-                <p className="text-zinc-400 mb-4">{profile.bio}</p>
-              )}
-
-              <div className="flex items-center gap-6 text-sm text-zinc-500">
-                <div className="flex items-center gap-2">
-                  <Trophy className="w-4 h-4" />
-                  <span>{profile.nodesCompleted} nodes unlocked</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Target className="w-4 h-4" />
-                  <span>
-                    Joined {new Date(profile.createdAt).toLocaleDateString()}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* Best Lifts */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="glass rounded-2xl p-6 mb-8"
-        >
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 rounded-lg bg-emerald-500/20 flex items-center justify-center">
-              <TrendingUp className="w-5 h-5 text-emerald-400" />
-            </div>
-            <h3 className="text-lg font-bold text-white">Best Lifts</h3>
-          </div>
-
-          {Object.keys(profile.bestLifts).length > 0 ? (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {Object.entries(profile.bestLifts).map(([lift, weight]) => (
-                <div key={lift} className="p-4 bg-zinc-800/50 rounded-xl">
-                  <div className="text-sm text-zinc-400 mb-1 capitalize">
-                    {lift.replace("_", " ")}
-                  </div>
-                  <div className="text-xl font-bold text-white">
-                    {weight.toFixed(1)}
-                  </div>
-                </div>
-              ))}
-            </div>
+          {copied ? (
+            <>
+              <Check className="h-4 w-4 text-green-300" /> Copied Profile Link!
+            </>
           ) : (
-            <div className="text-center py-8 text-zinc-500">
-              No lifts logged yet
-            </div>
+            <>
+              <Share2 className="h-4 w-4" /> Share Profile
+            </>
           )}
-        </motion.div>
+        </ActionButton>
+      </Card>
 
-        {/* Achievements */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="glass rounded-2xl p-6"
-        >
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 rounded-lg bg-amber-500/20 flex items-center justify-center">
-              <Award className="w-5 h-5 text-amber-400" />
-            </div>
-            <h3 className="text-lg font-bold text-white">Achievements</h3>
+      {/* Main Profile Info */}
+      <Card level="base" className="space-y-4">
+        <div className="flex flex-wrap items-start gap-6">
+          <div className="w-20 h-20 rounded-2xl bg-zinc-800 border border-[rgba(255,255,255,0.08)] flex items-center justify-center overflow-hidden shrink-0">
+            {profile.image ? (
+              <Image
+                src={profile.image}
+                alt={profile.name || ""}
+                width={80}
+                height={80}
+                className="object-cover"
+              />
+            ) : (
+              <User className="w-10 h-10 text-zinc-500" />
+            )}
           </div>
 
-          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-6">
-            {profile.achievements.map((achievement) => (
-              <AchievementBadge
-                key={achievement.id}
-                type={achievement.type}
-                label={achievement.label}
-                earnedAt={new Date(achievement.earnedAt)}
-                size="md"
-              />
-            ))}
+          <div className="flex-1 min-w-0">
+            <div className="flex flex-wrap items-center gap-3 mb-2">
+              <h3 className="text-2xl font-bold text-[#eeeef2]">
+                {profile.name || "Anonymous Athlete"}
+              </h3>
+              {profile.goal && (
+                <span className="rounded-full border border-cyan-400/30 bg-cyan-400/10 px-3 py-1 text-xs text-cyan-300">
+                  {profile.goal}
+                </span>
+              )}
+            </div>
 
-            {/* Show locked placeholder if fewer than 12 */}
-            {Array.from({
-              length: Math.max(0, 12 - profile.achievements.length),
-            }).map((_, i) => (
+            {profile.bio ? (
+              <p className="text-sm text-[#636380] mb-4 max-w-2xl">{profile.bio}</p>
+            ) : null}
+
+            <div className="flex flex-wrap items-center gap-6 text-sm text-[#636380]">
+              <div className="flex items-center gap-2">
+                <Trophy className="w-4 h-4 text-cyan-300" />
+                <span>{profile.nodesCompleted} roadmap milestones</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Target className="w-4 h-4 text-amber-300" />
+                <span>
+                  Member since {new Date(profile.createdAt).toLocaleDateString()}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Card>
+
+      {/* Best Lifts */}
+      <Card level="base" className="space-y-4">
+        <SectionHeader
+          kicker="Strength Records"
+          title="Best Recorded Lifts"
+          description="Verified 1RM estimations and competition records."
+        />
+
+        {Object.keys(profile.bestLifts).length > 0 ? (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {Object.entries(profile.bestLifts).map(([lift, weight]) => (
               <div
-                key={`locked-${i}`}
-                className="flex flex-col items-center gap-2 opacity-30"
+                key={lift}
+                className="p-4 rounded-xl border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)]"
               >
-                <div className="w-12 h-12 rounded-xl bg-zinc-800 border border-zinc-700 flex items-center justify-center">
-                  <Star className="w-6 h-6 text-zinc-500" />
+                <div className="text-xs uppercase tracking-[0.2em] text-[#636380] mb-1">
+                  {lift.replace("_", " ")}
                 </div>
-                <div className="text-xs text-zinc-500">???</div>
+                <div className="text-2xl font-bold font-mono text-[#eeeef2]">
+                  {weight.toFixed(1)} <span className="text-sm text-[#636380]">kg</span>
+                </div>
               </div>
             ))}
           </div>
-        </motion.div>
-      </main>
+        ) : (
+          <div className="text-center py-8 text-sm text-[#636380]">
+            No personal records logged yet.
+          </div>
+        )}
+      </Card>
+
+      {/* Achievements */}
+      <Card level="base" className="space-y-4">
+        <SectionHeader
+          kicker="Badges & Milestones"
+          title="Earned Achievements"
+          description="Unlocked through training momentum, milestones, and personal records."
+        />
+
+        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-6 pt-2">
+          {profile.achievements.map((achievement) => (
+            <AchievementBadge
+              key={achievement.id}
+              type={achievement.type}
+              label={achievement.label}
+              earnedAt={new Date(achievement.earnedAt)}
+              size="md"
+            />
+          ))}
+
+          {/* Show locked placeholder if fewer than 12 */}
+          {Array.from({
+            length: Math.max(0, 12 - profile.achievements.length),
+          }).map((_, i) => (
+            <div
+              key={`locked-${i}`}
+              className="flex flex-col items-center gap-2 opacity-30"
+            >
+              <div className="w-12 h-12 rounded-xl bg-zinc-800 border border-zinc-700 flex items-center justify-center">
+                <Star className="w-6 h-6 text-zinc-500" />
+              </div>
+              <div className="text-xs text-[#636380]">???</div>
+            </div>
+          ))}
+        </div>
+      </Card>
     </div>
   );
 }

@@ -9,6 +9,26 @@ export interface RoadmapUserMetrics {
   wilksScore: number;
 }
 
+export function findBestLiftScore(
+  bestLifts: Record<string, number>,
+  target: string,
+): number {
+  if (!target) return 0;
+  if (bestLifts[target] !== undefined) return bestLifts[target];
+  const targetNorm = target.toLowerCase().replace(/[\s\-_]/g, "");
+  for (const [name, score] of Object.entries(bestLifts)) {
+    const nameNorm = name.toLowerCase().replace(/[\s\-_]/g, "");
+    if (
+      nameNorm === targetNorm ||
+      nameNorm.includes(targetNorm) ||
+      targetNorm.includes(nameNorm)
+    ) {
+      return score;
+    }
+  }
+  return 0;
+}
+
 export function criteriaSatisfied(
   criteria: { lift?: string; metric: string; value: number; type?: string },
   metrics: RoadmapUserMetrics,
@@ -26,14 +46,15 @@ export function criteriaSatisfied(
   }
 
   if (criteria.lift && criteria.metric === "1rm_bw_ratio") {
-    const lift1RM = metrics.bestLifts[criteria.lift] || 0;
+    const lift1RM = findBestLiftScore(metrics.bestLifts, criteria.lift);
     const liftKg = metrics.userUnit === "LBS" ? lift1RM / 2.20462 : lift1RM;
     const ratio = metrics.bodyweightKg > 0 ? liftKg / metrics.bodyweightKg : 0;
     return ratio >= criteria.value;
   }
 
   if (criteria.lift && criteria.metric === "1rm_absolute") {
-    return (metrics.bestLifts[criteria.lift] || 0) >= criteria.value;
+    const lift1RM = findBestLiftScore(metrics.bestLifts, criteria.lift);
+    return lift1RM >= criteria.value;
   }
 
   return false;
@@ -62,10 +83,13 @@ export async function getRoadmapUserMetrics(
 
   const bodyweight = user?.bodyweight || 70;
   const bodyweightKg = user?.unit === "LBS" ? bodyweight / 2.20462 : bodyweight;
+  const squat = findBestLiftScore(bestLifts, "squat");
+  const bench = findBestLiftScore(bestLifts, "bench");
+  const deadlift = findBestLiftScore(bestLifts, "deadlift");
   const sbdTotal =
-    (bestLifts["squat"] || 0) +
-    (bestLifts["bench"] || 0) +
-    (bestLifts["deadlift"] || 0);
+    user?.unit === "LBS"
+      ? (squat + bench + deadlift) / 2.20462
+      : squat + bench + deadlift;
 
   return {
     bestLifts,

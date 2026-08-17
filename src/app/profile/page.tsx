@@ -29,7 +29,22 @@ export default function ProfilePage() {
     void syncPlannerSnapshotFromServer().then((serverSnap) => {
       setBodyweight(serverSnap.input.weightKg);
     });
-  }, [session]);
+
+    if (status === "authenticated") {
+      fetch("/api/profile")
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (data) {
+            if (data.name) setName(data.name);
+            if (data.bio) setBio(data.bio);
+            if (data.goal) setGoal(data.goal);
+            if (data.bodyweight) setBodyweight(data.bodyweight);
+            if (data.unit) setUnit(data.unit);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [session, status]);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();

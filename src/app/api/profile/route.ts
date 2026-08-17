@@ -15,6 +15,44 @@ const updateProfileSchema = z.object({
   image: z.string().url().optional(),
 });
 
+export async function GET() {
+  const session = await getServerSession(authOptions);
+  const userId = session?.user?.id;
+
+  if (!userId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        image: true,
+        goal: true,
+        bio: true,
+        bodyweight: true,
+        unit: true,
+        createdAt: true,
+      },
+    });
+
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    return NextResponse.json(user);
+  } catch (error) {
+    console.error("Get current user profile error:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch profile" },
+      { status: 500 },
+    );
+  }
+}
+
 export async function PATCH(req: NextRequest) {
   const session = await getServerSession(authOptions);
   const userId = session?.user?.id;

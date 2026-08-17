@@ -340,7 +340,10 @@ export default function RoadmapPage() {
             roadmapNodes={plan.roadmapNodes}
             progress={progress}
             selectedNodeId={selectedNodeId}
-            onNodeSelect={setSelectedNodeId}
+            onNodeSelect={(nodeId) => {
+              setSelectedNodeId(nodeId);
+              setDrawerOpen(true);
+            }}
           />
         </Card>
 
@@ -400,42 +403,51 @@ export default function RoadmapPage() {
             </div>
           </div>
 
-          <div className="flex gap-2">
-            <ActionButton
-              onClick={async () => {
-                if (selectedNodeStatus !== "locked") {
-                  const next = {
-                    ...progress,
-                    [selectedNode.id]: !progress[selectedNode.id],
-                  };
-                  setProgress(next);
+          <div className="flex flex-col gap-2">
+            <div className="flex gap-2">
+              <ActionButton
+                onClick={async () => {
+                  if (selectedNodeStatus !== "locked") {
+                    const next = {
+                      ...progress,
+                      [selectedNode.id]: !progress[selectedNode.id],
+                    };
+                    setProgress(next);
 
-                  const saved = await persistPlannerSnapshot({
-                    input: snapshot.input,
-                    checkins: snapshot.checkins,
-                    equipment: snapshot.equipment,
-                    experience: snapshot.experience,
-                    progress: next,
-                  });
-                  setSnapshot((current) => ({ ...current, progress: next }));
-                  setSaveMessage(
-                    saved
-                      ? "Roadmap progress synced."
-                      : "Roadmap progress saved locally.",
-                  );
-                }
-              }}
-              disabled={selectedNodeStatus === "locked"}
-              className="flex-1"
-            >
-              {progress[selectedNode.id] ? "Completed" : "Mark Done"}
-            </ActionButton>
+                    const saved = await persistPlannerSnapshot({
+                      input: snapshot.input,
+                      checkins: snapshot.checkins,
+                      equipment: snapshot.equipment,
+                      experience: snapshot.experience,
+                      progress: next,
+                    });
+                    setSnapshot((current) => ({ ...current, progress: next }));
+                    setSaveMessage(
+                      saved
+                        ? "Roadmap progress synced."
+                        : "Roadmap progress saved locally.",
+                    );
+                  }
+                }}
+                disabled={selectedNodeStatus === "locked"}
+                className="flex-1"
+              >
+                {progress[selectedNode.id] ? "Completed" : "Mark Done"}
+              </ActionButton>
+              <ActionButton
+                variant="secondary"
+                className="flex-1"
+                onClick={() => setDrawerOpen(true)}
+              >
+                Phase Details & PR
+              </ActionButton>
+            </div>
             <ActionButton
               variant="secondary"
-              className="flex-1"
+              className="w-full text-xs"
               onClick={() => setSelectedNodeId(plan.roadmapNodes[0].id)}
             >
-              Clear Focus Dimming
+              Reset Focus Dimming
             </ActionButton>
           </div>
           {saveMessage ? (

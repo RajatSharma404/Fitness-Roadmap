@@ -10,6 +10,7 @@ import {
   SectionHeader,
 } from "@/components/shared/UIPrimitives";
 import { ProgressRing } from "@/components/layout/ProgressRing";
+import { StrengthRadar } from "@/components/dashboard/StrengthRadar";
 import { calculateBodyPlan } from "@/lib/bodyPlanner";
 import {
   computeReadinessScore,
@@ -31,6 +32,8 @@ function Sparkline({
   color,
 }: Readonly<{ values: number[]; color: string }>) {
   const max = Math.max(...values, 1);
+  const min = Math.min(...values, 0);
+  const range = Math.max(1, max - min);
   const width = 120;
   const height = 28;
   const gap = 4;
@@ -39,7 +42,7 @@ function Sparkline({
   return (
     <svg viewBox={`0 0 ${width} ${height}`} className="h-7 w-full">
       {values.map((value, index) => {
-        const barHeight = (value / max) * height;
+        const barHeight = ((value - min) / range) * (height - 4) + 4;
         const x = index * (barWidth + gap);
         const y = height - barHeight;
         return (
@@ -61,6 +64,7 @@ function Sparkline({
 
 export default function HomePage() {
   const [snapshot, setSnapshot] = useState(defaultPlannerSnapshot);
+  const [lifts, setLifts] = useState<Record<string, number>>({});
   const [selectedStep, setSelectedStep] = useState<
     "warmup" | "main" | "accessories" | "recovery"
   >("warmup");
@@ -82,6 +86,38 @@ export default function HomePage() {
     });
     window.addEventListener("storage", sync);
     return () => window.removeEventListener("storage", sync);
+  }, []);
+
+  useEffect(() => {
+    fetch("/api/lifts")
+      .then((res) => (res.ok ? res.json() : []))
+      .then((data: Array<{ name: string; oneRM: number }>) => {
+        const map: Record<string, number> = {};
+        if (Array.isArray(data)) {
+          data.forEach((l) => {
+            const key = l.name.toLowerCase().replace(/[\s\-_]/g, "");
+            if (!map[key] || l.oneRM > map[key]) {
+              map[key] = l.oneRM;
+            }
+          });
+        }
+        setLifts(map);
+      })
+      .catch(() => {
+        try {
+          const guestPRs = JSON.parse(localStorage.getItem("guestPRs") || "[]");
+          const map: Record<string, number> = {};
+          guestPRs.forEach((l: { name: string; oneRM: number }) => {
+            const key = (l.name || "").toLowerCase().replace(/[\s\-_]/g, "");
+            if (!map[key] || (l.oneRM || 0) > map[key]) {
+              map[key] = l.oneRM || 0;
+            }
+          });
+          setLifts(map);
+        } catch {
+          setLifts({});
+        }
+      });
   }, []);
 
   const plan = useMemo(
@@ -115,7 +151,24 @@ export default function HomePage() {
     1200,
     plan.targetCalories + progressAdjustment.calorieDelta,
   );
-  const trendValues = [78, 82, 80, 84, 83, 81, 85];
+
+  const weightTrend = useMemo(() => {
+    const deduped = dedupeCheckinsByDate(snapshot.checkins);
+    if (deduped.length >= 2) {
+      const current = deduped[0].weightKg;
+      const prev = deduped[deduped.length - 1].weightKg;
+      const diff = current - prev;
+      return {
+        diffStr: `${diff >= 0 ? "+" : ""}${diff.toFixed(1)} kg`,
+        values: deduped.map((c) => c.weightKg).reverse(),
+      };
+    }
+    return {
+      diffStr: "0.0 kg",
+      values: [snapshot.input.weightKg, snapshot.input.weightKg],
+    };
+  }, [snapshot.checkins, snapshot.input.weightKg]);
+
   const calorieDelta = adjustedCalories - plan.maintenanceCalories;
 
   const stepDescriptions: Record<typeof selectedStep, string> = {
@@ -323,13 +376,14 @@ export default function HomePage() {
             </div>
             <div className="space-y-3">
               <div>
-                <p className="text-xs uppercase tracking-[0.2em] text-[#636380]">
-                  Weight trend
-                </p>
+                <div className="flex items-center justify-between text-xs text-[#636380]">
+                  <span className="uppercase tracking-[0.2em]">Weight trend</span>
+                  <span>{weightTrend.diffStr}</span>
+                </div>
                 <p className="font-mono text-2xl font-bold text-[#60a5fa] metric-number">
-                  -0.8 kg
+                  {weightTrend.values[weightTrend.values.length - 1] ?? snapshot.input.weightKg} kg
                 </p>
-                <Sparkline values={trendValues} color="#60a5fa" />
+                <Sparkline values={weightTrend.values} color="#60a5fa" />
               </div>
               <div>
                 <p className="text-xs uppercase tracking-[0.2em] text-[#636380]">
@@ -345,6 +399,17 @@ export default function HomePage() {
                 </p>
                 <p className="text-sm text-[#eeeef2]">{coachMessage}</p>
               </div>
+            </div>
+          </Card>
+
+          <Card level="base" className="space-y-3">
+            <SectionHeader
+              kicker="Athlete Radar"
+              title="Strength Balance"
+              description="Normalized against elite powerlifting standards."
+            />
+            <div className="h-56 w-full pt-1">
+              <StrengthRadar lifts={lifts} bodyweight={snapshot.input.weightKg} />
             </div>
           </Card>
 
