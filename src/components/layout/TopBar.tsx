@@ -6,6 +6,14 @@ import { cn } from "@/lib/cn";
 const titles: Record<string, { title: string; subtitle: string }> = {
   "/": { title: "Dashboard", subtitle: "Mission-first execution" },
   "/dashboard": { title: "Dashboard", subtitle: "Mission-first execution" },
+  "/analytics": {
+    title: "Analytics & Progression Science",
+    subtitle: "RP volume landmarks, lift plateaus, and DOTS standards",
+  },
+  "/leaderboard": {
+    title: "Community & Gym Squads",
+    subtitle: "Private clans, cooperative boss raids, and global leaderboards",
+  },
   "/generator": {
     title: "Generator",
     subtitle: "Build a personalized workout plan step-by-step",
@@ -25,7 +33,7 @@ const titles: Record<string, { title: string; subtitle: string }> = {
   },
   "/nutrition": {
     title: "Nutrition",
-    subtitle: "Macro planning and meal templates",
+    subtitle: "Daily food diary and macro templates",
   },
   "/tools": {
     title: "Tools",
@@ -54,9 +62,9 @@ export function TopBar() {
   const meta = titles[pathname] ?? titles["/"];
 
   return (
-    <header className="flex flex-col gap-2 border-b border-[rgba(255,255,255,0.06)] bg-[rgba(13,13,22,0.82)] px-6 py-4 backdrop-blur-xl md:px-8">
-      <p className="text-xs uppercase tracking-[0.22em] text-[#636380]">
-        FitFlow Planner
+    <header className="flex flex-col gap-1.5 border-b border-white/10 bg-[#0c0c16]/85 pl-16 pr-6 py-4 backdrop-blur-xl md:px-8">
+      <p className="text-[10px] uppercase font-mono tracking-[0.22em] text-cyan-400">
+        FitFlow Performance Console
       </p>
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>

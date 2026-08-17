@@ -72,6 +72,18 @@ It includes:
 - **1-Week Active Deload Protocol Generator** calculating customized 70% load and 50% volume reductions with weak-point technical assistance variations
 - **Strength Standards & DOTS Radar** classifying an athlete across Novice to Elite percentiles with international powerlifting DOTS & Wilks scoring
 
+### Community, Gym Squads & Cooperative Raids
+
+The community hub (`/leaderboard`) turns fitness into an engaging multiplayer RPG experience with clan milestones and shared challenges.
+
+It includes:
+
+- **Private Gym Squads & Clans (`SquadsView`)** with custom squad creation, unique invite codes (e.g. `IRON01`), and shared weekly tonnage goals (e.g. 50,000 kg milestone)
+- **Live Squad Activity Feed (`SquadActivityFeed`)** with real-time PRs, workout completions, and interactive **Fistbumps (👊)**
+- **Weekly Cooperative Raid Boss (`CommunityRaidCard`)** where all community workouts deal damage against a collective boss (e.g. Gorgon the Iron Colossus, 500,000 kg HP) with personal contribution ranks and combat archetypes (Vanguard Tank 🛡️, Damage Dealer 🗡️, Berserker ⚡)
+- **Shareable Instagram & WhatsApp PR Story Cards (`PRStoryCardModal`)** with 9:16 vertical glassmorphic cards, customizable themes (Cyberpunk, Solar Flare, Emerald, Onyx), and 1-click WhatsApp and image sharing
+- **Global Athlete Rankings** with normalized Wilks & SBD total leaderboards in table and card formats
+
 ### Roadmap
 
 The roadmap is the planning and progression workspace. It pairs a visual node graph with a detailed selection panel so users can understand both structure and reason.
@@ -172,16 +184,24 @@ It includes:
 
 ## Core Features
 
-### Global AI Coaching Widget
+### Global AI Coaching Widget & Form Advisor
 
 A universally accessible, floating AI Coach chat widget built with Server-Sent Events (SSE).
 
 It features:
 
 - A globally mounted component in the `ShellChrome` layout, making it accessible across the entire application without breaking user flows.
+- **Biomechanical Form & Technique Advisor (`FormCheckAnalyzer`)** offering instant Dr. Stuart McGill & Mark Rippetoe diagnostic breakdowns for common lift faults (Knee Valgus, Butt Wink, Flared Elbows, Stripper Pulls, Lumbar Flexion).
+- **Smart Daily Readiness & Energy Adjuster (`readinessEngine`)** auto-regulating daily working volume and intensity based on sleep, soreness, stress, and 48-hour rolling tonnage.
+- **Quick-Action Prompt Chips** (Form Check Cues, Daily Readiness, Deload Generator, Indian Meal Swap, Hypertrophy Volume).
 - Dynamic context building that injects the user's specific training data—such as bodyweight, goal, PR history, and unlocked roadmap nodes—directly into the system prompt for hyper-personalized responses.
 - Event-driven dispatch (`window.dispatchEvent(new CustomEvent("open-ai-chat"))`) to seamlessly integrate the coach with specific page components like Roadmap nodes.
 - Direct integration with Google Gemini for fast, fitness-optimized responses.
+
+### Modern Mobile Hamburger Navigation
+
+- **Sleek Glassmorphic Mobile Drawer (`Sidebar.tsx`)** featuring smooth slide-over transitions, category grouping (Command, Execution, Knowledge), glowing active route indicators, live Readiness progress ring, and user account status.
+- **Responsive TopBar Clearance** ensuring zero visual overlap across mobile and desktop viewport widths.
 
 ### Adaptive planning engine
 

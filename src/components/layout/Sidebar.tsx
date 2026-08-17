@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -20,6 +20,8 @@ import {
   User,
   LogOut,
   LogIn,
+  Sparkles,
+  ChevronRight,
 } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { ProgressRing } from "./ProgressRing";
@@ -47,7 +49,7 @@ const navItems: SidebarNavItem[] = [
   },
   {
     href: "/leaderboard",
-    label: "Leaderboard",
+    label: "Community & Squads",
     icon: Trophy,
     section: "core",
   },
@@ -81,9 +83,9 @@ const navItems: SidebarNavItem[] = [
 ];
 
 const sectionTitles: Record<SidebarNavItem["section"], string> = {
-  core: "Core",
-  plan: "Plan",
-  learn: "Learn",
+  core: "Command",
+  plan: "Execution",
+  learn: "Knowledge",
 };
 
 interface SidebarProps {
@@ -92,48 +94,64 @@ interface SidebarProps {
 }
 
 export function Sidebar({
-  readiness = 74,
-  todayLabel = "Push Day",
+  readiness = 78,
+  todayLabel = "Push Day (Hypertrophy)",
 }: Readonly<SidebarProps>) {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const { data: session, status } = useSession();
 
+  // Close mobile drawer on route change or ESC
+  useEffect(() => {
+    setIsOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setIsOpen(false);
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
   const navContent = (
-    <>
-      <div className="flex items-center justify-between gap-3 border-b border-[rgba(255,255,255,0.06)] px-5 py-4">
+    <div className="flex h-full flex-col justify-between overflow-hidden">
+      {/* Brand Header */}
+      <div className="flex items-center justify-between gap-3 border-b border-white/10 px-5 py-4 shrink-0 bg-black/20">
         <div className="flex items-center gap-3">
           <Image
             src="/logo-fitflow.svg"
             alt="FitFlow logo"
-            width={44}
-            height={44}
-            className="h-11 w-11 rounded-xl"
+            width={40}
+            height={40}
+            className="h-10 w-10 rounded-2xl shadow-md border border-cyan-500/30"
             priority
           />
           <div>
-            <p className="font-display text-lg font-bold tracking-tight text-[#eeeef2]">
-              FitFlow
+            <p className="font-display text-lg font-bold tracking-tight text-white flex items-center gap-1.5">
+              FitFlow <span className="text-[9px] font-mono font-bold uppercase px-1.5 py-0.2 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">PRO</span>
             </p>
-            <p className="text-xs uppercase tracking-[0.2em] text-[#636380]">
+            <p className="text-[10px] uppercase font-mono tracking-widest text-zinc-400">
               Performance Console
             </p>
           </div>
         </div>
+
         <button
           type="button"
-          className="rounded-md border border-[rgba(255,255,255,0.06)] p-2 text-[#eeeef2] md:hidden"
+          className="rounded-xl border border-white/10 bg-white/5 p-2 text-zinc-400 hover:text-white hover:bg-white/10 md:hidden transition"
           onClick={() => setIsOpen(false)}
           aria-label="Close navigation"
         >
-          <X className="h-4 w-4" />
+          <X className="h-5 w-5" />
         </button>
       </div>
 
-      <nav className="flex-1 space-y-3 overflow-y-auto px-3 py-4">
+      {/* Nav List */}
+      <nav className="flex-1 space-y-4 overflow-y-auto px-3 py-4 scrollbar-thin">
         {(["core", "plan", "learn"] as const).map((section) => (
           <div key={section} className="space-y-1">
-            <p className="px-3 text-[10px] uppercase tracking-[0.2em] text-[#636380]">
+            <p className="px-3 text-[10px] uppercase font-mono font-bold tracking-widest text-zinc-500">
               {sectionTitles[section]}
             </p>
             {navItems
@@ -148,14 +166,27 @@ export function Sidebar({
                     href={item.href}
                     onClick={() => setIsOpen(false)}
                     className={cn(
-                      "flex items-center rounded-md px-3 py-2 text-sm transition-all duration-150",
+                      "flex items-center justify-between rounded-xl px-3.5 py-2 text-xs font-mono font-medium transition-all duration-150 group",
                       active
-                        ? "border-l-2 border-cyan-400 bg-cyan-400/5 text-cyan-300 font-medium"
-                        : "text-[#636380] hover:bg-[rgba(255,255,255,0.03)] hover:text-[#eeeef2]",
+                        ? "bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 font-bold shadow-sm"
+                        : "text-zinc-400 hover:bg-white/[0.04] hover:text-white border border-transparent",
                     )}
                   >
-                    <Icon className="mr-3 h-4 w-4" />
-                    {item.label}
+                    <div className="flex items-center gap-3">
+                      <Icon
+                        className={cn(
+                          "h-4 w-4 transition",
+                          active
+                            ? "text-cyan-400"
+                            : "text-zinc-500 group-hover:text-zinc-300",
+                        )}
+                      />
+                      <span>{item.label}</span>
+                    </div>
+
+                    {active && (
+                      <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(6,182,212,0.8)]" />
+                    )}
                   </Link>
                 );
               })}
@@ -163,56 +194,51 @@ export function Sidebar({
         ))}
       </nav>
 
-      <div className="border-t border-[rgba(255,255,255,0.06)] px-5 py-4 space-y-4">
-        <div className="flex items-center gap-4">
-          <ProgressRing value={readiness} size={56} strokeWidth={5} />
+      {/* Bottom Profile & Readiness Section */}
+      <div className="border-t border-white/10 px-4 py-4 space-y-3 shrink-0 bg-black/40 font-mono">
+        {/* Readiness Compact Tile */}
+        <div className="p-3 rounded-2xl bg-white/[0.02] border border-white/5 flex items-center gap-3">
+          <ProgressRing value={readiness} size={44} strokeWidth={4} />
           <div>
-            <p className="text-xs uppercase tracking-[0.2em] text-[#636380]">
-              Readiness
-            </p>
-            <p className="font-mono text-2xl font-bold text-[#eeeef2]">
-              {readiness}
-            </p>
+            <span className="text-[10px] uppercase text-zinc-500 block">Daily Readiness</span>
+            <span className="text-sm font-bold text-white">
+              {readiness}% · <span className="text-cyan-300">{readiness >= 75 ? "Optimal" : "Fatigued"}</span>
+            </span>
           </div>
         </div>
-        <div className="rounded-lg border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] p-3 text-sm text-[#eeeef2]">
-          <p className="text-xs uppercase tracking-[0.2em] text-[#636380]">
-            Today
-          </p>
-          <p className="mt-1 font-semibold text-cyan-300">{todayLabel}</p>
-        </div>
 
+        {/* User Profile / Auth Button */}
         {status === "authenticated" && session?.user ? (
-          <div className="flex items-center gap-3 p-2 rounded-lg border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)]">
+          <div className="flex items-center gap-2 p-2 rounded-2xl border border-white/10 bg-white/[0.02]">
             <Link
               href={`/profile/${session.user.id}`}
               onClick={() => setIsOpen(false)}
-              className="flex items-center gap-3 flex-1 min-w-0"
+              className="flex items-center gap-2.5 flex-1 min-w-0"
             >
-              <div className="w-9 h-9 rounded-full bg-zinc-700 flex items-center justify-center overflow-hidden shrink-0 border border-white/10">
+              <div className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center overflow-hidden shrink-0 border border-white/10 text-xs font-bold text-cyan-300">
                 {session.user.image ? (
                   <Image
                     src={session.user.image}
                     alt={session.user.name || ""}
-                    width={36}
-                    height={36}
+                    width={32}
+                    height={32}
                     className="object-cover"
                   />
                 ) : (
-                  <User className="w-5 h-5 text-zinc-400" />
+                  (session.user.name || "U")[0]
                 )}
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold text-[#eeeef2] truncate">
-                  {session.user.name || "User"}
+                <p className="text-xs font-bold text-white truncate">
+                  {session.user.name || "Athlete"}
                 </p>
-                <p className="text-xs text-[#636380] truncate">View Profile</p>
+                <p className="text-[10px] text-zinc-500 truncate">Account Active</p>
               </div>
             </Link>
             <button
               onClick={() => signOut({ callbackUrl: "/" })}
               type="button"
-              className="p-1.5 hover:bg-zinc-800 rounded-md text-zinc-400 hover:text-red-400 transition-colors shrink-0"
+              className="p-1.5 hover:bg-red-500/10 rounded-xl text-zinc-500 hover:text-red-400 transition shrink-0"
               title="Sign Out"
             >
               <LogOut className="h-4 w-4" />
@@ -222,56 +248,55 @@ export function Sidebar({
           <button
             onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
             type="button"
-            className="flex w-full items-center justify-center gap-2 rounded-md border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.02)] px-3 py-2 text-sm text-[#eeeef2] transition hover:border-cyan-400/50 hover:bg-cyan-400/5"
+            className="flex w-full items-center justify-center gap-2 rounded-xl border border-cyan-500/30 bg-cyan-500/10 px-3 py-2 text-xs font-bold text-cyan-300 transition hover:bg-cyan-500/20"
           >
-            <LogIn className="h-4 w-4 text-[#60a5fa]" />
-            Sign In
+            <LogIn className="h-4 w-4" />
+            Sign In / Guest Active
           </button>
         )}
 
-        <div className="flex flex-wrap gap-x-2 gap-y-1 text-xs text-[#636380]">
-          <Link href="/about" className="hover:text-[#eeeef2]">
-            About
-          </Link>
-          <span>|</span>
-          <Link href="/terms" className="hover:text-[#eeeef2]">
-            Terms
-          </Link>
-          <span>|</span>
-          <Link href="/privacy" className="hover:text-[#eeeef2]">
-            Privacy
-          </Link>
+        {/* Footer Legal Links */}
+        <div className="flex items-center justify-center gap-3 text-[10px] text-zinc-500 pt-1">
+          <Link href="/about" className="hover:text-zinc-300">About</Link>
+          <span>·</span>
+          <Link href="/terms" className="hover:text-zinc-300">Terms</Link>
+          <span>·</span>
+          <Link href="/privacy" className="hover:text-zinc-300">Privacy</Link>
         </div>
       </div>
-    </>
+    </div>
   );
 
   return (
     <>
+      {/* Sleek Floating Mobile Menu Trigger Button */}
       <button
         type="button"
-        className="fixed left-4 top-4 z-50 inline-flex items-center justify-center rounded-md border border-[rgba(255,255,255,0.08)] bg-[rgba(13,13,22,0.9)] p-2 text-[#eeeef2] shadow-lg md:hidden"
+        className="fixed left-4 top-3.5 z-40 inline-flex items-center justify-center rounded-2xl border border-white/15 bg-[#0c0c16]/90 p-2.5 text-white shadow-2xl backdrop-blur-xl md:hidden hover:border-cyan-400/50 transition active:scale-95"
         onClick={() => setIsOpen(true)}
-        aria-label="Open navigation"
+        aria-label="Open navigation menu"
       >
-        <Menu className="h-5 w-5" />
+        <Menu className="h-5 w-5 text-cyan-300" />
       </button>
 
-      <aside className="hidden h-screen w-55 shrink-0 border-r border-[rgba(255,255,255,0.06)] bg-[rgba(13,13,22,0.92)] backdrop-blur-xl md:flex md:flex-col">
+      {/* Desktop Sidebar */}
+      <aside className="hidden h-screen w-60 shrink-0 border-r border-white/10 bg-[#0c0c16]/95 backdrop-blur-2xl md:flex md:flex-col shadow-xl">
         {navContent}
       </aside>
 
+      {/* Mobile Backdrop Overlay */}
       <div
         className={cn(
-          "fixed inset-0 z-40 bg-black/60 backdrop-blur-sm transition-opacity md:hidden",
+          "fixed inset-0 z-50 bg-black/80 backdrop-blur-md transition-opacity duration-300 md:hidden",
           isOpen ? "opacity-100" : "pointer-events-none opacity-0",
         )}
         onClick={() => setIsOpen(false)}
       />
 
+      {/* Mobile Drawer */}
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-50 flex w-70 flex-col border-r border-[rgba(255,255,255,0.06)] bg-[rgba(13,13,22,0.98)] backdrop-blur-xl transition-transform duration-200 md:hidden",
+          "fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-white/15 bg-[#0a0a14] shadow-2xl transition-transform duration-300 ease-out md:hidden",
           isOpen ? "translate-x-0" : "-translate-x-full",
         )}
       >
@@ -280,4 +305,3 @@ export function Sidebar({
     </>
   );
 }
-

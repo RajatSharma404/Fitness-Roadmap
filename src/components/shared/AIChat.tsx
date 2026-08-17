@@ -48,10 +48,12 @@ interface AIChatProps {
 }
 
 const STARTER_PROMPTS = [
-  "Analyze my current roadmap progress",
-  "What milestone should I tackle next?",
-  "Give me warm-up sets for 100kg Squat",
-  "How can I break through my bench plateau?",
+  "🔍 Form Check: Squat knee valgus cues",
+  "⚡ Evaluate my daily recovery & readiness",
+  "📉 Generate 1-week deload protocol",
+  "🍛 High-protein Indian meal swap for paneer",
+  "🔥 Check my hypertrophy volume landmarks (MEV/MAV)",
+  "📊 Calculate my powerlifting DOTS score",
 ];
 
 function extractActions(content: string): { cleanContent: string; actions: ActionItem[] } {
