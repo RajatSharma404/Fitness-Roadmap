@@ -1,3 +1,4 @@
+import React from "react";
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 import { Card } from "@/components/shared/UIPrimitives";
