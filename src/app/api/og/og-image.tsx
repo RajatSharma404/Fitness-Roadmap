@@ -16,10 +16,21 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get("userId");
+    const queryName = searchParams.get("name");
+    const queryGoal = searchParams.get("goal");
+    const queryNodes = searchParams.get("nodes");
 
-    const user = userIdSchema.safeParse(userId).success
+    let user = userIdSchema.safeParse(userId).success
       ? await fetchUserProfile(request, userId as string)
       : null;
+
+    if (!user && (queryName || queryGoal)) {
+      user = {
+        name: queryName ?? undefined,
+        goal: queryGoal ?? undefined,
+        nodesCompleted: queryNodes ? Number(queryNodes) : undefined,
+      };
+    }
 
     return new ImageResponse(
       <div
@@ -156,14 +167,21 @@ export async function GET(request: NextRequest) {
 }
 
 async function fetchUserProfile(request: NextRequest, userId: string) {
-  const profileUrl = new URL(
-    `/api/profile/${encodeURIComponent(userId)}`,
-    request.url,
-  );
-  const userRes = await fetch(profileUrl, { cache: "no-store" });
-  const rawUser = userRes.ok ? await userRes.json() : null;
-  const parsedUser = profileSchema.safeParse(rawUser);
-  return parsedUser.success ? parsedUser.data : null;
+  try {
+    const profileUrl = new URL(
+      `/api/profile/${encodeURIComponent(userId)}`,
+      request.url,
+    );
+    const userRes = await fetch(profileUrl, {
+      cache: "no-store",
+      signal: AbortSignal.timeout(2500),
+    });
+    const rawUser = userRes.ok ? await userRes.json() : null;
+    const parsedUser = profileSchema.safeParse(rawUser);
+    return parsedUser.success ? parsedUser.data : null;
+  } catch {
+    return null;
+  }
 }
 
 function formatBestLift(bestLifts: Record<string, number> | undefined) {
