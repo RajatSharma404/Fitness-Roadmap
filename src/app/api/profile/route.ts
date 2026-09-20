@@ -61,7 +61,16 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const payload = await req.json();
+  let payload: unknown;
+  try {
+    payload = await req.json();
+  } catch {
+    return NextResponse.json(
+      { error: "Invalid JSON request body" },
+      { status: 400 },
+    );
+  }
+
   const parsed = updateProfileSchema.safeParse(payload);
   if (!parsed.success) {
     return NextResponse.json(
