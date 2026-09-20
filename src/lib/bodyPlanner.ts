@@ -132,10 +132,10 @@ const goalCalorieFactor: Record<GoalType, number> = {
 };
 
 const goalProteinPerKg: Record<GoalType, number> = {
-  fat_loss: 1.5,
-  weight_loss: 1.5,
-  muscle_gain: 1.5,
-  recomposition: 1.5,
+  fat_loss: 2.2,
+  weight_loss: 1.8,
+  muscle_gain: 1.8,
+  recomposition: 2.1,
 };
 
 const dayNames = [
@@ -147,6 +147,14 @@ const dayNames = [
   "Saturday",
   "Sunday",
 ];
+
+const trainingDaySlotsByCount: Record<number, number[]> = {
+  3: [0, 2, 4], // Mon, Wed, Fri
+  4: [0, 1, 3, 4], // Mon, Tue, Thu, Fri (Upper/Lower)
+  5: [0, 1, 2, 4, 5], // Mon, Tue, Wed, Fri, Sat
+  6: [0, 1, 2, 3, 4, 5], // Mon - Sat
+  7: [0, 1, 2, 3, 4, 5, 6], // Everyday
+};
 
 function round(value: number, decimals = 0): number {
   const factor = Math.pow(10, decimals);
@@ -162,10 +170,11 @@ function buildWorkoutPlan(
   workoutDays: number,
 ): WorkoutDayPlan[] {
   const trainingDays = clamp(workoutDays, 3, 7);
+  const activeSlots = new Set(trainingDaySlotsByCount[trainingDays] ?? [0, 2, 4]);
   const plan: WorkoutDayPlan[] = [];
 
   for (let index = 0; index < 7; index += 1) {
-    const isTrainingDay = index < trainingDays;
+    const isTrainingDay = activeSlots.has(index);
 
     if (!isTrainingDay) {
       plan.push({
