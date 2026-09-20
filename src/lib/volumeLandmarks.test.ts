@@ -18,6 +18,10 @@ describe("volumeLandmarks", () => {
 
     const deadlift = getExerciseMuscleContributions("Barbell Deadlift");
     expect(deadlift.primary).toContain("back");
+
+    const inclineCurl = getExerciseMuscleContributions("Incline Dumbbell Curl");
+    expect(inclineCurl.primary).toContain("biceps");
+    expect(inclineCurl.primary).not.toContain("chest");
   });
 
   it("evaluates volume status correctly against landmark thresholds", () => {
