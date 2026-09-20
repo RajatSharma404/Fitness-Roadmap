@@ -104,9 +104,15 @@ export function DailyFoodDiary({
 
   // Date shifting
   const handleShiftDate = (daysDelta: number) => {
-    const current = new Date(currentDateStr);
-    current.setDate(current.getDate() + daysDelta);
-    onDateChange(current.toISOString().slice(0, 10));
+    // Parse year, month, day explicitly in local time to avoid UTC parsing timezone jumps
+    const [year, month, day] = currentDateStr.split("-").map(Number);
+    const localDate = new Date(year, (month || 1) - 1, day || 1);
+    localDate.setDate(localDate.getDate() + daysDelta);
+
+    const y = localDate.getFullYear();
+    const m = String(localDate.getMonth() + 1).padStart(2, "0");
+    const d = String(localDate.getDate()).padStart(2, "0");
+    onDateChange(`${y}-${m}-${d}`);
   };
 
   // Add Item to Meal Slot
