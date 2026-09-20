@@ -1,7 +1,8 @@
 "use client";
 
-import { memo } from "react";
+import { memo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Share2, Check } from "lucide-react";
 import { PlateDefinition, WeightUnit } from "@/lib/plateCalculator";
 import { cn } from "@/lib/cn";
 
@@ -24,6 +25,30 @@ export const VisualBarbell = memo(function VisualBarbell({
 }: VisualBarbellProps) {
   // Height scaling: standard 450mm diameter plate = 150px
   const maxPlateHeight = 150;
+  const [copied, setCopied] = useState(false);
+
+  const handleShare = async () => {
+    const breakdown = platesPerSide.map((p) => p.label).join(", ") || "No plates";
+    const text = `🏋️ Barbell Loadout: ${totalWeight} ${unit}\n• Bar: ${barWeight} ${unit}${collarWeight > 0 ? ` + ${collarWeight} ${unit} collars` : ""}\n• Sleeve: ${breakdown} per side\nCalculated on Fitness Roadmap`;
+
+    if (typeof navigator !== "undefined" && navigator.share) {
+      try {
+        await navigator.share({
+          title: `Barbell Loadout: ${totalWeight} ${unit}`,
+          text,
+        });
+        return;
+      } catch {
+        // Fallback to clipboard
+      }
+    }
+
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
 
   return (
     <div
@@ -33,7 +58,7 @@ export const VisualBarbell = memo(function VisualBarbell({
       )}
     >
       {/* Header Info Overlay */}
-      <div className="absolute top-4 left-6 right-6 flex items-center justify-between pointer-events-none z-10">
+      <div className="absolute top-4 left-6 right-6 flex items-center justify-between z-10 pointer-events-none">
         <div>
           <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-cyan-400 font-mono">
             Barbell Loader
@@ -46,13 +71,34 @@ export const VisualBarbell = memo(function VisualBarbell({
           </h3>
         </div>
 
-        <div className="text-right">
-          <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400 font-mono">
-            Per Sleeve
-          </span>
-          <div className="text-sm font-bold font-mono text-amber-400">
-            {platesPerSide.reduce((sum, p) => sum + p.weight, 0)} {unit}
+        <div className="flex items-center gap-3">
+          <div className="text-right">
+            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400 font-mono">
+              Per Sleeve
+            </span>
+            <div className="text-sm font-bold font-mono text-amber-400">
+              {platesPerSide.reduce((sum, p) => sum + p.weight, 0)} {unit}
+            </div>
           </div>
+
+          <button
+            type="button"
+            onClick={handleShare}
+            className="pointer-events-auto flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-xs font-mono font-medium text-zinc-300 hover:text-white transition"
+            title="Share or copy barbell loadout"
+          >
+            {copied ? (
+              <>
+                <Check className="w-3.5 h-3.5 text-green-400" />
+                <span className="text-green-300">Copied!</span>
+              </>
+            ) : (
+              <>
+                <Share2 className="w-3.5 h-3.5 text-cyan-400" />
+                <span>Share</span>
+              </>
+            )}
+          </button>
         </div>
       </div>
 
