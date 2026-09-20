@@ -137,7 +137,20 @@ export function getExerciseMuscleContributions(exerciseName: string): {
   const secondary = new Set<string>();
 
   // 1. Direct match by bodyPart & targetMuscles
-  if (bodyPart === "chest" || norm.includes("chest") || norm.includes("bench") || norm.includes("fly") || norm.includes("pushup") || norm.includes("incline") || norm.includes("decline") || norm.includes("pec")) {
+  const isChest =
+    bodyPart === "chest" ||
+    norm.includes("chest") ||
+    norm.includes("bench") ||
+    (norm.includes("fly") && !norm.includes("reverse") && !norm.includes("rear")) ||
+    norm.includes("pushup") ||
+    norm.includes("pec") ||
+    ((norm.includes("incline") || norm.includes("decline")) &&
+      !norm.includes("curl") &&
+      !norm.includes("walk") &&
+      !norm.includes("reverse") &&
+      !norm.includes("rear"));
+
+  if (isChest) {
     primary.add("chest");
     secondary.add("triceps");
     secondary.add("shoulders");
