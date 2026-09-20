@@ -7,12 +7,16 @@ import { prisma } from "./prisma";
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
   providers: [
-    Google({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-      allowDangerousEmailAccountLinking:
-        process.env.ALLOW_DANGEROUS_EMAIL_LINKING === "true",
-    }),
+    ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
+      ? [
+          Google({
+            clientId: process.env.GOOGLE_CLIENT_ID,
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+            allowDangerousEmailAccountLinking:
+              process.env.ALLOW_DANGEROUS_EMAIL_LINKING === "true",
+          }),
+        ]
+      : []),
   ],
   session: {
     strategy: "jwt",
@@ -59,20 +63,6 @@ export const authOptions: NextAuthOptions = {
         } as typeof session.user;
       }
       return session;
-    },
-  },
-  events: {
-    async signIn({ user }) {
-      // Check if user needs onboarding
-      const dbUser = await prisma.user.findUnique({
-        where: { id: user.id },
-        select: { goal: true, bodyweight: true },
-      });
-
-      // Mark as needing onboarding if goal/bodyweight not set
-      if (!dbUser?.goal || !dbUser?.bodyweight) {
-        // This will be handled by the client
-      }
     },
   },
   pages: {
