@@ -59,3 +59,28 @@ export function playCountdownBeep(isFinal: boolean = false): void {
     // Graceful fallback if audio context blocked by browser autoplay policy
   }
 }
+
+/**
+ * Hands-free Voice Announcement using Web Speech API
+ * Announces rest time checkpoints ("30 seconds remaining") and next plate loads
+ */
+export function announceTimerVoice(
+  message: string,
+  options?: { rate?: number; pitch?: number; lang?: string },
+): boolean {
+  if (typeof window === "undefined" || !("speechSynthesis" in window)) {
+    return false;
+  }
+
+  try {
+    window.speechSynthesis.cancel(); // Cancel any prior overlapping speech
+    const utterance = new SpeechSynthesisUtterance(message);
+    utterance.rate = options?.rate ?? 1.05;
+    utterance.pitch = options?.pitch ?? 1.0;
+    utterance.lang = options?.lang ?? "en-US";
+    window.speechSynthesis.speak(utterance);
+    return true;
+  } catch {
+    return false;
+  }
+}
