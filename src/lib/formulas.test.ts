@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  calculateBrzycki1RM,
   calculateEpley1RM,
   calculateStrengthRatio,
   calculateVolume,
@@ -12,6 +13,14 @@ describe("formulas", () => {
     expect(calculateEpley1RM(100, 5)).toBeCloseTo(116.67, 2);
     expect(calculateEpley1RM(100, 1)).toBe(100);
     expect(calculateEpley1RM(0, 5)).toBe(0);
+  });
+
+  it("calculates Brzycki 1RM safely on normal and high reps", () => {
+    expect(calculateBrzycki1RM(100, 5)).toBeCloseTo(112.51, 2);
+    expect(calculateBrzycki1RM(100, 1)).toBe(100);
+    expect(calculateBrzycki1RM(0, 5)).toBe(0);
+    // 37 reps would previously produce negative 1RM; now safely falls back to positive Epley estimate
+    expect(calculateBrzycki1RM(50, 37)).toBeGreaterThan(50);
   });
 
   it("converts units accurately", () => {
