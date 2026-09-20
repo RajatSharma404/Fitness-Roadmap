@@ -15,7 +15,15 @@ export function calculateEpley1RM(weight: number, reps: number): number {
 export function calculateBrzycki1RM(weight: number, reps: number): number {
   if (reps <= 0 || weight <= 0) return 0;
   if (reps === 1) return weight;
-  return weight / (1.0278 - 0.0278 * reps);
+  // Brzycki formula breaks down and becomes negative for reps >= 30; fallback to Epley
+  if (reps >= 30) {
+    return calculateEpley1RM(weight, reps);
+  }
+  const denominator = 1.0278 - 0.0278 * reps;
+  if (denominator <= 0.05) {
+    return calculateEpley1RM(weight, reps);
+  }
+  return weight / denominator;
 }
 
 // Convert between kg and lbs
