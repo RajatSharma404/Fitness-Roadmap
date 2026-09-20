@@ -7,12 +7,22 @@ describe("MuscleVolumeHeatmap component", () => {
   it("renders MuscleVolumeHeatmap element with volume data", () => {
     const mockVolumeData: Record<string, MuscleVolumeProgress> = {
       chest: {
+        muscle: "chest",
         label: "Chest",
         directSets: 12,
         indirectSets: 4,
         totalEffectiveSets: 14,
         status: "optimal",
-        landmarks: { mev: 8, mavMin: 12, mavMax: 18, mrv: 22, recoveryTimeHours: 48 },
+        percentageOfMAV: 93,
+        landmarks: {
+          muscle: "chest",
+          label: "Chest",
+          mev: 8,
+          mavMin: 12,
+          mavMax: 18,
+          mrv: 22,
+          recoveryTimeHours: 48,
+        },
       },
     };
 
