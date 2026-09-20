@@ -22,9 +22,20 @@ const chatPayloadSchema = z.object({
 const reqTimestampsByIp = new Map<string, number[]>();
 const RATE_WINDOW_MS = 60 * 1000;
 const RATE_MAX = 20;
+const MAX_TRACKED_IPS = 2000;
 
 function isRateLimited(ip: string): boolean {
   const now = Date.now();
+
+  // Evict stale entries if map exceeds maximum tracked IPs
+  if (reqTimestampsByIp.size > MAX_TRACKED_IPS) {
+    for (const [key, timestamps] of reqTimestampsByIp.entries()) {
+      if (timestamps.every((timestamp) => now - timestamp >= RATE_WINDOW_MS)) {
+        reqTimestampsByIp.delete(key);
+      }
+    }
+  }
+
   const existing = reqTimestampsByIp.get(ip) ?? [];
   const fresh = existing.filter(
     (timestamp) => now - timestamp < RATE_WINDOW_MS,
@@ -64,7 +75,16 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const payload = await req.json();
+  let payload: unknown;
+  try {
+    payload = await req.json();
+  } catch {
+    return NextResponse.json(
+      { error: "Invalid JSON request body" },
+      { status: 400 },
+    );
+  }
+
   const parsed = chatPayloadSchema.safeParse(payload);
 
   if (!parsed.success) {
@@ -135,28 +155,14 @@ The user interface will automatically render these tags as interactive 1-click e
   const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
   const model = genAI.getGenerativeModel({
     model: "gemini-1.5-flash",
+    systemInstruction: systemPrompt,
     generationConfig: {
       maxOutputTokens: 800,
       temperature: 0.7,
     },
   });
 
-  const chat = model.startChat({
-    history: [
-      {
-        role: "user",
-        parts: [{ text: systemPrompt }],
-      },
-      {
-        role: "model",
-        parts: [
-          {
-            text: "I understand. I will provide expert strength training advice based on your context and goals.",
-          },
-        ],
-      },
-    ],
-  });
+  const chat = model.startChat();
 
   const streamResult = await chat.sendMessageStream(message);
   const encoder = new TextEncoder();
