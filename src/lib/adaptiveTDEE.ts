@@ -33,12 +33,25 @@ export function calculateAdaptiveTDEE(input: AdaptiveTDEEInput): AdaptiveTDEERes
     .filter((w) => w.weightKg > 30 && w.weightKg < 350)
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-  // Collect daily caloric intakes
+  // Establish window bounds based on weight history
+  const hasWeightBounds = sortedWeights.length >= 2;
+  const minWindowTime = hasWeightBounds
+    ? new Date(sortedWeights[0].date).getTime() - 2 * 86400000
+    : 0;
+  const maxWindowTime = hasWeightBounds
+    ? new Date(sortedWeights[sortedWeights.length - 1].date).getTime() + 2 * 86400000
+    : Infinity;
+
+  // Collect daily caloric intakes within the active weight history window
   const dailyCalories: number[] = [];
-  Object.values(foodLogs).forEach((log) => {
-    const dayTotal = log.entries.reduce((sum, e) => sum + e.calories, 0);
-    if (dayTotal > 500 && dayTotal < 8000) {
-      dailyCalories.push(dayTotal);
+  Object.entries(foodLogs).forEach(([dateKey, log]) => {
+    const logTime = new Date(dateKey).getTime();
+    const isInWindow = isNaN(logTime) || (logTime >= minWindowTime && logTime <= maxWindowTime);
+    if (isInWindow) {
+      const dayTotal = log.entries.reduce((sum, e) => sum + e.calories, 0);
+      if (dayTotal > 500 && dayTotal < 8000) {
+        dailyCalories.push(dayTotal);
+      }
     }
   });
 
