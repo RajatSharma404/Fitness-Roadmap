@@ -47,7 +47,16 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const payload = await req.json();
+  let payload: unknown;
+  try {
+    payload = await req.json();
+  } catch {
+    return NextResponse.json(
+      { ok: false, error: "Invalid JSON request body" },
+      { status: 400 },
+    );
+  }
+
   const parsed = workoutSessionSchema.safeParse(payload);
 
   if (!parsed.success) {
