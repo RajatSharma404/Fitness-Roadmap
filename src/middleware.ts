@@ -1,7 +1,18 @@
 import { NextResponse } from "next/server";
 
-export async function middleware() {
-  return NextResponse.next();
+export function middleware() {
+  const response = NextResponse.next();
+
+  // Security Headers
+  response.headers.set("X-Frame-Options", "DENY");
+  response.headers.set("X-Content-Type-Options", "nosniff");
+  response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+  response.headers.set(
+    "Permissions-Policy",
+    "camera=(), microphone=(), geolocation=()",
+  );
+
+  return response;
 }
 
 export const config = {
