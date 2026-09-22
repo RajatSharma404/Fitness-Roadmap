@@ -1,82 +1,68 @@
-# Stack Guidelines & Pitfalls Reference
+# Full-Stack Audit Checklists & Stack Guidelines Reference
 
-This reference documents common architectural pitfalls, breaking changes, and high-leverage patterns for modern full-stack web applications.
-
----
-
-## 1. Next.js 15/16 & React 19
-
-### Async Route & Page Parameters
-In Next.js 15+, dynamic route parameters and search parameters are asynchronous Promises:
-- **Incorrect (legacy):**
-  ```typescript
-  export default function Page({ params }: { params: { id: string } }) {
-    const { id } = params; // Error in Next.js 15+
-  }
-  ```
-- **Correct (Next.js 15+):**
-  ```typescript
-  export default async function Page({ params }: { params: Promise<{ id: string }> }) {
-    const { id } = await params;
-  }
-  ```
-
-### React 19 Server Actions & Form State
-- Deprecated `useFormState` replaced with `useActionState` from `'react'`.
-- Deprecated `useFormStatus` moved to `react-dom`.
-- Form actions can be passed directly to `<form action={action}>` and `<button formAction={action}>`.
-- Avoid passing raw server action promises without pending state handlers.
-
-### React 19 Component Ref Pattern
-- `forwardRef` is deprecated. Pass `ref` directly as a regular prop:
-  ```typescript
-  // React 19 pattern
-  export function CustomInput({ ref, ...props }: { ref?: React.Ref<HTMLInputElement> } & React.InputHTMLAttributes<HTMLInputElement>) {
-    return <input ref={ref} {...props} />;
-  }
-  ```
-
-### Server vs. Client Boundary & Secret Leaking
-- Never import server-only modules (`@prisma/client`, database connectors, private API secrets) inside files marked with `'use client'`.
-- Ensure all public environment variables use `NEXT_PUBLIC_` prefix. Never expose raw API secret keys to client components.
+This reference documents exhaustive architectural checks, performance benchmarks, and high-leverage patterns across Frontend, Backend, and Database tiers.
 
 ---
 
-## 2. Tailwind CSS v4
+## 1. 🎨 Frontend Tier Audit Checklist
 
-- Tailwind CSS v4 is CSS-first. Configuration is handled in CSS using `@theme` and `@import "tailwindcss";` rather than `tailwind.config.js`.
-- Class names with arbitrary values should align with CSS variables: `bg-(--color-primary)`.
-- Avoid conflicting utility classes (use `clsx` and `tailwind-merge` properly).
+### React 19 & Next.js 15 App Router
+- [ ] **Async Params**: Are `params` and `searchParams` properly handled as async Promises (`await params`) in layouts, pages, and route handlers?
+- [ ] **Modern Hooks**: Are legacy hooks (`useFormState`, `useFormStatus` from wrong packages) migrated to React 19 `useActionState` (from `'react'`) and `useFormStatus` (from `'react-dom'`)?
+- [ ] **Component Ref Pattern**: Is `forwardRef` removed in favor of direct `ref` prop passing (React 19 standard)?
+- [ ] **Client Boundary Discipline**: Are components marked `'use client'` strictly restricted to interactive leaf nodes? Are server-only libraries or secrets leaked?
+- [ ] **Hydration Safety**: Are there mismatched browser/server states (e.g. `window.localStorage`, `new Date()`, random IDs) rendered directly without `useEffect` or `useSyncExternalStore`?
 
----
-
-## 3. Prisma & PostgreSQL
-
-- **N+1 Query Elimination**: Always leverage `include` or `select` relations instead of nested loops of `prisma.<model>.findMany` or `findUnique`.
-- **Global Prisma Instance**: Next.js hot-reloading instantiates multiple client connections if not attached to `globalThis`:
-  ```typescript
-  const globalForPrisma = globalThis as unknown as { prisma: PrismaClient };
-  export const prisma = globalForPrisma.prisma ?? new PrismaClient();
-  if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
-  ```
-- **Transaction Safety**: Wrap multi-step dependent writes in `prisma.$transaction([ ... ])` or interactive transactions `prisma.$transaction(async (tx) => { ... })`.
-- **Database Connection Pooling**: Ensure `DATABASE_URL` uses PgBouncer or pooling parameters (`?pgbouncer=true&connection_limit=10`) when deployed in serverless environments.
+### UI/UX, Styling & Accessibility
+- [ ] **Tailwind CSS v4 Standards**: Are styling rules using CSS-first `@theme` and `@import "tailwindcss";` rather than legacy JS configs? Are custom colors defined via theme tokens?
+- [ ] **Visual Hierarchy & Aesthetics**: Does the UI feel cohesive and premium (consistent border-radii, balanced spacing, curated HSL color palettes, dark-mode support, subtle micro-animations)?
+- [ ] **Layout Shifts & Skeletons**: Are dynamic data sections wrapped in `<Suspense>` with skeleton fallbacks to prevent Cumulative Layout Shift (CLS)?
+- [ ] **Accessibility (a11y)**: Do interactive controls have `aria-label`, keyboard navigation focus rings (`focus-visible:ring-2`), and appropriate semantic roles (`<button>`, `<nav>`, `<main>`)?
+- [ ] **Mobile Responsiveness**: Do grids and flexboxes scale down gracefully to 360px without horizontal scrollbars? Are touch targets at least 44x44px?
 
 ---
 
-## 4. Node.js & Express.js 5
+## 2. ⚙️ Backend Tier Audit Checklist
 
-- **Native Async Error Handling**: Express 5 automatically handles rejected promises from async route handlers without needing `express-async-errors` or manual `next(err)` blocks.
-- **Request Body Parsing**: Ensure strict body limits (`express.json({ limit: '1mb' })`) to avoid denial of service via oversized payloads.
-- **Graceful Shutdown**: Always attach `SIGINT` / `SIGTERM` listeners to close HTTP and database connections cleanly.
+### API Routes & Server Actions
+- [ ] **Input Validation**: Is every incoming request body, query parameter, and route parameter strictly validated using a schema validator like Zod?
+- [ ] **Authentication & Authorization**: Is user identity verified before executing data mutations or fetching private resources? Is tenant isolation enforced (e.g. `where: { userId: session.userId }`)?
+- [ ] **Error Handling & Status Codes**: Do endpoints catch and log unexpected exceptions while returning structured, sanitized error payloads with appropriate HTTP status codes (400, 401, 403, 404, 429, 500)?
+- [ ] **Rate Limiting & Abuse Prevention**: Are public or expensive endpoints protected against brute-force or denial-of-service?
+- [ ] **Safe Secret Isolation**: Are environment variables accessed safely? Are private keys never prefixed with `NEXT_PUBLIC_`?
 
 ---
 
-## 5. Python & Flask
+## 3. 🗄️ Database & Data Layer Audit Checklist
 
-- **Application Factory Pattern**: Use `create_app()` instead of global module-level app instances for testability and isolation.
-- **Type Hinting**: Use PEP 484 type annotations (`typing` / built-in generics in Python 3.10+) and Pydantic v2 for payload validation.
-- **WSGI / ASGI Safety**: Never run `app.run(debug=True)` in production; use Gunicorn or Uvicorn with proper worker configurations.
+### Prisma 6 & PostgreSQL
+- [ ] **N+1 Query Elimination**: Are queries leveraging `include` or explicit `select` to retrieve relations in a single query rather than iterating with sequential `findUnique` or `findMany`?
+- [ ] **Indexing Strategy**:
+  - Are foreign keys (`userId`, `workoutSessionId`, `routineId`) indexed with `@@index`?
+  - Are search/filter combinations indexed with compound indexes (e.g., `@@index([userId, createdAt])`)?
+  - Are unique constraints enforced at the DB level (`@unique` / `@@unique`)?
+- [ ] **Prisma Client Singleton**: Is the Prisma client initialized once on `globalThis` to prevent connection leaks during development hot-reloading?
+- [ ] **Connection Pooling**: Is the connection string configured with connection pooling (e.g., PgBouncer / Supabase / Neon pooler) to avoid exhausting PostgreSQL connection pools under serverless spikes?
+- [ ] **Transactional Integrity**: Are multi-step dependent writes wrapped in `prisma.$transaction([ ... ])` or interactive transactions `prisma.$transaction(async (tx) => { ... })` to prevent orphaned records?
+- [ ] **Cascade Deletes**: Are relations configured with `onDelete: Cascade` where appropriate to avoid foreign key violation crashes on deletions?
+
+---
+
+## 4. ⚡ Codebase Optimization & Modernization
+
+### Algorithmic & Memory Efficiency
+- [ ] **Over-fetching**: Are database queries selecting only the required columns (`select: { id: true, title: true }`) instead of returning full records with heavy JSON fields?
+- [ ] **Memoization & Rerenders**: Are expensive client computations memoized using `useMemo`? Are callback references stabilized with `useCallback` when passed to optimized memoized children?
+- [ ] **Bundle Size & Dynamic Imports**: Are heavy non-critical modules (e.g., charting libraries, canvas renderers, audio synthesis) lazy-loaded via `next/dynamic`?
+- [ ] **Dead Code & Redundancies**: Are unused imports, obsolete components, and duplicate utility functions pruned?
+
+---
+
+## 5. 🔄 Feature Merging & Consolidation Audit
+
+- [ ] **Duplicate State Stores**: Are multiple stores or contexts managing overlapping data that can be unified?
+- [ ] **Component Redundancies**: Are there similar cards, modal dialogs, or inputs that should be refactored into a single versatile, generic component?
+- [ ] **Route Consolidation**: Can multiple fragmented API endpoints (e.g., separate endpoints for toggling 3 related flags) be consolidated into a unified resource handler?
 
 ---
 
